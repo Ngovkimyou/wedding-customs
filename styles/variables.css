@@ -1,0 +1,26 @@
+:root {
+  --color-red-dark: #35171a;
+  --color-maroon: #5a2428;
+  --color-red: #7d3238;
+  --color-gold: #a77b3d;
+  --color-title-gold: #98702d;
+  --color-gold-light: #c9a968;
+  --color-gold-muted: #8e6b3d;
+  --color-cream: #f4ead7;
+  --color-paper: #f8f0e2;
+  --color-paper-deep: #e8d8ba;
+  --color-brown: #382620;
+  --color-text: #30201a;
+  --color-muted: #725f52;
+  --color-on-dark: #f5e9d5;
+  --color-line: rgba(102, 65, 39, 0.32);
+  --color-line-light: rgba(242, 222, 184, 0.28);
+  --max-width: 75rem;
+  --reading-width: 48rem;
+  --radius-sm: 0.2rem;
+  --radius-md: 0.45rem;
+  --shadow-soft: 0 10px 28px rgba(25, 9, 9, 0.18);
+  --font-display: Georgia, "Times New Roman", serif;
+  --font-body: "Segoe UI", Tahoma, Arial, sans-serif;
+  --font-meta: "Courier New", Courier, monospace;
+}
