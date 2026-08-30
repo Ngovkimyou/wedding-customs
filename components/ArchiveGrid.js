@@ -13,7 +13,8 @@ export default function ArchiveGrid({ entries }) {
         count={`${String(entries.length).padStart(2, "0")} records`}
       >
         <p>
-          Each record is a placeholder for an interview, photograph, memory, object, or tradition to be added to the archive.
+          Each record is a placeholder for an interview, photograph, memory, object, or tradition
+          to be added to the archive.
         </p>
       </SectionHeading>
       <DecorativeDivider compact />

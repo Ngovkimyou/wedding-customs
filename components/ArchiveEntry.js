@@ -2,8 +2,14 @@ import Link from "next/link";
 import ArchiveMetadata from "./ArchiveMetadata.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 
+const ARCHIVE_DETAIL_FIELDS = [
+  ["Wedding custom / tradition", "tradition"],
+  ["Related objects", "objects"],
+  ["Research notes", "researchNotes"],
+];
+
 export default function ArchiveEntry({ entry }) {
-  const hasImages = entry.images && entry.images.length > 0;
+  const hasImages = Boolean(entry.images?.length);
 
   return (
     <article className="archive-entry archive-surface">
@@ -40,14 +46,14 @@ export default function ArchiveEntry({ entry }) {
       )}
 
       <section className="archive-entry__section" aria-labelledby="description-title">
-        <p className="section-label" id="description-title">Archive description</p>
+        <h2 className="section-label" id="description-title">Archive description</h2>
         <p>{entry.content}</p>
       </section>
 
       <DecorativeDivider compact />
 
       <section className="oral-history" aria-labelledby="oral-history-title">
-        <p className="section-label" id="oral-history-title">Oral history</p>
+        <h2 className="section-label" id="oral-history-title">Oral history</h2>
         <blockquote>“{entry.oralHistory}”</blockquote>
         <p className="oral-history__attribution">— {entry.interviewee} · {entry.interviewDate}</p>
       </section>
@@ -55,24 +61,18 @@ export default function ArchiveEntry({ entry }) {
       <DecorativeDivider compact />
 
       <section className="archive-entry__section" aria-labelledby="notes-title">
-        <p className="section-label" id="notes-title">Archive notes</p>
+        <h2 className="section-label" id="notes-title">Archive notes</h2>
         <ArchiveMetadata entry={entry} />
       </section>
 
       <section className="archive-entry__section archive-entry__details" aria-labelledby="details-title">
-        <p className="section-label" id="details-title">Custom & objects</p>
-        <div>
-          <h2>Wedding custom / tradition</h2>
-          <p>{entry.tradition}</p>
-        </div>
-        <div>
-          <h2>Related objects</h2>
-          <p>{entry.objects}</p>
-        </div>
-        <div>
-          <h2>Research notes</h2>
-          <p>{entry.researchNotes}</p>
-        </div>
+        <h2 className="section-label" id="details-title">Custom & objects</h2>
+        {ARCHIVE_DETAIL_FIELDS.map(([title, field]) => (
+          <div key={field}>
+            <h3>{title}</h3>
+            <p>{entry[field]}</p>
+          </div>
+        ))}
       </section>
     </article>
   );

@@ -1,20 +1,20 @@
-export default function ArchiveMetadata({ entry }) {
-  const metadata = [
-    ["Archive ID", entry.id],
-    ["Category", entry.category],
-    ["Period", entry.period],
-    ["Location", entry.location],
-    ["People involved", entry.people],
-    ["Source", entry.source],
-    ["Interview date", entry.interviewDate],
-  ];
+const METADATA_FIELDS = [
+  ["Archive ID", "id"],
+  ["Category", "category"],
+  ["Period", "period"],
+  ["Location", "location"],
+  ["People involved", "people"],
+  ["Source", "source"],
+  ["Interview date", "interviewDate"],
+];
 
+export default function ArchiveMetadata({ entry }) {
   return (
     <dl className="archive-metadata">
-      {metadata.map(([label, value]) => (
+      {METADATA_FIELDS.map(([label, field]) => (
         <div key={label}>
           <dt>{label}</dt>
-          <dd>{value}</dd>
+          <dd>{entry[field]}</dd>
         </div>
       ))}
     </dl>

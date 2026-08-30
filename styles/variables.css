@@ -1,26 +1,67 @@
 :root {
   --color-red-dark: #35171a;
-  --color-maroon: #5a2428;
   --color-red: #7d3238;
   --color-gold: #a77b3d;
   --color-title-gold: #98702d;
   --color-gold-light: #c9a968;
   --color-gold-muted: #8e6b3d;
-  --color-cream: #f4ead7;
   --color-paper: #f8f0e2;
   --color-paper-deep: #e8d8ba;
   --color-brown: #382620;
   --color-text: #30201a;
   --color-muted: #725f52;
-  --color-on-dark: #f5e9d5;
   --color-line: rgba(102, 65, 39, 0.32);
   --color-line-light: rgba(242, 222, 184, 0.28);
+
   --max-width: 75rem;
   --reading-width: 48rem;
-  --radius-sm: 0.2rem;
-  --radius-md: 0.45rem;
+  --header-height: 6rem;
+
+  --type-scale: 1;
+  --type-body: calc(1rem * var(--type-scale));
+  --type-brand-mark: calc(0.85rem * var(--type-scale));
+  --type-brand: calc(1.05rem * var(--type-scale));
+  --type-meta: calc(0.7rem * var(--type-scale));
+  --type-nav: calc(0.69rem * var(--type-scale));
+  --type-divider: calc(0.7rem * var(--type-scale));
+  --type-hero-introduction: calc(0.96rem * var(--type-scale));
+  --type-byline: calc(0.72rem * var(--type-scale));
+  --type-caption: calc(0.72rem * var(--type-scale));
+  --type-placeholder: calc(0.7rem * var(--type-scale));
+  --type-placeholder-small: calc(0.75rem * var(--type-scale));
+  --type-card-title: calc(1.6rem * var(--type-scale));
+  --type-card-khmer: calc(0.95rem * var(--type-scale));
+  --type-card-summary: calc(0.9rem * var(--type-scale));
+  --type-card-action: calc(0.68rem * var(--type-scale));
+  --type-action-icon: calc(1rem * var(--type-scale));
+  --type-entry-khmer: calc(1.2rem * var(--type-scale));
+  --type-back-link: calc(0.7rem * var(--type-scale));
+  --type-image-note: calc(0.85rem * var(--type-scale));
+  --type-figure-caption: calc(0.82rem * var(--type-scale));
+  --type-attribution: calc(0.74rem * var(--type-scale));
+  --type-value: calc(0.88rem * var(--type-scale));
+  --type-detail-title: calc(1.2rem * var(--type-scale));
+  --type-detail-body: calc(0.88rem * var(--type-scale));
+  --type-about-copy: calc(1.02rem * var(--type-scale));
+  --type-footer: calc(0.9rem * var(--type-scale));
+
   --shadow-soft: 0 10px 28px rgba(25, 9, 9, 0.18);
+
   --font-display: Georgia, "Times New Roman", serif;
+  --font-archive-title: "Lugrasimo", var(--font-display);
   --font-body: "Segoe UI", Tahoma, Arial, sans-serif;
-  --font-meta: "Courier New", Courier, monospace;
+  --font-meta: "Overlock SC", "Courier New", Courier, monospace;
+}
+
+@media (max-width: 960px) {
+  :root {
+    --type-scale: 0.94;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --header-height: 4rem;
+    --type-scale: 0.88;
+  }
 }

@@ -5,7 +5,9 @@ import { archiveDetails, archiveEntries } from "../data/archive.js";
 export default function Home() {
   return (
     <div className="archive-home">
-      <Hero details={archiveDetails} />
+      <div className="opening-screen">
+        <Hero details={archiveDetails} />
+      </div>
       <ArchiveGrid entries={archiveEntries} />
     </div>
   );

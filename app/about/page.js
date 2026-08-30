@@ -1,7 +1,7 @@
 import DecorativeDivider from "../../components/DecorativeDivider.js";
 
 export const metadata = {
-  title: "About | Khmer Wedding Tradition Archive",
+  title: "About",
 };
 
 export default function AboutPage() {
@@ -11,10 +11,12 @@ export default function AboutPage() {
       <h1 id="about-title">A living archive, still being assembled.</h1>
       <DecorativeDivider />
       <p>
-        [Placeholder: Add a short introduction to the archive, its curator, and the family or community knowledge it preserves.]
+        [Placeholder: Add a short introduction to the archive, its curator, and the family or
+        community knowledge it preserves.]
       </p>
       <p>
-        [Placeholder: Add information about interviews, research methods, permissions, and how future records will be added.]
+        [Placeholder: Add information about interviews, research methods, permissions, and how
+        future records will be added.]
       </p>
     </section>
   );
