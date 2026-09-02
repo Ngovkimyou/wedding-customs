@@ -17,7 +17,7 @@ Open [http://localhost:3000](http://localhost:3000). For a production check, run
 npm run build
 ```
 
-Avoid running multiple development servers against the same project directory. They can compete for the `.next` cache and cause stale Webpack-module errors during refresh.
+Avoid running multiple development servers against the same project directory. They can compete for the development cache and cause stale Webpack-module errors during refresh. Development output is stored in `.next-dev`; production builds use `.next`.
 
 If the cache becomes stale, stop the running server first, then run:
 
@@ -26,7 +26,7 @@ npm run clean
 npm run dev
 ```
 
-Do not run `npm run build` while `npm run dev` is still active; both commands write to `.next`.
+The separate output directories allow `npm run build` to run without invalidating chunks used by an active development server.
 
 ## Project structure
 
@@ -41,6 +41,9 @@ components/
   Header.js                  Header artwork, brand, and navigation
   HeaderVisibilityController.js
                              Header idle/scroll behavior
+  MusicControl.js            Persistent audio player and soundtrack dialog
+  PlatformClass.js           Platform-specific layout hook
+  SiteBrand.js               Home link with same-page smooth scrolling
   ViewportHeightLock.js      Stable opening-screen height
   Hero.js                    Opening archive content and decorations
   ArchiveGrid.js             Collection heading and record grid
@@ -50,6 +53,7 @@ components/
 
 data/
   archive.js                 Archive identity, defaults, entries, and lookup
+  music.js                   Soundtrack playlists and page-mode mapping
 
 assets/                      Imported interface and decorative artwork
 public/images/               Archive photographs referenced by URL
@@ -61,9 +65,9 @@ styles/
   variables.css              Design tokens and global type scale
   base.css                   Reset, shared layout, surfaces, and typography
   header.css                 Header and navigation, including breakpoints
+  music.css                  Music trigger, dialog, controls, and scrolling
   opening-screen.css         Opening background, frame, hero, and decorations
   archive.css                Collection cards and archive-record pages
-  footer.css                 Footer and its mobile layout
   globals.css                Stylesheet import entry point
 ```
 

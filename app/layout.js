@@ -1,6 +1,6 @@
-import Footer from "../components/Footer.js";
 import Header from "../components/Header.js";
 import HeaderVisibilityController from "../components/HeaderVisibilityController.js";
+import PlatformClass from "../components/PlatformClass.js";
 import ViewportHeightLock from "../components/ViewportHeightLock.js";
 import { archiveDetails } from "../data/archive.js";
 import "./globals.css";
@@ -24,12 +24,12 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body className="archive-background">
+      <body>
+        <PlatformClass />
         <ViewportHeightLock />
         <Header />
         <HeaderVisibilityController />
         <main className="archive-shell">{children}</main>
-        <Footer />
       </body>
     </html>
   );

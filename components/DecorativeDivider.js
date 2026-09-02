@@ -1,3 +1,5 @@
+import chanFlower from "../assets/chan-flower.png";
+
 export default function DecorativeDivider({ compact = false }) {
   return (
     <div
@@ -5,7 +7,7 @@ export default function DecorativeDivider({ compact = false }) {
       aria-hidden="true"
     >
       <span />
-      <i>✦</i>
+      <img src={chanFlower.src} alt="" />
       <span />
     </div>
   );

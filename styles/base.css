@@ -3,7 +3,7 @@
 }
 
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
   background: var(--color-red-dark);
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -23,14 +23,8 @@ body {
   min-width: 20rem;
   min-height: 100vh;
   margin: 0;
-  overflow-x: hidden;
+  overflow-x: clip;
   background-color: var(--color-red-dark);
-  background-image:
-    radial-gradient(circle at 12% 10%, rgba(205, 171, 102, 0.12), transparent 19rem),
-    radial-gradient(circle at 88% 80%, rgba(0, 0, 0, 0.2), transparent 25rem),
-    repeating-linear-gradient(45deg, rgba(255, 230, 190, 0.025) 0 1px, transparent 1px 11px),
-    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.045) 0 1px, transparent 1px 13px);
-  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-body);
   font-size: var(--type-body);
@@ -58,6 +52,12 @@ a {
   outline-offset: 4px;
 }
 
+/* Pointer clicks should not leave a temporary keyboard-style outline around
+   header links or music controls. Keyboard focus keeps the visible outline. */
+:where(a, button, summary):focus:not(:focus-visible) {
+  outline: none;
+}
+
 ::selection {
   background: var(--color-gold-light);
   color: var(--color-red-dark);
@@ -74,8 +74,7 @@ a {
   padding-top: var(--header-height);
 }
 
-.site-header__inner,
-.site-footer__inner {
+.site-header__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -84,8 +83,7 @@ a {
 
 .eyebrow,
 .section-label,
-.archive-card__topline,
-.archive-card__period,
+.archive-card__meta,
 .archive-entry__category,
 .archive-metadata dt,
 .section-heading__count {
@@ -160,9 +158,12 @@ a {
   background: var(--color-gold-muted);
 }
 
-.decorative-divider i {
-  font-size: var(--type-divider);
-  font-style: normal;
+.decorative-divider img {
+  display: block;
+  width: clamp(1rem, 1.8vw, 1.45rem);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .decorative-divider--compact {
@@ -173,14 +174,14 @@ a {
   width: min(5.5rem, 18vw);
 }
 
+.decorative-divider--compact img {
+  width: clamp(0.8rem, 1.45vw, 1.15rem);
+}
+
 @media (max-width: 640px) {
   .site-frame,
   .archive-shell {
     width: min(calc(100% - 1.25rem), var(--max-width));
-  }
-
-  body {
-    background-attachment: scroll;
   }
 }
 

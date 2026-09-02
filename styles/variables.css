@@ -10,6 +10,7 @@
   --color-brown: #382620;
   --color-text: #30201a;
   --color-muted: #725f52;
+  --color-on-dark: #f5e9d5;
   --color-line: rgba(102, 65, 39, 0.32);
   --color-line-light: rgba(242, 222, 184, 0.28);
 
@@ -32,8 +33,6 @@
   --type-card-title: calc(1.6rem * var(--type-scale));
   --type-card-khmer: calc(0.95rem * var(--type-scale));
   --type-card-summary: calc(0.9rem * var(--type-scale));
-  --type-card-action: calc(0.68rem * var(--type-scale));
-  --type-action-icon: calc(1rem * var(--type-scale));
   --type-entry-khmer: calc(1.2rem * var(--type-scale));
   --type-back-link: calc(0.7rem * var(--type-scale));
   --type-image-note: calc(0.85rem * var(--type-scale));
@@ -43,7 +42,6 @@
   --type-detail-title: calc(1.2rem * var(--type-scale));
   --type-detail-body: calc(0.88rem * var(--type-scale));
   --type-about-copy: calc(1.02rem * var(--type-scale));
-  --type-footer: calc(0.9rem * var(--type-scale));
 
   --shadow-soft: 0 10px 28px rgba(25, 9, 9, 0.18);
 

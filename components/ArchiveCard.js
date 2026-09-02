@@ -4,16 +4,11 @@ export default function ArchiveCard({ entry }) {
   const image = entry.images?.[0];
 
   return (
-    <Link className="archive-card" href={`/archive/${entry.slug}`}>
+    <Link className="archive-card ornate-frame" href={`/archive/${entry.slug}`}>
       <article>
-        <div className="archive-card__topline">
-          <span>{entry.id}</span>
-          <span>{entry.category}</span>
-        </div>
-
         {image ? (
           <figure className="archive-card__image">
-            <img src={image.src} alt={image.alt || "Archive photograph"} />
+            <img src={image.src} alt={image.alt ?? "Archive photograph"} />
             {image.caption ? <figcaption>{image.caption}</figcaption> : null}
           </figure>
         ) : (
@@ -24,15 +19,11 @@ export default function ArchiveCard({ entry }) {
         )}
 
         <div className="archive-card__body">
-          <p className="archive-card__period">{entry.period}</p>
+          <p className="archive-card__meta">{entry.id}</p>
           <h3>{entry.title}</h3>
           <p className="archive-card__khmer-title">{entry.khmerTitle}</p>
-          <p className="archive-card__summary">{entry.summary}</p>
+          {entry.summary ? <p className="archive-card__summary">{entry.summary}</p> : null}
         </div>
-
-        <span className="archive-card__open">
-          Open record <b aria-hidden="true">→</b>
-        </span>
       </article>
     </Link>
   );

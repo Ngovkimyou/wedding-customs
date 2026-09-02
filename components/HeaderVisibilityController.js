@@ -10,6 +10,7 @@ export default function HeaderVisibilityController() {
 
   useEffect(() => {
     const header = document.querySelector("[data-site-header]");
+    const headerInner = header?.querySelector(".site-header__inner");
     const openingScreen = document.querySelector(".opening-screen");
 
     if (!header) {
@@ -17,6 +18,7 @@ export default function HeaderVisibilityController() {
     }
 
     let idleTimer;
+    let isInteractingWithHeader = false;
 
     const isInOpeningScreen = () => openingScreen?.getBoundingClientRect().bottom > 0;
 
@@ -31,13 +33,13 @@ export default function HeaderVisibilityController() {
     const scheduleIdleFade = () => {
       clearIdleTimer();
 
-      if (isInOpeningScreen()) {
+      if (isInOpeningScreen() || isInteractingWithHeader) {
         showHeader();
         return;
       }
 
       idleTimer = window.setTimeout(() => {
-        if (!isInOpeningScreen()) {
+        if (!isInOpeningScreen() && !isInteractingWithHeader) {
           header.classList.add("site-header--idle-hidden");
         }
       }, IDLE_DELAY);
@@ -48,14 +50,41 @@ export default function HeaderVisibilityController() {
       scheduleIdleFade();
     };
 
+    const handleHeaderEnter = () => {
+      isInteractingWithHeader = true;
+      showHeader();
+      clearIdleTimer();
+    };
+
+    const handleHeaderLeave = () => {
+      isInteractingWithHeader = false;
+      scheduleIdleFade();
+    };
+
+    const handleHeaderFocusOut = (event) => {
+      if (headerInner?.contains(event.relatedTarget)) {
+        return;
+      }
+
+      handleHeaderLeave();
+    };
+
     handleActivity();
     window.addEventListener("scroll", handleActivity, { passive: true });
     window.addEventListener("resize", handleActivity);
+    headerInner?.addEventListener("pointerenter", handleHeaderEnter);
+    headerInner?.addEventListener("pointerleave", handleHeaderLeave);
+    headerInner?.addEventListener("focusin", handleHeaderEnter);
+    headerInner?.addEventListener("focusout", handleHeaderFocusOut);
 
     return () => {
       clearIdleTimer();
       window.removeEventListener("scroll", handleActivity);
       window.removeEventListener("resize", handleActivity);
+      headerInner?.removeEventListener("pointerenter", handleHeaderEnter);
+      headerInner?.removeEventListener("pointerleave", handleHeaderLeave);
+      headerInner?.removeEventListener("focusin", handleHeaderEnter);
+      headerInner?.removeEventListener("focusout", handleHeaderFocusOut);
       header.classList.remove("site-header--idle-hidden");
     };
   }, [pathname]);

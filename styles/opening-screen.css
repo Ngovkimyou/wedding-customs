@@ -3,7 +3,7 @@
   max-width: none;
   margin-inline: 0;
   margin-top: calc(-1 * var(--header-height));
-  padding: 0 0 clamp(3rem, 7vw, 6rem);
+  padding: 0;
 }
 
 .opening-screen {

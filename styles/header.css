@@ -122,6 +122,20 @@
   text-decoration: none;
 }
 
+.site-brand:focus,
+.site-brand:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.site-brand:focus-visible {
+  color: #fff6e7;
+}
+
+.site-brand:focus-visible .site-brand__mark {
+  background: rgba(201, 169, 104, 0.12);
+}
+
 .site-brand__mark {
   display: grid;
   width: 2.25rem;
@@ -142,6 +156,13 @@
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1.15rem;
+  margin-left: auto;
 }
 
 .site-navigation,
@@ -171,6 +192,17 @@
 
 .site-navigation a:hover {
   border-color: var(--color-gold-light);
+  color: #fff6e7;
+}
+
+.site-navigation a:focus,
+.site-navigation a:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.site-navigation a:focus-visible {
+  background: rgba(201, 169, 104, 0.12);
   color: #fff6e7;
 }
 
@@ -208,6 +240,10 @@
     gap: 0;
   }
 
+  .site-header__actions {
+    gap: 0.65rem;
+  }
+
   .site-brand__title,
   .site-navigation__links {
     display: none;
@@ -216,7 +252,7 @@
   .site-navigation {
     position: relative;
     display: block;
-    margin-left: auto;
+    margin-left: 0;
     padding-left: 0;
   }
 
@@ -245,6 +281,16 @@
   .site-navigation__more summary:hover {
     border-color: var(--color-gold-light);
     color: #fff6e7;
+  }
+
+  .site-navigation__more summary:focus,
+  .site-navigation__more summary:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .site-navigation__more summary:focus-visible {
+    background: rgba(201, 169, 104, 0.12);
   }
 
   .site-navigation__menu {

@@ -1,7 +1,10 @@
 import { rm } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const nextCachePath = resolve(process.cwd(), ".next");
+const nextOutputDirectories = [".next", ".next-dev"];
 
-await rm(nextCachePath, { force: true, recursive: true });
-console.log(`Removed Next.js cache: ${nextCachePath}`);
+for (const directory of nextOutputDirectories) {
+  const outputPath = resolve(process.cwd(), directory);
+  await rm(outputPath, { force: true, recursive: true });
+  console.log(`Removed Next.js output: ${outputPath}`);
+}
