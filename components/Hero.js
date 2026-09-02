@@ -1,7 +1,7 @@
 import DecorativeDivider from "./DecorativeDivider.js";
-import coupleStamp from "../assets/couple-stamp.png";
-import pkaSla from "../assets/pka-sla.png";
-import prosProng from "../assets/pros-prong.png";
+import coupleStamp from "../assets/couple-stamp.avif";
+import pkaSla from "../assets/pka-sla.avif";
+import prosProng from "../assets/pros-prong.avif";
 
 export default function Hero({ details }) {
   return (

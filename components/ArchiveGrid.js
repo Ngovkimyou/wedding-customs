@@ -1,10 +1,10 @@
 import ArchiveCard from "./ArchiveCard.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 import SectionHeading from "./SectionHeading.js";
-import pkaSlaGarland from "../assets/pka-sla-garland.png";
-import desktopSmallerPkaSlaGarland from "../assets/desktop-smaller-pka-sla-garland.png";
-import tabletPkaSlaGarland from "../assets/tablet-pka-sla-garland.png";
-import mobilePkaSlaGarland from "../assets/mobile-pka-sla-garland.png";
+import pkaSlaGarland from "../assets/pka-sla-garland.avif";
+import desktopSmallerPkaSlaGarland from "../assets/desktop-smaller-pka-sla-garland.avif";
+import tabletPkaSlaGarland from "../assets/tablet-pka-sla-garland.avif";
+import mobilePkaSlaGarland from "../assets/mobile-pka-sla-garland.avif";
 
 export default function ArchiveGrid({ entries }) {
   return (
@@ -24,7 +24,7 @@ export default function ArchiveGrid({ entries }) {
       <div className="archive-collection__stage">
         <div className="archive-collection__body" aria-hidden="true" />
         <div className="archive-collection__body-inner">
-          <DecorativeDivider compact />
+          <DecorativeDivider compact loading="lazy" />
           <div className="archive-grid">
             {entries.map((entry) => (
               <ArchiveCard entry={entry} key={entry.id} />
@@ -35,7 +35,12 @@ export default function ArchiveGrid({ entries }) {
           <source media="(max-width: 640px)" srcSet={mobilePkaSlaGarland.src} />
           <source media="(max-width: 960px)" srcSet={tabletPkaSlaGarland.src} />
           <source media="(max-width: 1499px)" srcSet={desktopSmallerPkaSlaGarland.src} />
-          <img src={pkaSlaGarland.src} alt="" />
+          <img
+            src={pkaSlaGarland.src}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
         </picture>
       </div>
     </section>

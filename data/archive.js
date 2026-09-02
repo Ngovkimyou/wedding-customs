@@ -1,8 +1,8 @@
-import archive001Image from "../assets/images/archive-001.png";
-import archive002Image from "../assets/images/archive-002.png";
-import archive003Image from "../assets/images/archive-003.png";
-import archive004Image from "../assets/images/archive-004.png";
-import archive005Image from "../assets/images/archive-005.png";
+import archive001Image from "../assets/images/archive-001.avif";
+import archive002Image from "../assets/images/archive-002.avif";
+import archive003Image from "../assets/images/archive-003.avif";
+import archive004Image from "../assets/images/archive-004.avif";
+import archive005Image from "../assets/images/archive-005.avif";
 
 export const archiveDetails = {
   name: "Khmer Wedding Tradition Archive",
@@ -39,7 +39,7 @@ const archiveCatalog = [
     summary: "How the Couple Met",
     images: [
       {
-        src: archive001Image.src,
+        src: archive001Image,
         alt: "Photograph for Archive 001",
       },
     ],
@@ -52,7 +52,7 @@ const archiveCatalog = [
     summary: "The Tradition of Partners Introduction - After the First Meeting",
     images: [
       {
-        src: archive002Image.src,
+        src: archive002Image,
         alt: "Photograph for Archive 002",
       },
     ],
@@ -65,7 +65,7 @@ const archiveCatalog = [
     summary: "On Pre-Wedding Family Meeting",
     images: [
       {
-        src: archive003Image.src,
+        src: archive003Image,
         alt: "Photograph for Archive 003",
       },
     ],
@@ -78,7 +78,7 @@ const archiveCatalog = [
     summary: "About Wedding Preparations - About the Gold Received From the Boy's Family - Before the Wedding Day",
     images: [
       {
-        src: archive004Image.src,
+        src: archive004Image,
         alt: "Photograph for Archive 004",
       },
     ],
@@ -91,7 +91,7 @@ const archiveCatalog = [
     summary: "On Wedding Day",
     images: [
       {
-        src: archive005Image.src,
+        src: archive005Image,
         alt: "Photograph for Archive 005",
       },
     ],

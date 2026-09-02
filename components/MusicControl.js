@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
-import chanFlowerBackdrop from "../assets/chan-flower-backdrop.png";
+import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
 import musicIcon from "../assets/icons/music-icon.png";
 import {
   DEFAULT_MUSIC_MODE,
@@ -17,6 +17,7 @@ import {
 
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
+const ARCHIVE_START_EVENT = "archive:loading-complete";
 
 function clampVolume(volume) {
   return Math.min(Math.max(volume, 0), 1);
@@ -79,6 +80,7 @@ export default function MusicControl() {
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasUserStarted, setHasUserStarted] = useState(false);
   const [mode, setMode] = useState(DEFAULT_MUSIC_MODE);
   const [manualSelection, setManualSelection] = useState(INITIAL_MANUAL_SELECTION);
   const [playlistIndexes, setPlaylistIndexes] = useState(INITIAL_PLAYLIST_INDEXES);
@@ -210,7 +212,7 @@ export default function MusicControl() {
       const transitionId = transitionIdRef.current + 1;
       const nextSource = activeTrack.source;
       const previousSource = currentSourceRef.current;
-      const wasPlaying = shouldResumeRef.current || !audio.paused;
+      const wasPlaying = shouldResumeRef.current || hasUserStarted || !audio.paused;
 
       transitionIdRef.current = transitionId;
       shouldResumeRef.current = false;
@@ -285,7 +287,36 @@ export default function MusicControl() {
     };
 
     transitionToTrack();
-  }, [activePlaylist.length, activeTrack.source, mode, saveCurrentPosition]);
+  }, [activePlaylist.length, activeTrack.source, hasUserStarted, mode, saveCurrentPosition]);
+
+  useEffect(() => {
+    const handleArchiveStart = () => {
+      const audio = audioRef.current;
+      const startingTrack = MUSIC_PLAYLISTS[pageMode][0];
+
+      setMode(DEFAULT_MUSIC_MODE);
+      setPlaylistIndexes((currentIndexes) => ({
+        ...currentIndexes,
+        [pageMode]: 0,
+      }));
+      shouldResumeRef.current = true;
+      setHasUserStarted(true);
+
+      if (audio && currentSourceRef.current !== startingTrack.source) {
+        audio.src = startingTrack.source;
+        audio.loop = MUSIC_PLAYLISTS[pageMode].length === 1;
+        audio.volume = DEFAULT_VOLUME;
+        currentSourceRef.current = startingTrack.source;
+        audio.load();
+      }
+
+      audio?.play().catch(() => setIsPlaying(false));
+    };
+
+    window.addEventListener(ARCHIVE_START_EVENT, handleArchiveStart);
+
+    return () => window.removeEventListener(ARCHIVE_START_EVENT, handleArchiveStart);
+  }, [pageMode]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -405,6 +436,7 @@ export default function MusicControl() {
 
     if (audio.paused) {
       try {
+        setHasUserStarted(true);
         await audio.play();
       } catch {
         setIsPlaying(false);
@@ -413,6 +445,7 @@ export default function MusicControl() {
     }
 
     audio.pause();
+    setHasUserStarted(false);
   };
 
   const suppressPointerFocus = (event) => {

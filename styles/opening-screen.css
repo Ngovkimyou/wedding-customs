@@ -84,7 +84,7 @@
   position: absolute;
   z-index: 0;
   inset: 0;
-  background-image: url("../assets/hero-frame.png");
+  background-image: url("../assets/hero-frame.avif");
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -279,7 +279,7 @@
     );
     background-image:
       linear-gradient(rgba(12, 8, 7, 0.08), rgba(12, 8, 7, 0.08)),
-      url("../assets/tablet-opening-bg.png");
+      url("../assets/tablet-opening-bg.avif");
   }
 
   .hero-frame .hero {
@@ -312,7 +312,7 @@
     --opening-byline-leading: 1.2;
     background-image:
       linear-gradient(rgba(12, 8, 7, 0.08), rgba(12, 8, 7, 0.08)),
-      url("../assets/mobile-opening-bg.png");
+      url("../assets/mobile-opening-bg.avif");
   }
 
   .hero-frame {
@@ -320,7 +320,7 @@
   }
 
   .hero-frame::before {
-    background-image: url("../assets/mobile-hero-frame.png");
+    background-image: url("../assets/mobile-hero-frame.avif");
     background-size: 100% 100%;
   }
 

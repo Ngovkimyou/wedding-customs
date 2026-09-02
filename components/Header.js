@@ -1,9 +1,9 @@
 import Navigation from "./Navigation.js";
 import MusicControl from "./MusicControl.js";
 import SiteBrand from "./SiteBrand.js";
-import headerFrame from "../assets/header-frame.png";
-import mediumHeaderFrame from "../assets/medium-header-frame.png";
-import smallHeaderFrame from "../assets/small-header-frame.png";
+import headerFrame from "../assets/header-frame.avif";
+import mediumHeaderFrame from "../assets/medium-header-frame.avif";
+import smallHeaderFrame from "../assets/small-header-frame.avif";
 
 export default function Header() {
   return (

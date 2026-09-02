@@ -46,9 +46,9 @@
   --shadow-soft: 0 10px 28px rgba(25, 9, 9, 0.18);
 
   --font-display: Georgia, "Times New Roman", serif;
-  --font-archive-title: "Lugrasimo", var(--font-display);
+  --font-archive-title: var(--font-lugrasimo), var(--font-display);
   --font-body: "Segoe UI", Tahoma, Arial, sans-serif;
-  --font-meta: "Overlock SC", "Courier New", Courier, monospace;
+  --font-meta: var(--font-overlock-sc), "Courier New", Courier, monospace;
 }
 
 @media (max-width: 960px) {

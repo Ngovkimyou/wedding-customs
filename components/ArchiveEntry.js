@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ArchiveMetadata from "./ArchiveMetadata.js";
 import DecorativeDivider from "./DecorativeDivider.js";
+import ProgressiveImage from "./ProgressiveImage.js";
 
 const ARCHIVE_DETAIL_FIELDS = [
   ["Wedding custom / tradition", "tradition"],
@@ -28,15 +29,28 @@ export default function ArchiveEntry({ entry }) {
 
       {hasImages ? (
         <div className="archive-entry__images">
-          {entry.images.map((image) => (
-            <figure className="archive-entry__figure" key={image.src}>
-              <img src={image.src} alt={image.alt || "Archive photograph"} />
-              <figcaption>
-                {image.caption || "[Image caption]"}
-                {image.approximateDate ? ` · ${image.approximateDate}` : ""}
-              </figcaption>
-            </figure>
-          ))}
+          {entry.images.map((image, index) => {
+            const dimensions = typeof image.src === "object" ? image.src : null;
+            const imageKey = dimensions?.src ?? image.src;
+
+            return (
+              <figure className="archive-entry__figure" key={imageKey}>
+                <ProgressiveImage
+                  src={image.src}
+                  alt={image.alt || "Archive photograph"}
+                  width={dimensions?.width ?? 1600}
+                  height={dimensions?.height ?? 1000}
+                  sizes="(max-width: 48rem) 100vw, 48rem"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  fetchPriority={index === 0 ? "high" : "auto"}
+                />
+                <figcaption>
+                  {image.caption || "[Image caption]"}
+                  {image.approximateDate ? ` · ${image.approximateDate}` : ""}
+                </figcaption>
+              </figure>
+            );
+          })}
         </div>
       ) : (
         <div className="archive-entry__image-placeholder" role="img" aria-label="Family photograph placeholder">

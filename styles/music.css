@@ -20,6 +20,7 @@
   opacity: 0.34;
   object-fit: contain;
   pointer-events: none;
+  transition: opacity 240ms ease, transform 360ms ease, filter 240ms ease;
 }
 
 .music-control__button {
@@ -35,11 +36,7 @@
   background: transparent;
   color: var(--color-gold-light);
   cursor: pointer;
-}
-
-.music-control__button:hover,
-.music-control__button:focus-visible {
-  background: rgba(201, 169, 104, 0.12);
+  transition: transform 240ms ease, filter 240ms ease;
 }
 
 .music-control__button:focus,
@@ -55,6 +52,26 @@
   filter: brightness(0) saturate(100%) invert(77%) sepia(20%) saturate(680%) hue-rotate(357deg)
     brightness(91%) contrast(88%);
   object-fit: contain;
+  transition: transform 240ms ease, filter 240ms ease;
+}
+
+.music-control:hover .music-control__backdrop,
+.music-control:focus-within .music-control__backdrop {
+  opacity: 0.62;
+  filter: drop-shadow(0 0 0.4rem rgba(201, 169, 104, 0.42));
+  transform: scale(1.1) rotate(8deg);
+}
+
+.music-control__button:hover,
+.music-control__button:focus-visible {
+  background: transparent;
+  filter: drop-shadow(0 0 0.35rem rgba(201, 169, 104, 0.32));
+  transform: scale(1.04);
+}
+
+.music-control__button:hover .music-control__icon,
+.music-control__button:focus-visible .music-control__icon {
+  transform: scale(1.12) rotate(-6deg);
 }
 
 .music-control--playing .music-control__backdrop {
@@ -119,7 +136,7 @@
 
 .music-panel::before {
   z-index: 2;
-  background-image: url("../assets/music-panel-frame.png");
+  background-image: url("../assets/music-panel-frame.avif");
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;

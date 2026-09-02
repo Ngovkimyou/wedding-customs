@@ -41,11 +41,14 @@ components/
   Header.js                  Header artwork, brand, and navigation
   HeaderVisibilityController.js
                              Header idle/scroll behavior
+  LoadingScreen.js           Initial visual preload gate and start gesture
   MusicControl.js            Persistent audio player and soundtrack dialog
   PlatformClass.js           Platform-specific layout hook
   SiteBrand.js               Home link with same-page smooth scrolling
   ViewportHeightLock.js      Stable opening-screen height
   Hero.js                    Opening archive content and decorations
+  DecorativeDivider.js      Reusable floral divider
+  ProgressiveImage.js       Lazy image placeholder, fade-in, and fallback
   ArchiveGrid.js             Collection heading and record grid
   ArchiveCard.js             Collection record preview
   ArchiveEntry.js            Full archive record
@@ -55,8 +58,11 @@ data/
   archive.js                 Archive identity, defaults, entries, and lookup
   music.js                   Soundtrack playlists and page-mode mapping
 
-assets/                      Imported interface and decorative artwork
-public/images/               Archive photographs referenced by URL
+assets/                      Imported AVIF interface and decorative artwork
+assets/fonts/                Self-hosted Lugrasimo and Overlock SC WOFF2 files
+assets/legacy/               Replaced or unused source artwork retained for reference
+assets/images/               Optimized archive photographs imported by the catalog
+public/images/               Optional public URL assets for future records
 
 scripts/
   clean-next-cache.mjs       Cross-platform generated-cache cleanup
@@ -65,6 +71,7 @@ styles/
   variables.css              Design tokens and global type scale
   base.css                   Reset, shared layout, surfaces, and typography
   header.css                 Header and navigation, including breakpoints
+  loading-screen.css         Initial loading gate and reveal transition
   music.css                  Music trigger, dialog, controls, and scrolling
   opening-screen.css         Opening background, frame, hero, and decorations
   archive.css                Collection cards and archive-record pages
@@ -75,9 +82,12 @@ styles/
 
 Edit `data/archive.js`. Shared placeholder fields live in `archiveEntryDefaults`; the record-specific catalog contains only the values that differ for each entry.
 
-Add an `images` array only when a real image is available:
+Add an `images` array only when a real image is available. Imported assets in
+`assets/images/` are optimized by the Next.js image pipeline:
 
 ```js
+import archive012Image from "../assets/images/archive-012.avif";
+
 {
   id: "ARCHIVE 012",
   slug: "example-record",
@@ -85,7 +95,7 @@ Add an `images` array only when a real image is available:
   title: "Example Record",
   images: [
     {
-      src: "/images/example.jpg",
+      src: archive012Image,
       alt: "A precise description of the archive photograph",
       caption: "Optional photograph caption",
       approximateDate: "Early 2000s",
@@ -95,6 +105,22 @@ Add an `images` array only when a real image is available:
 ```
 
 Records without images automatically receive an empty array and display the existing placeholder treatment.
+
+## Loading and image behavior
+
+The initial loading screen preloads the visual assets required for the current
+desktop, tablet, or mobile layout. It reaches `100%` and enables “Click to
+start” only after every required asset loads successfully. The start gesture
+launches the petal reveal and starts the default soundtrack through the same
+user interaction required by browser autoplay policies.
+
+The petal layer is independent from the fading black loading layer, allowing
+the animation to finish after the opening screen appears. Reduced-motion users
+receive the opening transition without the petal flight.
+
+Archive photographs below the opening screen remain lazy-loaded. The reusable
+`ProgressiveImage` component provides a lightweight placeholder, fade-in, and
+failure state while those images load.
 
 ## Responsive styling
 

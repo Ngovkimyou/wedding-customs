@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ProgressiveImage from "./ProgressiveImage.js";
 
 export default function ArchiveCard({ entry }) {
   const image = entry.images?.[0];
@@ -8,7 +9,13 @@ export default function ArchiveCard({ entry }) {
       <article>
         {image ? (
           <figure className="archive-card__image">
-            <img src={image.src} alt={image.alt ?? "Archive photograph"} />
+            <ProgressiveImage
+              src={image.src}
+              alt={image.alt ?? "Archive photograph"}
+              fill
+              sizes="(max-width: 640px) calc(100vw - 2.5rem), (max-width: 960px) 50vw, 33vw"
+              loading="lazy"
+            />
             {image.caption ? <figcaption>{image.caption}</figcaption> : null}
           </figure>
         ) : (

@@ -1,0 +1,368 @@
+.loading-screen-open {
+  overflow: hidden;
+}
+
+.loading-screen {
+  --loading-exit-duration: 1000ms;
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: #050403;
+  color: var(--color-gold-light);
+  cursor: wait;
+  opacity: 1;
+  transition: opacity 700ms ease, visibility 0s linear 0s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.loading-screen img,
+.loading-screen__petals img {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+.loading-screen--exiting {
+  visibility: hidden;
+  cursor: default;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity var(--loading-exit-duration) ease,
+    visibility 0s linear var(--loading-exit-duration);
+}
+
+.loading-screen__petals {
+  position: fixed;
+  z-index: 2100;
+  inset: -14vh -12vw;
+  overflow: hidden;
+  pointer-events: none;
+  perspective: 70rem;
+  contain: layout paint;
+}
+
+.loading-screen__petal {
+  position: absolute;
+  width: min(68vw, 58rem);
+  max-width: none;
+  top: 0;
+  left: 0;
+  height: auto;
+  object-fit: contain;
+  opacity: 0;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  /* Large layers remain on the compositor by animating only transform and opacity. */
+  filter: none;
+  backface-visibility: hidden;
+  animation-fill-mode: both;
+}
+
+.loading-screen__petal--light {
+  --petal-start-x: -62vw;
+  --petal-start-y: 76vh;
+  --petal-start-scale: 0.3;
+  width: min(52vw, 45rem);
+  animation: loading-petal-wind-light 1.15s linear forwards;
+}
+
+.loading-screen__petal--medium {
+  --petal-start-x: -68vw;
+  --petal-start-y: 82vh;
+  --petal-start-scale: 0.34;
+  width: min(72vw, 64rem);
+  animation: loading-petal-wind-medium 1.05s .08s linear forwards;
+}
+
+.loading-screen__petal--dense {
+  --petal-start-x: -72vw;
+  --petal-start-y: 88vh;
+  --petal-start-scale: 0.28;
+  width: min(82vw, 74rem);
+  animation: loading-petal-wind-dense 1.1s .16s linear forwards;
+}
+
+/* The oversized foreground petal acts like a soft camera wipe while the
+   opening screen is revealed behind it. */
+.loading-screen__petal--hero {
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  width: 175vw;
+  animation: loading-petal-camera-wipe .75s .8s cubic-bezier(.35, 0, .2, 1) forwards;
+}
+
+.loading-screen__petal--tail {
+  z-index: 1;
+  top: calc(50% - 10vh);
+  left: 50%;
+  width: 72vw;
+  opacity: 0;
+  /* Follow closely behind the main petal during its later flight. */
+  animation: loading-petal-camera-wipe .70s linear forwards;
+  animation-delay: 1.05s;
+}
+
+@keyframes loading-petal-wind-light {
+  0% { opacity: 0; transform: translate3d(var(--petal-start-x), var(--petal-start-y), -10rem) rotate(-25deg) scale(var(--petal-start-scale)); }
+  15% { opacity: .72; }
+  58% { opacity: .9; transform: translate3d(6vw, 2vh, 4rem) rotate(18deg) scale(1.05); }
+  82% { opacity: .9; }
+  93% { opacity: .65; }
+  100% { opacity: 0; transform: translate3d(78vw, -78vh, 12rem) rotate(54deg) scale(1.7); }
+}
+
+@keyframes loading-petal-wind-medium {
+  0% { opacity: 0; transform: translate3d(var(--petal-start-x), var(--petal-start-y), -12rem) rotate(20deg) scale(var(--petal-start-scale)); }
+  16% { opacity: .65; }
+  60% { opacity: .86; transform: translate3d(2vw, -2vh, 5rem) rotate(-17deg) scale(1.08); }
+  82% { opacity: .86; }
+  93% { opacity: .62; }
+  100% { opacity: 0; transform: translate3d(82vw, -84vh, 14rem) rotate(-52deg) scale(1.8); }
+}
+
+@keyframes loading-petal-wind-dense {
+  0% { opacity: 0; transform: translate3d(var(--petal-start-x), var(--petal-start-y), -16rem) rotate(-8deg) scale(var(--petal-start-scale)); }
+  14% { opacity: .58; }
+  58% { opacity: .78; transform: translate3d(0, 0, 8rem) rotate(12deg) scale(1.12); }
+  82% { opacity: .78; }
+  93% { opacity: .58; }
+  100% { opacity: 0; transform: translate3d(88vw, -92vh, 18rem) rotate(38deg) scale(2); }
+}
+
+@keyframes loading-petal-camera-wipe {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(-100vw, 100vh, 5rem) rotate(-28deg) scale(.62);
+  }
+  14% {
+    opacity: .98;
+  }
+  56% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate3d(0, 0, 18rem) rotate(8deg) scale(1.12);
+  }
+  84% {
+    opacity: 1;
+  }
+  94% {
+    opacity: .7;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate3d(100vw, -100vh, 24rem) rotate(42deg) scale(1.46);
+  }
+}
+
+/* Keep the artwork broad enough to cover narrow viewports without forcing
+   the source images to stretch vertically. */
+@media (max-width: 60rem) {
+  .loading-screen__petals {
+    inset: -12vh -18vw;
+  }
+
+  .loading-screen__petal--light {
+    width: 70vw;
+  }
+
+  .loading-screen__petal--medium {
+    width: 96vw;
+  }
+
+  .loading-screen__petal--dense {
+    width: 108vw;
+  }
+
+  .loading-screen__petal--hero {
+    width: 215vw;
+  }
+
+  .loading-screen__petal--tail {
+    width: 86vw;
+  }
+}
+
+@media (min-width: 40.0625rem) and (max-width: 60rem) {
+  .loading-screen__petal--light {
+    width: 82vw;
+  }
+
+  .loading-screen__petal--medium {
+    width: 112vw;
+  }
+
+  .loading-screen__petal--dense {
+    width: 126vw;
+  }
+
+  .loading-screen__petal--hero {
+    width: 245vw;
+  }
+
+  .loading-screen__petal--tail {
+    width: 100vw;
+  }
+}
+
+@media (max-width: 40rem) {
+  .loading-screen {
+    --loading-exit-duration: 350ms;
+  }
+
+  .loading-screen__petals {
+    inset: -14vh -28vw;
+  }
+
+  .loading-screen__petal--light {
+    --petal-start-x: -48vw;
+    --petal-start-y: 90vh;
+    --petal-start-scale: 0.34;
+    width: 100vw;
+  }
+
+  .loading-screen__petal--medium {
+    --petal-start-x: -54vw;
+    --petal-start-y: 96vh;
+    --petal-start-scale: 0.38;
+    width: 138vw;
+  }
+
+  .loading-screen__petal--dense {
+    --petal-start-x: -58vw;
+    --petal-start-y: 102vh;
+    --petal-start-scale: 0.32;
+    width: 152vw;
+  }
+
+  .loading-screen__petal--hero {
+    width: 275vw;
+  }
+
+  .loading-screen__petal--tail {
+    top: calc(50% - 8vh);
+    width: 112vw;
+    animation-delay: .85s;
+  }
+
+  .loading-screen__petal--hero {
+    animation-delay: .55s;
+  }
+}
+
+.loading-screen__content {
+  position: relative;
+  display: grid;
+  width: min(82vw, 24rem);
+  justify-items: center;
+  gap: 1rem;
+  text-align: center;
+  transition: opacity 360ms ease 0s;
+}
+
+.loading-screen--exiting .loading-screen__content {
+  opacity: 0;
+  transition-delay: 0s;
+}
+
+.loading-screen__flower {
+  position: relative;
+  width: clamp(4.5rem, 15vw, 7rem);
+  aspect-ratio: 1;
+  opacity: 0.86;
+  filter: drop-shadow(0 0 1.2rem rgba(201, 169, 104, 0.22));
+  animation: loading-flower-spin 3.2s linear infinite;
+  animation-play-state: running;
+}
+
+.loading-screen__flower-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.loading-screen__flower-layer--dim {
+  filter: grayscale(1) brightness(0.48) saturate(0.25);
+}
+
+.loading-screen__flower-layer--color {
+  clip-path: circle(var(--flower-reveal, 0%) at 50% 50%);
+  transition: clip-path 280ms ease;
+}
+
+.loading-screen__flower--ready {
+  animation-play-state: paused;
+}
+
+@keyframes loading-flower-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-screen__status,
+.loading-screen__prompt {
+  margin: 0;
+  font-family: var(--font-meta);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.loading-screen__status {
+  color: var(--color-gold-light);
+  font-family: var(--font-archive-title);
+  font-size: clamp(1rem, 3.2vw, 1.55rem);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.loading-screen__prompt {
+  position: absolute;
+  top: calc(100% + clamp(1.35rem, 3vw, 2rem));
+  left: 50%;
+  color: rgba(245, 233, 213, 0.76);
+  font-size: clamp(0.78rem, 1.8vw, 1rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, 0);
+  animation: loading-prompt-reveal 520ms ease forwards;
+}
+
+@keyframes loading-prompt-reveal {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-screen,
+  .loading-screen__prompt {
+    transition-duration: 0.01ms;
+  }
+
+  .loading-screen__flower {
+    animation: none;
+  }
+
+  .loading-screen__flower-layer--color {
+    transition: none;
+  }
+
+  .loading-screen__prompt {
+    animation: none;
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  .loading-screen__petal {
+    animation: none;
+    opacity: 0;
+  }
+}

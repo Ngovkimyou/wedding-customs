@@ -72,7 +72,7 @@
 
 @media (min-width: 961px) {
   .platform-macos .archive-collection__garland {
-    transform: none;
+    transform: translateY(-6.5rem);
   }
 }
 
@@ -94,7 +94,7 @@
   background-color: var(--color-red-dark);
   background-image:
     linear-gradient(90deg, rgba(20, 7, 8, 0.24), rgba(20, 7, 8, 0.04) 50%, rgba(20, 7, 8, 0.24)),
-    url("../assets/section-heading-bg.png");
+    url("../assets/section-heading-bg.avif");
   background-position: center;
   background-repeat: no-repeat;
   background-size: 100% 100%;
@@ -165,7 +165,7 @@
 }
 
 .ornate-frame {
-  --ornate-frame-source: url("../assets/collection-frame.png");
+  --ornate-frame-source: url("../assets/collection-frame.avif");
   --ornate-frame-slice: 320;
   --ornate-frame-width: clamp(2.5rem, 5vw, 4.25rem);
   border: var(--ornate-frame-width) solid transparent;
@@ -196,15 +196,74 @@
 
 .archive-card__image,
 .archive-card__image-placeholder {
+  position: relative;
+  height: clamp(8rem, 16vw, 10rem);
   min-height: 9.5rem;
   margin: 0;
   border-bottom: 1px solid var(--color-line);
 }
 
 .archive-card__image img {
-  width: 100%;
-  height: 10rem;
   object-fit: cover;
+}
+
+.progressive-image {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-paper-deep);
+}
+
+.progressive-image--fill {
+  position: absolute;
+  inset: 0;
+}
+
+.progressive-image__placeholder {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(105deg, transparent 25%, rgba(248, 240, 226, 0.45) 50%, transparent 75%),
+    var(--color-paper-deep);
+  background-size: 220% 100%;
+  animation: progressive-image-shimmer 1.8s ease-in-out infinite;
+}
+
+.progressive-image__image {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+.progressive-image--loaded .progressive-image__image {
+  opacity: 1;
+}
+
+.progressive-image--loaded .progressive-image__placeholder {
+  opacity: 0;
+  transition: opacity 260ms ease;
+}
+
+.progressive-image__fallback {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  font-family: var(--font-meta);
+  font-size: var(--type-placeholder);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes progressive-image-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -20% 0; }
 }
 
 .archive-card__image figcaption {
@@ -467,7 +526,7 @@
   }
 
   .archive-collection__body {
-    --archive-body-image: url("../assets/tablet-body-bg.png");
+    --archive-body-image: url("../assets/tablet-body-bg.avif");
   }
 
   .archive-collection__garland {
@@ -499,7 +558,7 @@
 
 @media (max-width: 640px) {
   .archive-collection__body {
-    --archive-body-image: url("../assets/mobile-body-bg.png");
+    --archive-body-image: url("../assets/mobile-body-bg.avif");
   }
 
   .archive-collection__garland {
@@ -523,7 +582,7 @@
     --section-heading-count-size: clamp(0.5rem, 1.6vw, 0.62rem);
     background-image:
       linear-gradient(90deg, rgba(20, 7, 8, 0.24), rgba(20, 7, 8, 0.04) 50%, rgba(20, 7, 8, 0.24)),
-      url("../assets/mobile-section-heading.png");
+      url("../assets/mobile-section-heading.avif");
   }
 
   .section-heading__inner {
@@ -543,6 +602,7 @@
 
   .archive-card__image,
   .archive-card__image-placeholder {
+    height: 8rem;
     min-height: 8rem;
   }
 

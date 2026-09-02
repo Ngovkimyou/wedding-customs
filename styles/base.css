@@ -196,4 +196,8 @@ a {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
   }
+
+  .progressive-image__placeholder {
+    animation: none;
+  }
 }
