@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import logo from "../assets/logo.avif";
 
 export default function SiteBrand() {
   const pathname = usePathname();
@@ -25,7 +26,7 @@ export default function SiteBrand() {
       aria-label="Khmer Wedding Tradition Archive home"
       onClick={handleClick}
     >
-      <span className="site-brand__mark" aria-hidden="true">✦</span>
+      <img className="site-brand__logo" src={logo.src} alt="" aria-hidden="true" />
       <span className="site-brand__title">Khmer Wedding Tradition Archive</span>
     </Link>
   );

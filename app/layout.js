@@ -1,6 +1,7 @@
 import Header from "../components/Header.js";
 import HeaderVisibilityController from "../components/HeaderVisibilityController.js";
 import LoadingScreen from "../components/LoadingScreen.js";
+import RouteTransition from "../components/RouteTransition.js";
 import PlatformClass from "../components/PlatformClass.js";
 import ViewportHeightLock from "../components/ViewportHeightLock.js";
 import { archiveDetails } from "../data/archive.js";
@@ -32,6 +33,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${lugrasimo.variable} ${overlock.variable}`}>
       <body>
         <LoadingScreen />
+        <RouteTransition />
         <PlatformClass />
         <ViewportHeightLock />
         <Header />

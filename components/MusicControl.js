@@ -4,23 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
-import musicIcon from "../assets/icons/music-icon.png";
+import musicIcon from "../assets/icons/music-icon.avif";
 import {
   DEFAULT_MUSIC_MODE,
   INITIAL_MANUAL_SELECTION,
   INITIAL_PLAYLIST_INDEXES,
   MUSIC_CHOICES,
   MUSIC_PLAYLISTS,
+  MUSIC_TRACK_SOURCES,
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
 
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
+const PAGE_MUSIC_FADE_DURATION = 180;
 const ARCHIVE_START_EVENT = "archive:loading-complete";
 
 function clampVolume(volume) {
-  return Math.min(Math.max(volume, 0), 1);
+  const safeVolume = Number.isFinite(volume) ? volume : 0;
+  return Math.min(Math.max(safeVolume, 0), 1);
 }
 
 function fadeAudioVolume(audio, nextVolume, duration, transitionId, transitionIdRef) {
@@ -72,13 +75,18 @@ export default function MusicControl() {
   const musicPanelBodyRef = useRef(null);
   const musicScrollbarRef = useRef(null);
   const musicChoiceRefs = useRef(new Map());
+  const preloadedAudioRef = useRef([]);
   const previouslyFocusedRef = useRef(null);
+  const panelCloseTimerRef = useRef(null);
   const shouldResumeRef = useRef(false);
   const currentSourceRef = useRef(null);
+  const activeModeRef = useRef(null);
   const playbackPositionsRef = useRef({});
   const transitionIdRef = useRef(0);
   const [isMounted, setIsMounted] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isPanelClosing, setIsPanelClosing] = useState(false);
+  const [panelAnimationKey, setPanelAnimationKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasUserStarted, setHasUserStarted] = useState(false);
   const [mode, setMode] = useState(DEFAULT_MUSIC_MODE);
@@ -151,6 +159,30 @@ export default function MusicControl() {
   }, []);
 
   useEffect(() => {
+    preloadedAudioRef.current = MUSIC_TRACK_SOURCES.map((source) => {
+      const audio = new Audio(source);
+      audio.preload = "auto";
+      audio.load();
+      return audio;
+    });
+
+    return () => {
+      preloadedAudioRef.current.forEach((audio) => {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      });
+      preloadedAudioRef.current = [];
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (panelCloseTimerRef.current) {
+      window.clearTimeout(panelCloseTimerRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
     const audio = audioRef.current;
 
     if (!audio) {
@@ -212,17 +244,24 @@ export default function MusicControl() {
       const transitionId = transitionIdRef.current + 1;
       const nextSource = activeTrack.source;
       const previousSource = currentSourceRef.current;
+      const previousActiveMode = activeModeRef.current;
+      const isDefaultPageChange = mode === DEFAULT_MUSIC_MODE
+        && previousActiveMode !== null
+        && previousActiveMode !== activeMode;
+      const fadeDuration = isDefaultPageChange ? PAGE_MUSIC_FADE_DURATION : MUSIC_FADE_DURATION;
       const wasPlaying = shouldResumeRef.current || hasUserStarted || !audio.paused;
 
       transitionIdRef.current = transitionId;
+      activeModeRef.current = activeMode;
       shouldResumeRef.current = false;
       saveCurrentPosition();
 
       if (previousSource === nextSource) {
         audio.loop = mode !== DEFAULT_MUSIC_MODE || activePlaylist.length === 1;
+        // A canceled fade may leave the same track below its normal level.
+        audio.volume = DEFAULT_VOLUME;
 
         if (wasPlaying && audio.paused) {
-          audio.volume = DEFAULT_VOLUME;
           audio.play().catch(() => setIsPlaying(false));
         } else {
           setIsPlaying(!audio.paused);
@@ -232,10 +271,15 @@ export default function MusicControl() {
       }
 
       if (!audio.paused) {
+        // Continue only the audible portion of an interrupted fade instead
+        // of waiting through another full transition.
+        const fadeOutDuration = audio.volume > 0
+          ? Math.max(80, Math.round(fadeDuration * audio.volume / DEFAULT_VOLUME))
+          : 0;
         const completedFadeOut = await fadeAudioVolume(
           audio,
           0,
-          MUSIC_FADE_DURATION,
+          fadeOutDuration,
           transitionId,
           transitionIdRef,
         );
@@ -279,7 +323,7 @@ export default function MusicControl() {
       try {
         await audio.play();
         setIsPlaying(true);
-        await fadeAudioVolume(audio, DEFAULT_VOLUME, MUSIC_FADE_DURATION, transitionId, transitionIdRef);
+        await fadeAudioVolume(audio, DEFAULT_VOLUME, fadeDuration, transitionId, transitionIdRef);
       } catch {
         audio.volume = DEFAULT_VOLUME;
         setIsPlaying(false);
@@ -287,7 +331,7 @@ export default function MusicControl() {
     };
 
     transitionToTrack();
-  }, [activePlaylist.length, activeTrack.source, hasUserStarted, mode, saveCurrentPosition]);
+  }, [activeMode, activePlaylist.length, activeTrack.source, hasUserStarted, mode, saveCurrentPosition]);
 
   useEffect(() => {
     const handleArchiveStart = () => {
@@ -421,9 +465,26 @@ export default function MusicControl() {
     };
   }, [activeMode, activeTrackIndex, isOpen, mode]);
 
-  const closePanel = () => setIsOpen(false);
+  const closePanel = () => {
+    if (!isOpen || isPanelClosing) {
+      return;
+    }
+
+    setIsOpen(false);
+    setIsPanelClosing(true);
+    panelCloseTimerRef.current = window.setTimeout(() => {
+      setIsPanelClosing(false);
+      panelCloseTimerRef.current = null;
+    }, 260);
+  };
 
   const openPanel = () => {
+    if (panelCloseTimerRef.current) {
+      window.clearTimeout(panelCloseTimerRef.current);
+      panelCloseTimerRef.current = null;
+    }
+    setIsPanelClosing(false);
+    setPanelAnimationKey((key) => key + 1);
     setIsOpen(true);
   };
 
@@ -562,9 +623,10 @@ export default function MusicControl() {
 
   const musicPanel = (
     <div
-      className="music-panel-layer"
+      key={panelAnimationKey}
+      className={`music-panel-layer${isPanelClosing ? " music-panel-layer--closing" : ""}`}
       role="presentation"
-      onMouseDown={(event) => {
+      onPointerDown={(event) => {
         if (event.target === event.currentTarget) {
           closePanel();
         }
@@ -576,7 +638,7 @@ export default function MusicControl() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="music-panel-title"
-        onMouseDown={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <header className="music-panel__header">
           <div>
@@ -686,9 +748,9 @@ export default function MusicControl() {
         >
           <img className="music-control__icon" src={musicIcon.src} alt="" aria-hidden="true" />
         </button>
-        <audio ref={audioRef} className="music-control__audio" loop={false} preload="none" />
+        <audio ref={audioRef} className="music-control__audio" loop={false} preload="auto" />
       </div>
-      {isMounted && isOpen ? createPortal(musicPanel, document.body) : null}
+      {isMounted && (isOpen || isPanelClosing) ? createPortal(musicPanel, document.body) : null}
     </>
   );
 }

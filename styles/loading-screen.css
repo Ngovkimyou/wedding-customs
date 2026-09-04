@@ -1,5 +1,10 @@
 .loading-screen-open {
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.loading-screen-open {
+  background: #050403;
 }
 
 .loading-screen {
@@ -7,6 +12,11 @@
   position: fixed;
   z-index: 2000;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100svh;
+  max-height: 100lvh;
   display: grid;
   place-items: center;
   background: #050403;
@@ -16,6 +26,9 @@
   transition: opacity 700ms ease, visibility 0s linear 0s;
   user-select: none;
   -webkit-user-select: none;
+  overscroll-behavior: none;
+  touch-action: none;
+  isolation: isolate;
 }
 
 .loading-screen img,
@@ -36,14 +49,59 @@
     visibility 0s linear var(--loading-exit-duration);
 }
 
-.loading-screen__petals {
+.loading-screen__petals,
+.route-transition__petals {
   position: fixed;
-  z-index: 2100;
   inset: -14vh -12vw;
   overflow: hidden;
   pointer-events: none;
   perspective: 70rem;
   contain: layout paint;
+}
+
+.loading-screen__petals {
+  z-index: 2100;
+}
+
+.route-transition__petals {
+  z-index: 2300;
+}
+
+body.about-route-transition main {
+  transition: opacity 90ms ease;
+}
+
+body.about-route-transition--entering main {
+  animation: about-route-page-fade-in 260ms ease both;
+}
+
+body.about-route-transition--leaving main {
+  opacity: 0;
+}
+
+body.route-page-fade main {
+  animation: route-page-fade-in 520ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: opacity;
+}
+
+@keyframes about-route-page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes route-page-fade-in {
+  from { opacity: 0.18; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 60rem) {
+  .loading-screen__petals,
+  .route-transition__petals { inset: -12vh -18vw; }
+}
+
+@media (max-width: 40rem) {
+  .loading-screen__petals,
+  .route-transition__petals { inset: -14vh -28vw; }
 }
 
 .loading-screen__petal {
@@ -162,10 +220,6 @@
 /* Keep the artwork broad enough to cover narrow viewports without forcing
    the source images to stretch vertically. */
 @media (max-width: 60rem) {
-  .loading-screen__petals {
-    inset: -12vh -18vw;
-  }
-
   .loading-screen__petal--light {
     width: 70vw;
   }
@@ -212,10 +266,6 @@
 @media (max-width: 40rem) {
   .loading-screen {
     --loading-exit-duration: 350ms;
-  }
-
-  .loading-screen__petals {
-    inset: -14vh -28vw;
   }
 
   .loading-screen__petal--light {

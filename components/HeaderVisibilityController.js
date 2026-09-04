@@ -10,7 +10,6 @@ export default function HeaderVisibilityController() {
 
   useEffect(() => {
     const header = document.querySelector("[data-site-header]");
-    const headerInner = header?.querySelector(".site-header__inner");
     const openingScreen = document.querySelector(".opening-screen");
 
     if (!header) {
@@ -50,6 +49,16 @@ export default function HeaderVisibilityController() {
       scheduleIdleFade();
     };
 
+    const handlePointerActivity = (event) => {
+      if (event.pointerType === "touch" || event.pointerType === "pen") {
+        handleActivity();
+      }
+    };
+
+    const handleTouchActivity = () => {
+      handleActivity();
+    };
+
     const handleHeaderEnter = () => {
       isInteractingWithHeader = true;
       showHeader();
@@ -62,7 +71,7 @@ export default function HeaderVisibilityController() {
     };
 
     const handleHeaderFocusOut = (event) => {
-      if (headerInner?.contains(event.relatedTarget)) {
+      if (header.contains(event.relatedTarget)) {
         return;
       }
 
@@ -72,19 +81,23 @@ export default function HeaderVisibilityController() {
     handleActivity();
     window.addEventListener("scroll", handleActivity, { passive: true });
     window.addEventListener("resize", handleActivity);
-    headerInner?.addEventListener("pointerenter", handleHeaderEnter);
-    headerInner?.addEventListener("pointerleave", handleHeaderLeave);
-    headerInner?.addEventListener("focusin", handleHeaderEnter);
-    headerInner?.addEventListener("focusout", handleHeaderFocusOut);
+    window.addEventListener("pointerdown", handlePointerActivity, { passive: true });
+    document.addEventListener("touchstart", handleTouchActivity, { capture: true, passive: true });
+    header.addEventListener("pointerenter", handleHeaderEnter);
+    header.addEventListener("pointerleave", handleHeaderLeave);
+    header.addEventListener("focusin", handleHeaderEnter);
+    header.addEventListener("focusout", handleHeaderFocusOut);
 
     return () => {
       clearIdleTimer();
       window.removeEventListener("scroll", handleActivity);
       window.removeEventListener("resize", handleActivity);
-      headerInner?.removeEventListener("pointerenter", handleHeaderEnter);
-      headerInner?.removeEventListener("pointerleave", handleHeaderLeave);
-      headerInner?.removeEventListener("focusin", handleHeaderEnter);
-      headerInner?.removeEventListener("focusout", handleHeaderFocusOut);
+      window.removeEventListener("pointerdown", handlePointerActivity);
+      document.removeEventListener("touchstart", handleTouchActivity, { capture: true });
+      header.removeEventListener("pointerenter", handleHeaderEnter);
+      header.removeEventListener("pointerleave", handleHeaderLeave);
+      header.removeEventListener("focusin", handleHeaderEnter);
+      header.removeEventListener("focusout", handleHeaderFocusOut);
       header.classList.remove("site-header--idle-hidden");
     };
   }, [pathname]);

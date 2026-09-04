@@ -49,6 +49,18 @@ export const MUSIC_PLAYLISTS = {
   ],
 };
 
+export const MUSIC_TRACK_SOURCES = Array.from(
+  new Set(
+    Object.values(MUSIC_PLAYLISTS)
+      .flat()
+      .map((track) => track.source),
+  ),
+);
+
+export const MUSIC_STARTUP_TRACK_SOURCES = Array.from(
+  new Set(Object.values(MUSIC_PLAYLISTS).map((playlist) => playlist[0].source)),
+);
+
 export const INITIAL_PLAYLIST_INDEXES = Object.fromEntries(
   Object.keys(MUSIC_PLAYLISTS).map((mode) => [mode, 0]),
 );

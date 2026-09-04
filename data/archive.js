@@ -7,6 +7,8 @@ import archive005Image from "../assets/images/archive-005.avif";
 export const archiveDetails = {
   name: "Khmer Wedding Tradition Archive",
   curator: "Kimyoo",
+  instructor: "Jesse Orndorff",
+  lecture: "Vibe Coding Class - Section 001",
   description:
     "An oral-history collection preserving family memories, traditions, ceremonies, and " +
     "stories surrounding Khmer marriage and weddings.",
