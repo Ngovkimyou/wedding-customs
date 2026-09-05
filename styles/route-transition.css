@@ -1,0 +1,50 @@
+/* Route-only transitions; petal artwork and flight paths stay shared with the loader. */
+body {
+  --route-page-fade-duration: 760ms;
+}
+
+body.about-route-transition main {
+  transition: opacity 90ms ease;
+}
+
+body.about-route-transition--entering main {
+  animation: about-route-page-fade-in 260ms ease both;
+}
+
+body.about-route-transition--leaving main {
+  opacity: 0;
+}
+
+body.route-page-fade main {
+  animation: route-page-fade-in var(--route-page-fade-duration) cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  will-change: opacity;
+}
+
+body.route-page-fade::after {
+  position: fixed;
+  z-index: 19;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(245, 203, 111, 0.12), transparent 48%),
+    linear-gradient(105deg, rgba(53, 23, 26, 0.42), rgba(201, 169, 104, 0.1) 48%, rgba(53, 23, 26, 0.42));
+  content: "";
+  pointer-events: none;
+  animation: route-page-veil var(--route-page-fade-duration) ease-out both;
+}
+
+@keyframes about-route-page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes route-page-fade-in {
+  from { opacity: 0; }
+  55% { opacity: 0.86; }
+  to { opacity: 1; }
+}
+
+@keyframes route-page-veil {
+  from { opacity: 1; }
+  65% { opacity: 0.42; }
+  to { opacity: 0; }
+}

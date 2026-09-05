@@ -167,6 +167,18 @@
   margin-left: auto;
 }
 
+.site-search {
+  display: inline-flex;
+  color: var(--color-gold-light);
+  text-decoration: none;
+}
+
+.site-search:focus,
+.site-search:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .site-navigation,
 .site-navigation__links {
   display: flex;
@@ -192,6 +204,7 @@
   transition: border-color 180ms ease, color 180ms ease;
 }
 
+.site-search__control,
 .site-navigation__link-control {
   position: relative;
   display: grid;
@@ -210,6 +223,7 @@
   display: none;
 }
 
+.site-search__backdrop,
 .site-navigation__link-backdrop {
   position: absolute;
   z-index: 0;
@@ -222,17 +236,20 @@
   transition: opacity 240ms ease, transform 360ms ease, filter 240ms ease;
 }
 
+.site-search__icon,
 .site-navigation__link-icon {
   position: relative;
   z-index: 1;
   width: clamp(1rem, 1.35vw, 1.3rem);
   height: auto;
-  opacity: 0.92;
-  filter: brightness(0) saturate(100%) invert(77%) sepia(20%) saturate(680%) hue-rotate(357deg)
-    brightness(91%) contrast(88%);
+  filter: var(--icon-gold-filter);
   object-fit: contain;
   pointer-events: none;
   transition: transform 240ms ease, filter 240ms ease;
+}
+
+.site-navigation__link-icon {
+  opacity: 0.92;
 }
 
 .site-navigation .site-navigation__link:hover,
@@ -241,6 +258,8 @@
   background: transparent;
 }
 
+.site-search:hover .site-search__backdrop,
+.site-search:focus-visible .site-search__backdrop,
 .site-navigation .site-navigation__link:hover .site-navigation__link-backdrop,
 .site-navigation .site-navigation__link:focus-visible .site-navigation__link-backdrop {
   opacity: 0.62;
@@ -248,10 +267,11 @@
   transform: scale(1.1) rotate(8deg);
 }
 
+.site-search:hover .site-search__icon,
+.site-search:focus-visible .site-search__icon,
 .site-navigation .site-navigation__link:hover .site-navigation__link-icon,
 .site-navigation .site-navigation__link:focus-visible .site-navigation__link-icon {
-  filter: brightness(0) saturate(100%) invert(77%) sepia(20%) saturate(680%) hue-rotate(357deg)
-    brightness(91%) contrast(88%) drop-shadow(0 0 0.35rem rgba(201, 169, 104, 0.32));
+  filter: var(--icon-gold-filter) drop-shadow(0 0 0.35rem rgba(201, 169, 104, 0.32));
   transform: scale(1.12) rotate(-6deg);
 }
 

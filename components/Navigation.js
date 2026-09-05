@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import aboutIcon from "../assets/icons/about-icon.avif";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
@@ -11,7 +12,7 @@ const NAVIGATION_ITEMS = [
 
 function NavigationLinks() {
   return NAVIGATION_ITEMS.map(({ href, label }) => (
-    <Link className="site-navigation__link" href={href} key={href}>
+    <Link className="site-navigation__link" href={href} key={href} aria-label={label}>
       <span className="site-navigation__link-label">{label}</span>
       <span className="site-navigation__link-control" aria-hidden="true">
         <img className="site-navigation__link-backdrop" src={chanFlowerBackdrop.src} alt="" />
@@ -23,6 +24,11 @@ function NavigationLinks() {
 
 export default function Navigation() {
   const moreRef = useRef(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    moreRef.current?.removeAttribute("open");
+  }, [pathname]);
 
   useEffect(() => {
     const handleOutsidePointer = (event) => {
@@ -32,8 +38,20 @@ export default function Navigation() {
       }
     };
 
+    const handleEscape = (event) => {
+      const more = moreRef.current;
+      if (event.key === "Escape" && more?.open) {
+        more.removeAttribute("open");
+        more.querySelector("summary")?.focus();
+      }
+    };
+
     document.addEventListener("pointerdown", handleOutsidePointer);
-    return () => document.removeEventListener("pointerdown", handleOutsidePointer);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsidePointer);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   return (

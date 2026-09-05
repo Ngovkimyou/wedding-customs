@@ -1,20 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import petalWoosh from "../assets/sound-effects/petals-woosh-se.mp3";
 import PetalReveal from "./PetalReveal.js";
 import useSoundEffect from "./useSoundEffect.js";
 
 const ABOUT_PATH = "/about";
-const PAGE_FADE_DURATION = 520;
+const PAGE_FADE_DURATION = 760;
 const ROUTE_SWAP_DELAY = 90;
 const TRANSITION_DURATION = 2250;
+const ABOUT_CLASSES = [
+  "about-route-transition",
+  "about-route-transition--leaving",
+  "about-route-transition--entering",
+];
 
 export default function RouteTransition() {
   const pathname = usePathname();
   const router = useRouter();
-  const firstPath = useRef(true);
   const previousPath = useRef(pathname);
   const delayedNavigation = useRef(false);
   const transitioning = useRef(false);
@@ -28,13 +32,32 @@ export default function RouteTransition() {
     timers.current = [];
   }, []);
 
-  const schedule = useCallback((callback, delay) => {
-    const timer = window.setTimeout(callback, delay);
-    timers.current.push(timer);
+  const clearPageFade = useCallback(() => {
+    window.clearTimeout(pageFadeTimer.current);
+    document.body.classList.remove("route-page-fade");
+    document.body.style.removeProperty("--route-page-fade-duration");
   }, []);
 
-  const startAboutTransition = useCallback(() => {
+  const schedule = useCallback((callback, delay) => {
+    timers.current.push(window.setTimeout(callback, delay));
+  }, []);
+
+  const finishAboutTransition = useCallback(() => {
+    clearTransitionTimers();
+    document.body.classList.remove(...ABOUT_CLASSES);
+    transitioning.current = false;
+    delayedNavigation.current = false;
+    setActive(false);
+  }, [clearTransitionTimers]);
+
+  const startAboutTransition = useCallback((href) => {
     if (transitioning.current) return;
+    clearPageFade();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      router.push(href);
+      return;
+    }
+
     transitioning.current = true;
     clearTransitionTimers();
     document.body.classList.add("about-route-transition");
@@ -47,79 +70,69 @@ export default function RouteTransition() {
         document.body.classList.remove("about-route-transition--leaving");
         document.body.classList.add("about-route-transition--entering");
         delayedNavigation.current = true;
-        router.push(ABOUT_PATH);
+        router.push(href);
       }, ROUTE_SWAP_DELAY);
     }, revealDelay);
-    schedule(() => {
-      document.body.classList.remove("about-route-transition", "about-route-transition--leaving", "about-route-transition--entering");
-      transitioning.current = false;
-      setActive(false);
-    }, TRANSITION_DURATION);
-  }, [clearTransitionTimers, playPetalWoosh, router, schedule]);
+    schedule(finishAboutTransition, TRANSITION_DURATION);
+  }, [clearPageFade, clearTransitionTimers, finishAboutTransition, playPetalWoosh, router, schedule]);
 
   useEffect(() => {
     const handleAboutClick = (event) => {
       const anchor = event.target.closest?.("a[href]");
-      if (!anchor || event.defaultPrevented || event.button !== 0 || pathname === ABOUT_PATH || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (
+        !anchor || event.defaultPrevented || event.button !== 0 || pathname === ABOUT_PATH
+        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+        || anchor.hasAttribute("download") || (anchor.target && anchor.target !== "_self")
+      ) return;
+
       const destination = new URL(anchor.href, window.location.href);
       if (destination.origin !== window.location.origin || destination.pathname !== ABOUT_PATH) return;
       event.preventDefault();
-      startAboutTransition();
+      startAboutTransition(destination.pathname + destination.search + destination.hash);
     };
+
     document.addEventListener("click", handleAboutClick, true);
     return () => document.removeEventListener("click", handleAboutClick, true);
   }, [pathname, startAboutTransition]);
 
-  useEffect(() => {
-    if (firstPath.current) {
-      firstPath.current = false;
-      previousPath.current = pathname;
-      return undefined;
-    }
-
-    const fromPath = previousPath.current;
-    const shouldAnimate = pathname === ABOUT_PATH && fromPath !== ABOUT_PATH;
-    const pathChanged = fromPath !== pathname;
+  // Run before paint, so a freshly committed page cannot flash ahead of its fade.
+  useLayoutEffect(() => {
+    if (previousPath.current === pathname) return;
     previousPath.current = pathname;
-    if (delayedNavigation.current) {
+    clearPageFade();
+
+    if (pathname === ABOUT_PATH && delayedNavigation.current) {
       delayedNavigation.current = false;
-      return undefined;
-    }
-    if (!shouldAnimate) {
-      clearTransitionTimers();
-      document.body.classList.remove("about-route-transition", "about-route-transition--leaving", "about-route-transition--entering");
-      transitioning.current = false;
-      setActive(false);
-      window.clearTimeout(pageFadeTimer.current);
-      if (pathChanged) {
-        document.body.classList.add("route-page-fade");
-        pageFadeTimer.current = window.setTimeout(() => document.body.classList.remove("route-page-fade"), PAGE_FADE_DURATION);
-      }
-      return undefined;
+      return;
     }
 
-    clearTransitionTimers();
-    window.clearTimeout(pageFadeTimer.current);
-    document.body.classList.add("about-route-transition", "about-route-transition--entering");
-    setActive(true);
-    schedule(() => {
-      document.body.classList.remove("about-route-transition", "about-route-transition--leaving", "about-route-transition--entering");
-      transitioning.current = false;
-      setActive(false);
-    }, TRANSITION_DURATION);
+    finishAboutTransition();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    return undefined;
-  }, [clearTransitionTimers, pathname, schedule]);
+    if (pathname === ABOUT_PATH) {
+      // Also cover client navigation that did not originate from an About link.
+      document.body.classList.add("about-route-transition", "about-route-transition--entering");
+      transitioning.current = true;
+      setActive(true);
+      schedule(finishAboutTransition, TRANSITION_DURATION);
+      return;
+    }
+
+    // Flush removal of the previous animation before starting another quick navigation.
+    const main = document.querySelector("main");
+    if (main) void window.getComputedStyle(main).opacity;
+    document.body.style.setProperty("--route-page-fade-duration", `${PAGE_FADE_DURATION}ms`);
+    document.body.classList.add("route-page-fade");
+    pageFadeTimer.current = window.setTimeout(clearPageFade, PAGE_FADE_DURATION);
+  }, [clearPageFade, finishAboutTransition, pathname, schedule]);
 
   useEffect(() => () => {
     clearTransitionTimers();
-    window.clearTimeout(pageFadeTimer.current);
-    document.body.classList.remove("about-route-transition", "about-route-transition--leaving", "about-route-transition--entering");
-    document.body.classList.remove("route-page-fade");
+    clearPageFade();
+    document.body.classList.remove(...ABOUT_CLASSES);
     transitioning.current = false;
-  }, [clearTransitionTimers]);
+    delayedNavigation.current = false;
+  }, [clearPageFade, clearTransitionTimers]);
 
-  if (!active) return null;
-
-  return <PetalReveal className="route-transition__petals" />;
+  return active ? <PetalReveal className="route-transition__petals" /> : null;
 }

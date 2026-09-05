@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import ArchiveBackLink, { CollectionBackLink } from "./ArchiveBackLink.js";
 import ArchiveMetadata from "./ArchiveMetadata.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 import ProgressiveImage from "./ProgressiveImage.js";
@@ -14,9 +15,9 @@ export default function ArchiveEntry({ entry }) {
 
   return (
     <article className="archive-entry archive-surface">
-      <Link className="back-link" href="/">
-        <span aria-hidden="true">←</span> Back to archive collection
-      </Link>
+      <Suspense fallback={<CollectionBackLink />}>
+        <ArchiveBackLink />
+      </Suspense>
 
       <header className="archive-entry__header">
         <p className="eyebrow">{entry.id}</p>

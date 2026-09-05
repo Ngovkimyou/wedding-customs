@@ -49,8 +49,7 @@
   width: clamp(1rem, 1.35vw, 1.3rem);
   height: auto;
   opacity: 0.92;
-  filter: brightness(0) saturate(100%) invert(77%) sepia(20%) saturate(680%) hue-rotate(357deg)
-    brightness(91%) contrast(88%);
+  filter: var(--icon-gold-filter);
   object-fit: contain;
   transition: transform 240ms ease, filter 240ms ease;
 }
@@ -431,23 +430,9 @@
 }
 
 .music-panel__scrollbar {
-  position: absolute;
-  z-index: 4;
   top: calc(var(--music-panel-frame-inset-top) + 0.5rem);
   right: calc(var(--music-panel-frame-inset-right) * 0.42);
   bottom: calc(var(--music-panel-frame-inset-bottom) + 0.5rem);
-  display: none;
-  width: 0.16rem;
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      to bottom,
-      transparent,
-      rgba(167, 123, 61, 0.24) 18%,
-      rgba(167, 123, 61, 0.24) 82%,
-      transparent
-    );
-  pointer-events: none;
 }
 
 .platform-macos .music-panel {
@@ -457,29 +442,13 @@
   --music-panel-frame-inset-left: clamp(5.8rem, 11vw, 7.1rem);
 }
 
-.platform-macos .music-panel__scrollbar--visible {
-  display: block;
-}
 
-.music-panel__scrollbar-thumb {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  display: block;
-  width: 0.26rem;
-  min-height: 1.5rem;
-  border-radius: 999px;
-  background:
-    linear-gradient(
-      to bottom,
-      rgba(167, 123, 61, 0),
-      rgba(167, 123, 61, 0.95) 24%,
-      rgba(167, 123, 61, 0.95) 76%,
-      rgba(167, 123, 61, 0)
-    );
+.music-panel__scrollbar span {
+  background: linear-gradient(
+    to bottom, rgba(167, 123, 61, 0), rgba(167, 123, 61, 0.95) 24%,
+    rgba(167, 123, 61, 0.95) 76%, rgba(167, 123, 61, 0)
+  );
   filter: drop-shadow(0 0 0.18rem rgba(167, 123, 61, 0.5));
-  transform-origin: top center;
-  translate: -50% 0;
 }
 
 .music-panel__now-playing {
@@ -599,9 +568,6 @@
     padding: 0.58rem 0;
   }
 
-  .music-panel__scrollbar--visible {
-    display: block;
-  }
 
   .music-panel__footer {
     padding: 0.58rem 0 0;

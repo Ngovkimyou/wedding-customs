@@ -13,6 +13,8 @@
   --color-on-dark: #f5e9d5;
   --color-line: rgba(102, 65, 39, 0.32);
   --color-line-light: rgba(242, 222, 184, 0.28);
+  --icon-gold-filter: brightness(0) saturate(100%) invert(77%) sepia(20%) saturate(680%)
+    hue-rotate(357deg) brightness(91%) contrast(88%);
 
   --max-width: 75rem;
   --reading-width: 48rem;

@@ -7,6 +7,8 @@ import chanFlower from "../assets/chan-flower.avif";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
 import aboutIcon from "../assets/icons/about-icon.avif";
 import musicIcon from "../assets/icons/music-icon.avif";
+import searchIcon from "../assets/icons/search-icon.avif";
+import searchBackground from "../assets/search-background.avif";
 import aboutBg from "../assets/about-bg.jpg";
 import collectionFrame from "../assets/collection-frame.avif";
 import coupleStamp from "../assets/couple-stamp.avif";
@@ -69,6 +71,7 @@ function getVisualSources() {
     coupleStamp,
     musicPanelFrame,
     musicIcon,
+    searchIcon,
     logo,
     ...PETAL_ASSETS,
     pkaSla,
@@ -81,6 +84,8 @@ function getVisualSources() {
     isMobile ? mobileSectionHeading : sectionHeading,
     garland,
   ];
+
+  if (window.location.pathname === "/search") sources.push(searchBackground);
 
   return Array.from(new Set(sources.map(assetSource)));
 }

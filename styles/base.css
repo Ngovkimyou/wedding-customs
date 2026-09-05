@@ -195,9 +195,19 @@ a {
   *::after {
     transition-duration: 0.01ms !important;
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 
-  .progressive-image__placeholder {
-    animation: none;
+  .progressive-image__placeholder,
+  .archive-entry__loading-line,
+  .about-page__credit-track,
+  .archive-search__result::after {
+    animation: none !important;
+  }
+
+  .archive-search__result:hover::after,
+  .archive-search__result:focus-visible::after {
+    animation: none !important;
+    opacity: 0;
   }
 }

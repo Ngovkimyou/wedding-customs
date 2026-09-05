@@ -1,0 +1,29 @@
+/* Independent decorative track: never reserves space in the content column. */
+.scroll-indicator {
+  position: absolute;
+  z-index: 4;
+  top: 0.5rem;
+  right: 0.65rem;
+  bottom: 0.5rem;
+  width: 0.16rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom, transparent, rgba(167, 123, 61, 0.24) 18%,
+    rgba(167, 123, 61, 0.24) 82%, transparent
+  );
+  pointer-events: none;
+}
+
+.scroll-indicator span {
+  position: absolute;
+  left: 50%;
+  display: block;
+  width: calc(100% + 0.1rem);
+  border-radius: 999px;
+  background: linear-gradient(
+    to bottom, rgba(167, 123, 61, 0), rgba(201, 169, 104, 0.92) 28%,
+    rgba(245, 203, 111, 0.98) 50%, rgba(201, 169, 104, 0.92) 72%,
+    rgba(167, 123, 61, 0)
+  );
+  transform: translateX(-50%);
+}

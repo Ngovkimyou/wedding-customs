@@ -79,7 +79,8 @@ export default function HeaderVisibilityController() {
     };
 
     handleActivity();
-    window.addEventListener("scroll", handleActivity, { passive: true });
+    // Capture scrolls from nested viewports (search, credits, and the music panel).
+    window.addEventListener("scroll", handleActivity, { capture: true, passive: true });
     window.addEventListener("resize", handleActivity);
     window.addEventListener("pointerdown", handlePointerActivity, { passive: true });
     document.addEventListener("touchstart", handleTouchActivity, { capture: true, passive: true });
@@ -90,7 +91,7 @@ export default function HeaderVisibilityController() {
 
     return () => {
       clearIdleTimer();
-      window.removeEventListener("scroll", handleActivity);
+      window.removeEventListener("scroll", handleActivity, { capture: true });
       window.removeEventListener("resize", handleActivity);
       window.removeEventListener("pointerdown", handlePointerActivity);
       document.removeEventListener("touchstart", handleTouchActivity, { capture: true });

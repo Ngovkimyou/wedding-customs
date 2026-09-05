@@ -23,17 +23,17 @@ function ExternalLink({ href, children, className, label }) {
   );
 }
 
-function Sources() {
+function Sources({ idPrefix }) {
   return (
-    <section className="about-page__section about-page__sources" aria-labelledby="about-sources-title">
-      <h2 id="about-sources-title">Sources &amp; Acknowledgements</h2>
+    <section className="about-page__section about-page__sources" aria-labelledby={`${idPrefix}-sources-title`}>
+      <h2 id={`${idPrefix}-sources-title`}>Sources &amp; Acknowledgements</h2>
       <div className="about-page__source-list">
         {archiveSources.map((source) => (
           <article className="about-page__source" key={source.label}>
             <h3>{source.label}</h3>
             {source.detail ? <p>{source.detail}</p> : null}
             {source.href ? (
-              <ExternalLink href={source.href}>Visit source <span aria-hidden="true">&nearr;</span></ExternalLink>
+              <ExternalLink href={source.href}>Visit source <span aria-hidden="true">↗</span></ExternalLink>
             ) : (
               <span className="about-page__source-placeholder">{source.linkText || "Source link to be added"}</span>
             )}
@@ -51,7 +51,7 @@ function Sources() {
             {track.links.length ? (
               <div className="about-page__music-links">
                 {track.links.map((link) => (
-                  <ExternalLink href={link} key={link}>Music source <span aria-hidden="true">&nearr;</span></ExternalLink>
+                  <ExternalLink href={link} key={link}>Music source <span aria-hidden="true">↗</span></ExternalLink>
                 ))}
               </div>
             ) : (
@@ -64,10 +64,10 @@ function Sources() {
   );
 }
 
-function Contact() {
+function Contact({ idPrefix }) {
   return (
-    <section className="about-page__section about-page__contact" aria-labelledby="about-contact-title">
-      <h2 id="about-contact-title">Contact</h2>
+    <section className="about-page__section about-page__contact" aria-labelledby={`${idPrefix}-contact-title`}>
+      <h2 id={`${idPrefix}-contact-title`}>Contact</h2>
       <p className="about-page__section-intro">{archiveContact.note}</p>
       <div className="about-page__contact-links" aria-label="Contact links">
         {archiveContact.links.map((link) => {
@@ -90,15 +90,13 @@ function Contact() {
   );
 }
 
-function CreditBlock({ duplicate = false }) {
-  const headingId = duplicate ? undefined : "about-title";
+function CreditBlock({ idPrefix }) {
+  const headingId = `${idPrefix}-title`;
 
   return (
     <section
-      className={`about-page${duplicate ? " about-page--duplicate" : ""}`}
+      className="about-page"
       aria-labelledby={headingId}
-      aria-hidden={duplicate || undefined}
-      inert={duplicate || undefined}
     >
       <img className="about-page__logo" src={logo.src} alt="" aria-hidden="true" />
       <p className="eyebrow">About the project</p>
@@ -118,8 +116,8 @@ function CreditBlock({ duplicate = false }) {
         <div><dt>Lecture</dt><dd>{archiveDetails.lecture}</dd></div>
         <div><dt>Primary source</dt><dd>Family oral history shared by my parents.</dd></div>
       </dl>
-      <Sources />
-      <Contact />
+      <Sources idPrefix={idPrefix} />
+      <Contact idPrefix={idPrefix} />
     </section>
   );
 }
@@ -128,8 +126,8 @@ export default function AboutPage() {
   return (
     <AboutPageShell>
       <div className="about-page__credit-track">
-        <CreditBlock />
-        <CreditBlock duplicate />
+        <CreditBlock idPrefix="about" />
+        <CreditBlock idPrefix="about-repeat" />
       </div>
     </AboutPageShell>
   );

@@ -15,6 +15,7 @@ import {
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
+import ScrollIndicator from "./ScrollIndicator.js";
 
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
@@ -73,7 +74,6 @@ export default function MusicControl() {
   const audioRef = useRef(null);
   const musicPanelRef = useRef(null);
   const musicPanelBodyRef = useRef(null);
-  const musicScrollbarRef = useRef(null);
   const musicChoiceRefs = useRef(new Map());
   const preloadedAudioRef = useRef([]);
   const previouslyFocusedRef = useRef(null);
@@ -92,11 +92,6 @@ export default function MusicControl() {
   const [mode, setMode] = useState(DEFAULT_MUSIC_MODE);
   const [manualSelection, setManualSelection] = useState(INITIAL_MANUAL_SELECTION);
   const [playlistIndexes, setPlaylistIndexes] = useState(INITIAL_PLAYLIST_INDEXES);
-  const [scrollIndicator, setScrollIndicator] = useState({
-    isScrollable: false,
-    thumbHeight: 0,
-    thumbOffset: 0,
-  });
 
   const pageMode = getPageMusicMode(pathname);
   const activeMode = mode === DEFAULT_MUSIC_MODE ? pageMode : manualSelection.mode;
@@ -424,47 +419,6 @@ export default function MusicControl() {
     };
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined;
-    }
-
-    const body = musicPanelBodyRef.current;
-    const scrollbar = musicScrollbarRef.current;
-
-    if (!body || !scrollbar) {
-      return undefined;
-    }
-
-    const updateScrollIndicator = () => {
-      const maxScroll = body.scrollHeight - body.clientHeight;
-      const trackHeight = scrollbar.clientHeight;
-      const isScrollable = maxScroll > 1;
-      const thumbHeight = isScrollable ? Math.max((body.clientHeight / body.scrollHeight) * trackHeight, 24) : 0;
-      const thumbOffset = isScrollable
-        ? (body.scrollTop / maxScroll) * Math.max(trackHeight - thumbHeight, 0)
-        : 0;
-
-      setScrollIndicator({
-        isScrollable,
-        thumbHeight,
-        thumbOffset,
-      });
-    };
-
-    updateScrollIndicator();
-    body.addEventListener("scroll", updateScrollIndicator, { passive: true });
-    window.addEventListener("resize", updateScrollIndicator);
-    const resizeObserver = new ResizeObserver(updateScrollIndicator);
-    resizeObserver.observe(body);
-
-    return () => {
-      body.removeEventListener("scroll", updateScrollIndicator);
-      window.removeEventListener("resize", updateScrollIndicator);
-      resizeObserver.disconnect();
-    };
-  }, [activeMode, activeTrackIndex, isOpen, mode]);
-
   const closePanel = () => {
     if (!isOpen || isPanelClosing) {
       return;
@@ -698,19 +652,7 @@ export default function MusicControl() {
           </div>
         </div>
 
-        <div
-          ref={musicScrollbarRef}
-          className={`music-panel__scrollbar${scrollIndicator.isScrollable ? " music-panel__scrollbar--visible" : ""}`}
-          aria-hidden="true"
-        >
-          <span
-            className="music-panel__scrollbar-thumb"
-            style={{
-              height: `${scrollIndicator.thumbHeight}px`,
-              transform: `translateY(${scrollIndicator.thumbOffset}px)`,
-            }}
-          />
-        </div>
+        <ScrollIndicator scrollRef={musicPanelBodyRef} className="music-panel__scrollbar" />
 
         <footer className="music-panel__footer">
           <p className="music-panel__now-playing">

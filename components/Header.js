@@ -1,5 +1,6 @@
 import Navigation from "./Navigation.js";
 import MusicControl from "./MusicControl.js";
+import SearchControl from "./SearchControl.js";
 import SiteBrand from "./SiteBrand.js";
 import headerFrame from "../assets/header-frame.avif";
 import mediumHeaderFrame from "../assets/medium-header-frame.avif";
@@ -17,6 +18,7 @@ export default function Header() {
         <div className="site-frame site-header__inner">
           <SiteBrand />
           <div className="site-header__actions">
+            <SearchControl />
             <MusicControl />
             <Navigation />
           </div>
