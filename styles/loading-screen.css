@@ -93,6 +93,7 @@ body.loading-screen-open {
   filter: none;
   backface-visibility: hidden;
   animation-fill-mode: both;
+  animation-play-state: paused;
 }
 
 .loading-screen__petal--light {
@@ -138,6 +139,23 @@ body.loading-screen-open {
   /* Follow closely behind the main petal during its later flight. */
   animation: loading-petal-camera-wipe .70s linear forwards;
   animation-delay: 1.05s;
+}
+
+/* The animation shorthand on each variant resets animation-play-state, so keep
+   this guard after all variant declarations. The reveal class is the only
+   state allowed to start the flight. */
+.loading-screen__petals .loading-screen__petal {
+  animation-play-state: paused;
+}
+
+.loading-screen__petals--active .loading-screen__petal {
+  animation-play-state: running;
+}
+
+/* Route transitions are triggered programmatically, so they start running as
+   soon as their overlay mounts. Only the initial loader uses the paused state. */
+.route-transition__petals .loading-screen__petal {
+  animation-play-state: running;
 }
 
 @keyframes loading-petal-wind-light {

@@ -11,7 +11,6 @@ import {
   INITIAL_PLAYLIST_INDEXES,
   MUSIC_CHOICES,
   MUSIC_PLAYLISTS,
-  MUSIC_TRACK_SOURCES,
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
@@ -25,6 +24,17 @@ const ARCHIVE_START_EVENT = "archive:loading-complete";
 function clampVolume(volume) {
   const safeVolume = Number.isFinite(volume) ? volume : 0;
   return Math.min(Math.max(safeVolume, 0), 1);
+}
+
+function setAudioSource(audio, source) {
+  const absoluteSource = new URL(source, window.location.href).href;
+  if (audio.src === absoluteSource || audio.currentSrc === absoluteSource) {
+    return false;
+  }
+
+  audio.src = source;
+  audio.load();
+  return true;
 }
 
 function fadeAudioVolume(audio, nextVolume, duration, transitionId, transitionIdRef) {
@@ -75,9 +85,9 @@ export default function MusicControl() {
   const musicPanelRef = useRef(null);
   const musicPanelBodyRef = useRef(null);
   const musicChoiceRefs = useRef(new Map());
-  const preloadedAudioRef = useRef([]);
   const previouslyFocusedRef = useRef(null);
   const panelCloseTimerRef = useRef(null);
+  const prefetchedTracksRef = useRef(new Map());
   const shouldResumeRef = useRef(false);
   const currentSourceRef = useRef(null);
   const activeModeRef = useRef(null);
@@ -100,6 +110,11 @@ export default function MusicControl() {
     ? playlistIndexes[activeMode]
     : manualSelection.trackIndex;
   const activeTrack = activePlaylist[activeTrackIndex % activePlaylist.length];
+  const initialAudioSourceRef = useRef(null);
+
+  if (initialAudioSourceRef.current === null) {
+    initialAudioSourceRef.current = activeTrack.source;
+  }
 
   const saveCurrentPosition = useCallback(() => {
     const audio = audioRef.current;
@@ -153,29 +168,40 @@ export default function MusicControl() {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    preloadedAudioRef.current = MUSIC_TRACK_SOURCES.map((source) => {
-      const audio = new Audio(source);
-      audio.preload = "auto";
-      audio.load();
-      return audio;
-    });
-
-    return () => {
-      preloadedAudioRef.current.forEach((audio) => {
-        audio.pause();
-        audio.removeAttribute("src");
-        audio.load();
-      });
-      preloadedAudioRef.current = [];
-    };
-  }, []);
-
   useEffect(() => () => {
     if (panelCloseTimerRef.current) {
       window.clearTimeout(panelCloseTimerRef.current);
     }
+
+    prefetchedTracksRef.current.forEach((audio) => {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    });
+    prefetchedTracksRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    if (!hasUserStarted || mode !== DEFAULT_MUSIC_MODE || activePlaylist.length < 2) {
+      return undefined;
+    }
+
+    const nextTrack = activePlaylist[(activeTrackIndex + 1) % activePlaylist.length];
+    const preloadTimer = window.setTimeout(() => {
+      if (prefetchedTracksRef.current.has(nextTrack.source)) {
+        return;
+      }
+
+      const audio = new Audio();
+      audio.preload = "auto";
+      audio.fetchPriority = "low";
+      audio.src = nextTrack.source;
+      audio.load();
+      prefetchedTracksRef.current.set(nextTrack.source, audio);
+    }, 900);
+
+    return () => window.clearTimeout(preloadTimer);
+  }, [activePlaylist, activeTrackIndex, hasUserStarted, mode]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -208,10 +234,9 @@ export default function MusicControl() {
       }));
 
       shouldResumeRef.current = false;
-      audio.src = nextTrack.source;
+      setAudioSource(audio, nextTrack.source);
       audio.loop = activePlaylist.length === 1;
       currentSourceRef.current = nextTrack.source;
-      audio.load();
       audio.currentTime = 0;
       audio.volume = DEFAULT_VOLUME;
       audio.play().catch(() => setIsPlaying(false));
@@ -290,10 +315,9 @@ export default function MusicControl() {
         return;
       }
 
-      audio.src = nextSource;
+      setAudioSource(audio, nextSource);
       audio.loop = mode !== DEFAULT_MUSIC_MODE || activePlaylist.length === 1;
       currentSourceRef.current = nextSource;
-      audio.load();
 
       const savedTime = playbackPositionsRef.current[nextSource];
 
@@ -342,11 +366,10 @@ export default function MusicControl() {
       setHasUserStarted(true);
 
       if (audio && currentSourceRef.current !== startingTrack.source) {
-        audio.src = startingTrack.source;
+        setAudioSource(audio, startingTrack.source);
         audio.loop = MUSIC_PLAYLISTS[pageMode].length === 1;
         audio.volume = DEFAULT_VOLUME;
         currentSourceRef.current = startingTrack.source;
-        audio.load();
       }
 
       audio?.play().catch(() => setIsPlaying(false));
@@ -690,7 +713,14 @@ export default function MusicControl() {
         >
           <img className="music-control__icon" src={musicIcon.src} alt="" aria-hidden="true" />
         </button>
-        <audio ref={audioRef} className="music-control__audio" loop={false} preload="auto" />
+        <audio
+          ref={audioRef}
+          data-music-audio
+          className="music-control__audio"
+          src={initialAudioSourceRef.current}
+          loop={false}
+          preload="auto"
+        />
       </div>
       {isMounted && (isOpen || isPanelClosing) ? createPortal(musicPanel, document.body) : null}
     </>

@@ -49,6 +49,7 @@ components/
   HeaderVisibilityController.js
                              Header idle/scroll behavior
   LoadingScreen.js           Initial visual preload gate and start gesture
+  ArchiveRoutePrefetcher.js  Warms About and archive routes after the initial reveal
   MusicControl.js            Persistent audio player and soundtrack dialog
   PlatformClass.js           Platform-specific layout hook
   SiteBrand.js               Home link with same-page smooth scrolling
@@ -137,9 +138,10 @@ this visual set; the empty-search artwork is also required when entering directl
 `/search`. When adding interface assets, update `getVisualSources()` in
 `components/LoadingScreen.js` if they must be ready before reveal.
 
-Audio is warmed up separately with a bounded wait; `100%` is not a promise that every
-song has been fully downloaded. Archive photos and noncritical route content should
-not be added to the initial blocking preload list.
+The current page's first soundtrack is required before reveal. Remaining playlist
+tracks are warmed after playback starts, so one slow optional track cannot delay the
+first screen. Archive photos and noncritical route content should not be added to the
+initial blocking preload list.
 
 The petal layer is independent from the fading black loading layer, allowing
 the animation to finish after the opening screen appears. Reduced-motion users

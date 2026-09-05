@@ -148,6 +148,8 @@ export const archiveEntries = archiveCatalog.map((entry) => ({
   images: entry.images ?? [],
 }));
 
+export const archiveSlugs = archiveCatalog.map(({ slug }) => slug);
+
 export function getArchiveEntry(slug) {
   return archiveEntries.find((entry) => entry.slug === slug);
 }

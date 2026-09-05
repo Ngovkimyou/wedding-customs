@@ -111,6 +111,7 @@ export default function ArchiveSearch({ entries = [] }) {
             <Link
               className="archive-search__result ornate-frame"
               href={`/archive/${entry.slug}?from=search`}
+              prefetch={true}
               key={entry.id}
               ref={(element) => { resultRefs.current[index] = element; }}
               onKeyDown={(event) => handleResultKeyDown(event, index)}

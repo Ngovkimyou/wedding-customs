@@ -58,6 +58,16 @@ export default function RouteTransition() {
       return;
     }
 
+    // Start a full About route prefetch at the same moment as the petal
+    // transition. This covers a cold session where the shared warm-up has not
+    // completed yet, while the reveal animation provides time for the route to
+    // arrive before it is shown.
+    try {
+      router.prefetch(href, { kind: "full" });
+    } catch {
+      router.prefetch(href);
+    }
+
     transitioning.current = true;
     clearTransitionTimers();
     document.body.classList.add("about-route-transition");

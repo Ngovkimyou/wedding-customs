@@ -12,7 +12,13 @@ const NAVIGATION_ITEMS = [
 
 function NavigationLinks() {
   return NAVIGATION_ITEMS.map(({ href, label }) => (
-    <Link className="site-navigation__link" href={href} key={href} aria-label={label}>
+    <Link
+      className="site-navigation__link"
+      href={href}
+      key={href}
+      prefetch={true}
+      aria-label={label}
+    >
       <span className="site-navigation__link-label">{label}</span>
       <span className="site-navigation__link-control" aria-hidden="true">
         <img className="site-navigation__link-backdrop" src={chanFlowerBackdrop.src} alt="" />

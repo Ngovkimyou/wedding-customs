@@ -5,7 +5,11 @@ export default function ArchiveCard({ entry }) {
   const image = entry.images?.[0];
 
   return (
-    <Link className="archive-card ornate-frame" href={`/archive/${entry.slug}`}>
+    <Link
+      className="archive-card ornate-frame"
+      href={`/archive/${entry.slug}`}
+      prefetch={true}
+    >
       <article>
         {image ? (
           <figure className="archive-card__image">

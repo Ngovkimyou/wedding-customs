@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { MUSIC_STARTUP_TRACK_SOURCES } from "../data/music.js";
+import { MUSIC_PLAYLISTS, getPageMusicMode } from "../data/music.js";
 import champaFlower from "../assets/champa-flower.avif";
 import chanFlower from "../assets/chan-flower.avif";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
@@ -105,35 +105,53 @@ function loadImage(source) {
     }, { once: true });
     image.addEventListener("error", () => finish(false), { once: true });
     image.decoding = "async";
-    image.fetchPriority = "high";
     image.src = assetSource(source);
   });
 }
 
+function hasAudioSource(audio, source) {
+  const absoluteSource = new URL(source, window.location.href).href;
+  return audio.src === absoluteSource || audio.currentSrc === absoluteSource;
+}
+
 function loadAudio(source) {
   return new Promise((resolve) => {
-    const audio = new Audio();
+    const sharedAudio = document.querySelector("[data-music-audio]");
+    const audio = sharedAudio && hasAudioSource(sharedAudio, source)
+      ? sharedAudio
+      : new Audio();
     let hasSettled = false;
+    const cleanup = () => {
+      audio.removeEventListener("canplay", handleCanPlay);
+      audio.removeEventListener("error", handleError);
+    };
     const finish = (loaded) => {
-      if (hasSettled) {
-        return;
-      }
-
+      if (hasSettled) return;
       hasSettled = true;
-      window.clearTimeout(timeout);
-      audio.removeAttribute("src");
-      audio.load();
+      cleanup();
+      audio.pause();
       resolve(loaded);
     };
-    const timeout = window.setTimeout(() => finish(true), 2500);
+    const handleCanPlay = () => finish(true);
+    const handleError = () => finish(false);
 
-    audio.addEventListener("canplay", () => finish(true), { once: true });
-    audio.addEventListener("loadeddata", () => finish(true), { once: true });
-    audio.addEventListener("error", () => finish(false), { once: true });
+    audio.addEventListener("canplay", handleCanPlay, { once: true });
+    audio.addEventListener("error", handleError, { once: true });
     audio.preload = "auto";
-    audio.src = source;
-    audio.load();
+    if (!hasAudioSource(audio, source)) {
+      audio.src = source;
+      audio.load();
+    } else if (audio.readyState >= 3) {
+      finish(true);
+    } else if (audio.networkState === 0) {
+      audio.load();
+    }
   });
+}
+
+function getRequiredAudioSources() {
+  const mode = getPageMusicMode(window.location.pathname);
+  return [MUSIC_PLAYLISTS[mode][0].source];
 }
 
 export default function LoadingScreen() {
@@ -147,8 +165,8 @@ export default function LoadingScreen() {
 
   useEffect(() => {
     const sources = [
+      ...getRequiredAudioSources().map((source) => ({ type: "audio", source })),
       ...getVisualSources().map((source) => ({ type: "image", source })),
-      ...MUSIC_STARTUP_TRACK_SOURCES.map((source) => ({ type: "audio", source })),
     ];
     let completed = 0;
     let failed = false;
@@ -245,6 +263,27 @@ export default function LoadingScreen() {
     };
   }, [isVisible]);
 
+  useEffect(() => {
+    if (!isVisible || !isExiting) {
+      return undefined;
+    }
+
+    // The loader no longer receives pointer events while it fades out. Release
+    // the page controls at that point so a first tap/click on a card or About
+    // link is not swallowed, while the body scroll lock remains until the
+    // reveal sequence has finished.
+    [
+      document.querySelector("[data-site-header]"),
+      document.querySelector("main"),
+    ]
+      .filter(Boolean)
+      .forEach((element) => {
+        element.inert = false;
+      });
+
+    return undefined;
+  }, [isExiting, isVisible]);
+
   const beginArchive = () => {
     if (!isReady || isExiting || isPetalReveal) {
       return;
@@ -278,7 +317,11 @@ export default function LoadingScreen() {
 
   return (
     <>
-      {isPetalReveal ? <PetalReveal /> : null}
+      {isVisible ? (
+        <PetalReveal
+          className={`loading-screen__petals${isPetalReveal ? " loading-screen__petals--active" : ""}`}
+        />
+      ) : null}
       <div
         className={`loading-screen${isExiting ? " loading-screen--exiting" : ""}`}
         role={isReady ? "button" : "status"}

@@ -1,10 +1,11 @@
 import Header from "../components/Header.js";
 import HeaderVisibilityController from "../components/HeaderVisibilityController.js";
+import ArchiveRoutePrefetcher from "../components/ArchiveRoutePrefetcher.js";
 import LoadingScreen from "../components/LoadingScreen.js";
 import RouteTransition from "../components/RouteTransition.js";
 import PlatformClass from "../components/PlatformClass.js";
 import ViewportHeightLock from "../components/ViewportHeightLock.js";
-import { archiveDetails } from "../data/archive.js";
+import { archiveDetails, archiveSlugs } from "../data/archive.js";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${lugrasimo.variable} ${overlock.variable}`}>
       <body>
         <LoadingScreen />
+        <ArchiveRoutePrefetcher slugs={archiveSlugs} />
         <RouteTransition />
         <PlatformClass />
         <ViewportHeightLock />
