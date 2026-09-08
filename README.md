@@ -60,6 +60,8 @@ components/
   ArchiveGrid.js             Collection heading and record grid
   ArchiveCard.js             Collection record preview
   ArchiveEntry.js            Full archive record
+  ArchiveNavigation.js       Prefetched previous/next record links
+  RelatedTopics.js           Three responsive links to neighboring records
   ArchiveBackLink.js         Search-aware return link, isolated from static record content
   ArchiveSearch.js           Live title search, keyboard navigation, and result cards
   HighlightedTitle.js        Original-spelling match highlights

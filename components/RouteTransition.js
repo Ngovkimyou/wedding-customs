@@ -7,7 +7,9 @@ import PetalReveal from "./PetalReveal.js";
 import useSoundEffect from "./useSoundEffect.js";
 
 const ABOUT_PATH = "/about";
+const ARCHIVE_RECORD_PATH = /^\/archive\/[^/]+$/;
 const PAGE_FADE_DURATION = 760;
+const ARCHIVE_RECORD_FADE_DURATION = 320;
 const ROUTE_SWAP_DELAY = 90;
 const TRANSITION_DURATION = 2250;
 const ABOUT_CLASSES = [
@@ -34,8 +36,9 @@ export default function RouteTransition() {
 
   const clearPageFade = useCallback(() => {
     window.clearTimeout(pageFadeTimer.current);
-    document.body.classList.remove("route-page-fade");
+    document.body.classList.remove("route-page-fade", "archive-record-transition");
     document.body.style.removeProperty("--route-page-fade-duration");
+    document.body.style.removeProperty("--archive-record-transition-duration");
   }, []);
 
   const schedule = useCallback((callback, delay) => {
@@ -108,6 +111,7 @@ export default function RouteTransition() {
   // Run before paint, so a freshly committed page cannot flash ahead of its fade.
   useLayoutEffect(() => {
     if (previousPath.current === pathname) return;
+    const fromPath = previousPath.current;
     previousPath.current = pathname;
     clearPageFade();
 
@@ -125,6 +129,18 @@ export default function RouteTransition() {
       transitioning.current = true;
       setActive(true);
       schedule(finishAboutTransition, TRANSITION_DURATION);
+      return;
+    }
+
+    if (ARCHIVE_RECORD_PATH.test(fromPath) && ARCHIVE_RECORD_PATH.test(pathname)) {
+      const archiveDynamic = document.querySelector("[data-archive-dynamic]");
+      if (archiveDynamic) void window.getComputedStyle(archiveDynamic).opacity;
+      document.body.style.setProperty(
+        "--archive-record-transition-duration",
+        `${ARCHIVE_RECORD_FADE_DURATION}ms`
+      );
+      document.body.classList.add("archive-record-transition");
+      pageFadeTimer.current = window.setTimeout(clearPageFade, ARCHIVE_RECORD_FADE_DURATION);
       return;
     }
 

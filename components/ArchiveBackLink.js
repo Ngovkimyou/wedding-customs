@@ -2,11 +2,21 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import goBackIcon from "../assets/icons/go-back-icon.avif";
+
+function BackLinkContent({ children }) {
+  return (
+    <>
+      <img className="back-link__icon" src={goBackIcon.src} alt="" aria-hidden="true" />
+      <span className="back-link__label">{children}</span>
+    </>
+  );
+}
 
 export function CollectionBackLink() {
   return (
     <Link className="back-link" href="/">
-      <span aria-hidden="true">←</span> Back to archive collection
+      <BackLinkContent>Back to archive collection</BackLinkContent>
     </Link>
   );
 }
@@ -17,7 +27,7 @@ export default function ArchiveBackLink() {
 
   return (
     <Link className="back-link" href="/search">
-      <span aria-hidden="true">←</span> Back to search results
+      <BackLinkContent>Back to search results</BackLinkContent>
     </Link>
   );
 }

@@ -39,7 +39,6 @@
   --type-back-link: calc(0.7rem * var(--type-scale));
   --type-image-note: calc(0.85rem * var(--type-scale));
   --type-figure-caption: calc(0.82rem * var(--type-scale));
-  --type-attribution: calc(0.74rem * var(--type-scale));
   --type-value: calc(0.88rem * var(--type-scale));
   --type-detail-title: calc(1.2rem * var(--type-scale));
   --type-detail-body: calc(0.88rem * var(--type-scale));

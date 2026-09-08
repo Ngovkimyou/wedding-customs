@@ -24,5 +24,9 @@ export default async function ArchiveRecordPage({ params }) {
     notFound();
   }
 
-  return <ArchiveEntry entry={entry} />;
+  return (
+    <div className="archive-record-page" data-archive-slug={entry.slug}>
+      <ArchiveEntry entry={entry} />
+    </div>
+  );
 }

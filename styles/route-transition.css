@@ -20,6 +20,10 @@ body.route-page-fade main {
   will-change: opacity;
 }
 
+body.archive-record-transition [data-archive-dynamic="true"] {
+  animation: archive-record-page-in var(--archive-record-transition-duration, 320ms) ease-out both;
+}
+
 body.route-page-fade::after {
   position: fixed;
   z-index: 19;
@@ -40,6 +44,11 @@ body.route-page-fade::after {
 @keyframes route-page-fade-in {
   from { opacity: 0; }
   55% { opacity: 0.86; }
+  to { opacity: 1; }
+}
+
+@keyframes archive-record-page-in {
+  from { opacity: 0; }
   to { opacity: 1; }
 }
 

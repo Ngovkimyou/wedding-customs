@@ -1,10 +1,7 @@
 const METADATA_FIELDS = [
   ["Archive ID", "id"],
-  ["Category", "category"],
   ["Period", "period"],
   ["Location", "location"],
-  ["People involved", "people"],
-  ["Source", "source"],
   ["Interview date", "interviewDate"],
 ];
 
