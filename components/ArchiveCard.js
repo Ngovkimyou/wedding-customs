@@ -1,7 +1,7 @@
 import Link from "next/link";
 import ProgressiveImage from "./ProgressiveImage.js";
 
-export default function ArchiveCard({ entry }) {
+export default function ArchiveCard({ entry, eager = false }) {
   const image = entry.images?.[0];
 
   return (
@@ -18,7 +18,8 @@ export default function ArchiveCard({ entry }) {
               alt={image.alt ?? "Archive photograph"}
               fill
               sizes="(max-width: 640px) calc(100vw - 2.5rem), (max-width: 960px) 50vw, 33vw"
-              loading="lazy"
+              loading={eager ? "eager" : "lazy"}
+              fetchPriority={eager ? "high" : "auto"}
             />
             {image.caption ? <figcaption>{image.caption}</figcaption> : null}
           </figure>

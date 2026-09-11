@@ -24,6 +24,34 @@ body.archive-record-transition [data-archive-dynamic="true"] {
   animation: archive-record-page-in var(--archive-record-transition-duration, 320ms) ease-out both;
 }
 
+/* The body class is added just before router.push while the outgoing record
+   is still mounted. Exclude that record so its exit transform is never
+   overwritten by the incoming-record animation. */
+body.archive-swipe-transition--next .archive-entry:not(.archive-entry--swipe-exiting):not(.archive-entry--loading) {
+  animation: archive-entry-swipe-in-from-right 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+body.archive-swipe-transition--previous .archive-entry:not(.archive-entry--swipe-exiting):not(.archive-entry--loading) {
+  animation: archive-entry-swipe-in-from-left 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+body.archive-record-background-transition .archive-record-page::after {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background-image: var(--archive-record-previous-bg);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  animation: archive-record-background-fade
+    var(--archive-record-background-fade-duration, 720ms)
+    ease-out both;
+}
+
 body.route-page-fade::after {
   position: fixed;
   z-index: 19;
@@ -50,6 +78,33 @@ body.route-page-fade::after {
 @keyframes archive-record-page-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes archive-entry-swipe-in-from-right {
+  from {
+    opacity: 0.86;
+    transform: translate3d(100vw, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes archive-entry-swipe-in-from-left {
+  from {
+    opacity: 0.86;
+    transform: translate3d(-100vw, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes archive-record-background-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
 @keyframes route-page-veil {

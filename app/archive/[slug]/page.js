@@ -12,7 +12,7 @@ export async function generateMetadata({ params }) {
 
   return {
     title: entry?.title ?? "Archive record not found",
-    description: entry?.summary ?? archiveDetails.description,
+    description: entry?.summary || archiveDetails.description,
   };
 }
 

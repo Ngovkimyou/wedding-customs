@@ -377,6 +377,46 @@ body.loading-screen-open {
   animation: loading-prompt-reveal 520ms ease forwards;
 }
 
+.loading-screen__error {
+  position: absolute;
+  top: calc(100% + clamp(3.2rem, 6vw, 4.75rem));
+  left: 50%;
+  display: grid;
+  gap: 0.7rem;
+  width: min(82vw, 22rem);
+  color: rgba(245, 233, 213, 0.78);
+  font-family: var(--font-meta);
+  font-size: clamp(0.68rem, 1.6vw, 0.82rem);
+  line-height: 1.35;
+  text-align: center;
+  transform: translateX(-50%);
+}
+
+.loading-screen__error button {
+  justify-self: center;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid rgba(201, 169, 104, 0.68);
+  border-radius: 999px;
+  background: rgba(201, 169, 104, 0.12);
+  color: var(--color-gold-light);
+  font: inherit;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.loading-screen__error button:hover,
+.loading-screen__error button:focus-visible {
+  border-color: var(--color-gold-light);
+  background: rgba(201, 169, 104, 0.28);
+  color: #fff4dc;
+}
+
+.loading-screen__error button:focus:not(:focus-visible) {
+  outline: none;
+}
+
 @keyframes loading-prompt-reveal {
   to {
     opacity: 1;

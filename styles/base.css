@@ -209,4 +209,8 @@ a {
     animation: none !important;
     opacity: 0;
   }
+
+  .image-lightbox {
+    animation: none !important;
+  }
 }

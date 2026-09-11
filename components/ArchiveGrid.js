@@ -6,6 +6,11 @@ import desktopSmallerPkaSlaGarland from "../assets/desktop-smaller-pka-sla-garla
 import tabletPkaSlaGarland from "../assets/tablet-pka-sla-garland.avif";
 import mobilePkaSlaGarland from "../assets/mobile-pka-sla-garland.avif";
 
+// The opening screen occupies the first viewport, so only the first card is
+// promoted to high priority. Remaining thumbnails stay lazy and can load as
+// the collection approaches the viewport.
+const INITIAL_CARD_COUNT = 1;
+
 export default function ArchiveGrid({ entries }) {
   return (
     <section className="archive-collection" aria-labelledby="collection-title">
@@ -26,8 +31,12 @@ export default function ArchiveGrid({ entries }) {
         <div className="archive-collection__body-inner">
           <DecorativeDivider compact loading="lazy" />
           <div className="archive-grid">
-            {entries.map((entry) => (
-              <ArchiveCard entry={entry} key={entry.id} />
+            {entries.map((entry, index) => (
+              <ArchiveCard
+                entry={entry}
+                eager={index < INITIAL_CARD_COUNT}
+                key={entry.id}
+              />
             ))}
           </div>
         </div>

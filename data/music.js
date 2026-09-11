@@ -4,8 +4,7 @@ import hybridChineseKhmerMusic from "../assets/audios/hybrid-chinese-khmer-tradi
 import jompeiSiemReapMusic from "../assets/audios/jompei-siem-reap-music.mp3";
 import khmerRelaxingMusic from "../assets/audios/khmer-relaxing-music.mp3";
 import traditionalKhmerInstrumentsMusic from "../assets/audios/traditional-khmer-instruments-music.mp3";
-
-const toSource = (asset) => (typeof asset === "string" ? asset : asset.src);
+import { getAssetSource } from "../lib/media.js";
 
 export const DEFAULT_MUSIC_MODE = "default";
 
@@ -14,37 +13,37 @@ export const MUSIC_PLAYLISTS = {
     {
       id: "traditional-khmer-instruments",
       label: "Traditional Khmer Instrument Music",
-      source: toSource(traditionalKhmerInstrumentsMusic),
+      source: getAssetSource(traditionalKhmerInstrumentsMusic),
     },
     {
       id: "jompei-siem-reap",
       label: "Jompei Siem Reap",
       variant: "[ Variant ]",
-      source: toSource(jompeiSiemReapMusic),
+      source: getAssetSource(jompeiSiemReapMusic),
     },
     {
       id: "flute-solo",
       label: "Flute Solo",
-      source: toSource(fluteSoloMusic),
+      source: getAssetSource(fluteSoloMusic),
     },
   ],
   about: [
     {
       id: "about-page",
       label: "About Page Music",
-      source: toSource(aboutPageMusic),
+      source: getAssetSource(aboutPageMusic),
     },
   ],
   reading: [
     {
       id: "khmer-relaxing",
       label: "Khmer Relaxing Music",
-      source: toSource(khmerRelaxingMusic),
+      source: getAssetSource(khmerRelaxingMusic),
     },
     {
       id: "hybrid-chinese-khmer",
       label: "Hybrid Chinese-Khmer Traditional Music",
-      source: toSource(hybridChineseKhmerMusic),
+      source: getAssetSource(hybridChineseKhmerMusic),
     },
   ],
 };

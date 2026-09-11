@@ -3,22 +3,7 @@ import Link from "next/link";
 function NavigationItem({ entry, direction }) {
   const isPrevious = direction === "previous";
   const label = isPrevious ? "Previous" : "Next";
-  const boundaryLabel = isPrevious ? "Start" : "End";
   const arrow = String.fromCodePoint(isPrevious ? 0x2190 : 0x2192);
-
-  if (!entry) {
-    return (
-      <span
-        className={`archive-entry__navigation-item archive-entry__navigation-item--${direction} archive-entry__navigation-item--disabled`}
-        aria-disabled="true"
-      >
-        <span className="archive-entry__navigation-label">
-          {isPrevious ? `${arrow} ${label}` : `${label} ${arrow}`}
-        </span>
-        <span className="archive-entry__navigation-target">{boundaryLabel}</span>
-      </span>
-    );
-  }
 
   return (
     <Link
@@ -37,7 +22,7 @@ function NavigationItem({ entry, direction }) {
 }
 
 export default function ArchiveNavigation({ previous, next, position, total }) {
-  if (!previous && !next) {
+  if (!previous || !next) {
     return null;
   }
 

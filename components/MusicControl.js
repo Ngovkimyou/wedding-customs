@@ -14,12 +14,12 @@ import {
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
+import { ARCHIVE_READY_EVENT } from "../lib/client-navigation.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
 const PAGE_MUSIC_FADE_DURATION = 180;
-const ARCHIVE_START_EVENT = "archive:loading-complete";
 
 function clampVolume(volume) {
   const safeVolume = Number.isFinite(volume) ? volume : 0;
@@ -375,9 +375,9 @@ export default function MusicControl() {
       audio?.play().catch(() => setIsPlaying(false));
     };
 
-    window.addEventListener(ARCHIVE_START_EVENT, handleArchiveStart);
+    window.addEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
 
-    return () => window.removeEventListener(ARCHIVE_START_EVENT, handleArchiveStart);
+    return () => window.removeEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
   }, [pageMode]);
 
   useEffect(() => {

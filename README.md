@@ -48,7 +48,7 @@ components/
   SearchControl.js           Search entry point and shared header artwork
   HeaderVisibilityController.js
                              Header idle/scroll behavior
-  LoadingScreen.js           Initial visual preload gate and start gesture
+  LoadingScreen.js           Loading-gate UI, page lock, and start gesture
   ArchiveRoutePrefetcher.js  Warms About and archive routes after the initial reveal
   MusicControl.js            Persistent audio player and soundtrack dialog
   PlatformClass.js           Platform-specific layout hook
@@ -59,7 +59,13 @@ components/
   ProgressiveImage.js       Lazy image placeholder, fade-in, and fallback
   ArchiveGrid.js             Collection heading and record grid
   ArchiveCard.js             Collection record preview
-  ArchiveEntry.js            Full archive record
+  ArchiveEntry.js            Full archive record composition
+  ArchiveEntryImages.js      Framed lead images and empty-image fallback
+  ArchiveDescription.js      Rich description sections, links, and inline media
+  ArchiveDescriptionGallery.js
+                             Reusable connected and stacked image galleries
+  ArchiveAside.js            Optional framed or plain archive aside
+  ImageLightbox.js           Detail-page full-screen image viewer
   ArchiveNavigation.js       Prefetched previous/next record links
   RelatedTopics.js           Three responsive links to neighboring records
   ArchiveBackLink.js         Search-aware return link, isolated from static record content
@@ -73,9 +79,18 @@ components/
 data/
   archive.js                 Archive identity, defaults, entries, and lookup
   music.js                   Soundtrack playlists and page-mode mapping
+  petals.js                  Shared petal assets and ordered reveal layers
   about.js                   Source links, music credits, and contact details
 
-lib/                         Pure search matching and scrollbar geometry
+lib/
+  archive-search.mjs         Pure normalized title matching
+  archive-swipe.mjs          Pure swipe direction, threshold, and drag math
+  archive-validation.mjs     Catalog, rich text, link, and gallery validation
+  client-navigation.js       Shared route prefetch and archive-ready event
+  initial-asset-loader.js    Cancellable visual, font, and audio readiness checks
+  media.js                   Shared imported-asset source and dimension helpers
+  scroll-indicator.mjs       Pure scrollbar geometry
+
 tests/                       Dependency-free regression tests (`pnpm test`)
 
 assets/                      Imported AVIF interface and decorative artwork
@@ -92,6 +107,7 @@ styles/
   base.css                   Reset, shared layout, surfaces, and typography
   header.css                 Header and navigation, including breakpoints
   loading-screen.css         Initial loading gate and reveal transition
+  media.css                  Progressive images and full-screen lightbox
   music.css                  Music trigger, dialog, controls, and scrolling
   opening-screen.css         Opening background, frame, hero, and decorations
   archive.css                Collection cards, records, and About credits
@@ -114,8 +130,8 @@ import archive012Image from "../assets/images/archive-012.avif";
 {
   id: "ARCHIVE 012",
   slug: "example-record",
-  category: "Ceremony",
   title: "Example Record",
+  summary: "A concise preview shown on collection and search cards",
   images: [
     {
       src: archive012Image,
@@ -137,8 +153,8 @@ start” only after every required asset loads successfully. The start gesture
 launches the petal reveal and starts the default soundtrack through the same
 user interaction required by browser autoplay policies. Header icons are included in
 this visual set; the empty-search artwork is also required when entering directly at
-`/search`. When adding interface assets, update `getVisualSources()` in
-`components/LoadingScreen.js` if they must be ready before reveal.
+`/search`. When adding interface assets, update the visual source list in
+`lib/initial-asset-loader.js` if they must be ready before reveal.
 
 The current page's first soundtrack is required before reveal. Remaining playlist
 tracks are warmed after playback starts, so one slow optional track cannot delay the
@@ -189,8 +205,8 @@ Music playback remains owned by the persistent `MusicControl` in the shared head
 ## Verification before committing
 
 Run `pnpm test`, `pnpm build`, and `git diff --check`. Tests cover normalized title
-matches (including Khmer, combining accents, and emoji) and scroll indicator
-geometry, including exact endpoints and touch overscroll.
+matches (including Khmer, combining accents, and emoji), archive data validation,
+swipe direction and thresholds, and scroll-indicator geometry.
 
 Also check the production build at desktop, tablet, and mobile widths:
 
