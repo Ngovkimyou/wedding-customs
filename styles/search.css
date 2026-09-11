@@ -242,6 +242,14 @@
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
+.archive-search__result-khmer-title {
+  margin-top: 0.35rem;
+  color: var(--color-red);
+  font-family: var(--font-khmer-title), var(--font-display);
+  font-size: clamp(0.92rem, 1.45vw, 1.18rem);
+  font-style: italic;
+  line-height: 1.35;
+}
 .archive-search__match {
   border-radius: 0.1em;
   background: rgba(201, 169, 104, 0.24);
@@ -255,6 +263,28 @@
   color: var(--color-muted);
   font-size: var(--search-copy-size);
   overflow-wrap: anywhere;
+}
+.archive-search__description-matches {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+.archive-search__description-match {
+  min-width: 0;
+}
+.archive-search__description-context {
+  display: block;
+  margin-bottom: 0.18rem;
+  color: var(--color-red);
+  font-family: var(--font-meta);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.archive-search__description-match p {
+  line-height: 1.5;
 }
 .archive-search__result-action {
   display: flex;

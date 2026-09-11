@@ -1,5 +1,6 @@
 import ProgressiveImage from "./ProgressiveImage.js";
 import ImageLightbox from "./ImageLightbox.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 import { getAssetSource, getImageDimensions } from "../lib/media.js";
 
 export function DescriptionGallery({ images, caption, layout }) {
@@ -45,12 +46,18 @@ export function DescriptionGallery({ images, caption, layout }) {
                   loading="lazy"
                 />
               </ImageLightbox>
-              {image.caption ? <figcaption>{image.caption}</figcaption> : null}
+              {image.caption ? (
+                <figcaption><KhmerScriptText>{image.caption}</KhmerScriptText></figcaption>
+              ) : null}
             </figure>
           );
         })}
       </div>
-      {caption ? <p className="archive-entry__subsection-gallery-caption">{caption}</p> : null}
+      {caption ? (
+        <p className="archive-entry__subsection-gallery-caption">
+          <KhmerScriptText>{caption}</KhmerScriptText>
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -91,7 +98,9 @@ export function DescriptionGalleryStack({ galleries, sharedCaption }) {
           />
         ))}
         {sharedCaption ? (
-          <p className="archive-entry__subsection-gallery-caption">{sharedCaption}</p>
+          <p className="archive-entry__subsection-gallery-caption">
+            <KhmerScriptText>{sharedCaption}</KhmerScriptText>
+          </p>
         ) : null}
       </div>
     </>

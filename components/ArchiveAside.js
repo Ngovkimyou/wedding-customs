@@ -1,6 +1,7 @@
 import asideArtwork from "../assets/aside-01.avif";
 import { getImageDimensions } from "../lib/media.js";
 import ProgressiveImage from "./ProgressiveImage.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 
 export default function ArchiveAside({ entry }) {
   if (!entry.showAside) {
@@ -41,7 +42,7 @@ export default function ArchiveAside({ entry }) {
           <h2 id="aside-title" data-archive-dynamic="true">
             {entry.asideTitle || "Aside"}
           </h2>
-          <p data-archive-dynamic="true">{entry.aside}</p>
+          <p data-archive-dynamic="true"><KhmerScriptText>{entry.aside}</KhmerScriptText></p>
         </div>
       </div>
     </section>

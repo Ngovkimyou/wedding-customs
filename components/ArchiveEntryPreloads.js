@@ -28,7 +28,6 @@ const DESKTOP_BACKGROUNDS = {
   "traditional-khmer-wedding-ceremonies": archive05Background,
   "wedding-ceremonies-afternoon": archive05Background,
   "ceremonial-objects": archive07Background,
-  food: archive07Background,
 };
 
 function preloadSource(asset, options = {}) {

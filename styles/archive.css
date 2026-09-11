@@ -304,7 +304,7 @@
 .archive-card__khmer-title {
   margin: 0.45rem 0 0;
   color: var(--color-red);
-  font-family: var(--font-display);
+  font-family: var(--font-khmer-title), var(--font-display);
   font-size: var(--type-card-khmer);
   font-style: italic;
   line-height: 1.35;
@@ -443,8 +443,7 @@
   }
 
   .archive-record-page:is(
-    [data-archive-slug="ceremonial-objects"],
-    [data-archive-slug="food"]
+    [data-archive-slug="ceremonial-objects"]
   ) {
     --archive-record-bg: url("../assets/archive-07-bg.avif");
   }
@@ -654,7 +653,7 @@
 .archive-entry__khmer-title {
   margin: 0.85rem 0 0;
   color: var(--color-red);
-  font-family: var(--font-display);
+  font-family: var(--font-khmer-title), var(--font-display);
   font-size: var(--type-entry-khmer);
   font-style: italic;
 }

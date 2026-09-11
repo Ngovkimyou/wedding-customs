@@ -1,3 +1,5 @@
+import KhmerScriptText from "./KhmerScriptText.js";
+
 const METADATA_FIELDS = [
   ["Archive ID", "id"],
   ["Period", "period"],
@@ -11,7 +13,7 @@ export default function ArchiveMetadata({ entry }) {
       {METADATA_FIELDS.map(([label, field]) => (
         <div key={label}>
           <dt>{label}</dt>
-          <dd>{entry[field]}</dd>
+          <dd><KhmerScriptText>{entry[field]}</KhmerScriptText></dd>
         </div>
       ))}
     </dl>

@@ -4,6 +4,7 @@ import githubIcon from "../../assets/icons/github.avif";
 import gmailIcon from "../../assets/icons/gmail.avif";
 import telegramIcon from "../../assets/icons/telegram.avif";
 import AboutPageShell from "../../components/AboutPageShell.js";
+import KhmerScriptText from "../../components/KhmerScriptText.js";
 import { archiveContact, archiveSources, musicCredits } from "../../data/about.js";
 import { archiveDetails } from "../../data/archive.js";
 
@@ -31,7 +32,7 @@ function Sources({ idPrefix }) {
         {archiveSources.map((source) => (
           <article className="about-page__source" key={source.label}>
             <h3>{source.label}</h3>
-            {source.detail ? <p>{source.detail}</p> : null}
+            {source.detail ? <p><KhmerScriptText>{source.detail}</KhmerScriptText></p> : null}
             {source.href ? (
               <ExternalLink href={source.href}>Visit source <span aria-hidden="true">↗</span></ExternalLink>
             ) : (
@@ -68,7 +69,9 @@ function Contact({ idPrefix }) {
   return (
     <section className="about-page__section about-page__contact" aria-labelledby={`${idPrefix}-contact-title`}>
       <h2 id={`${idPrefix}-contact-title`}>Contact</h2>
-      <p className="about-page__section-intro">{archiveContact.note}</p>
+      <p className="about-page__section-intro">
+        <KhmerScriptText>{archiveContact.note}</KhmerScriptText>
+      </p>
       <div className="about-page__contact-links" aria-label="Contact links">
         {archiveContact.links.map((link) => {
           const icon = CONTACT_ICONS[link.icon];
@@ -111,9 +114,9 @@ function CreditBlock({ idPrefix }) {
         marriage customs were prepared, witnessed, celebrated, and carried forward across generations.
       </p>
       <dl className="about-page__notes" aria-label="Archive notes">
-        <div><dt>Curated by</dt><dd>{archiveDetails.curator}</dd></div>
-        <div><dt>Instructor</dt><dd>{archiveDetails.instructor}</dd></div>
-        <div><dt>Lecture</dt><dd>{archiveDetails.lecture}</dd></div>
+        <div><dt>Curated by</dt><dd><KhmerScriptText>{archiveDetails.curator}</KhmerScriptText></dd></div>
+        <div><dt>Instructor</dt><dd><KhmerScriptText>{archiveDetails.instructor}</KhmerScriptText></dd></div>
+        <div><dt>Lecture</dt><dd><KhmerScriptText>{archiveDetails.lecture}</KhmerScriptText></dd></div>
         <div><dt>Primary source</dt><dd>Family oral history shared by my parents.</dd></div>
       </dl>
       <Sources idPrefix={idPrefix} />

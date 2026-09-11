@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { findTitleMatches, normalizeSearchText } from "../lib/archive-search.mjs";
+import {
+  findTitleMatches,
+  getArchiveDescriptionSnippets,
+  getArchiveDescriptionText,
+  normalizeSearchText,
+} from "../lib/archive-search.mjs";
 
 test("search ignores case and Latin accents without stripping Khmer characters", () => {
   assert.equal(normalizeSearchText("Café"), "cafe");
@@ -20,6 +25,77 @@ test("quotes, punctuation, and repeated spaces do not change a match", () => {
     { start: 21, end: 24 },
   ]);
   assert.deepEqual(findTitleMatches("M—et", "m @ et"), [{ start: 0, end: 4 }]);
+});
+
+test("description search flattens rich text and returns matching sentences only", () => {
+  const entry = {
+    descriptionSections: [
+      {
+        title: "The Tradition",
+        paragraphs: [
+          [
+            "The family prepared tea. The couple first met at the family home, ",
+            { text: "then spoke privately", strong: true },
+            ". The celebration continued afterward.",
+          ],
+        ],
+      },
+    ],
+  };
+
+  assert.match(getArchiveDescriptionText(entry), /then spoke privately/);
+  assert.deepEqual(getArchiveDescriptionSnippets(entry, '"m   et"'), [
+    {
+      sectionTitle: "The Tradition",
+      text: "The couple first met at the family home, then spoke privately.",
+    },
+  ]);
+});
+
+test("description search ignores placeholder content and limits long matches", () => {
+  const entry = {
+    content: "[Full archive story or tradition description to be added here.]",
+    aside: "A long aside that mentions a special meeting and continues with context.",
+  };
+
+  assert.deepEqual(getArchiveDescriptionSnippets(entry, "story"), []);
+  const [snippet] = getArchiveDescriptionSnippets(entry, "meeting");
+  assert.equal(snippet.sectionTitle, "Aside");
+  assert.match(snippet.text, /meeting/);
+});
+
+test("description search accepts the text-only server projection", () => {
+  const entry = {
+    descriptionBlocks: [
+      { sectionTitle: "Morning", text: "The procession begins at sunrise." },
+      { sectionTitle: "Afternoon", text: "The family visits the studio." },
+    ],
+    // This should not be read when the projection is present.
+    descriptionSections: [{ paragraphs: ["A different hidden description."] }],
+  };
+
+  assert.deepEqual(getArchiveDescriptionSnippets(entry, "studio"), [
+    { sectionTitle: "Afternoon", text: "The family visits the studio." },
+  ]);
+});
+
+test("description search includes a record summary", () => {
+  const entry = {
+    summary: "Morning wedding customs",
+    descriptionSections: [],
+  };
+
+  assert.deepEqual(getArchiveDescriptionSnippets(entry, "customs"), [
+    { sectionTitle: "Summary", text: "Morning wedding customs" },
+  ]);
+});
+
+test("Khmer titles are searchable and preserve the matched title text", () => {
+  const khmerTitle = "ជំនួបគ្នាលើកដំបូង";
+  const [match] = findTitleMatches(khmerTitle, "លើក");
+
+  assert.equal(normalizeSearchText(khmerTitle), khmerTitle);
+  assert.equal(khmerTitle.slice(match.start, match.end), "លើក");
 });
 
 test("repeated matches preserve the original title text and casing", () => {

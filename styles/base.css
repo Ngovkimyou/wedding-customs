@@ -42,6 +42,10 @@ a {
   color: inherit;
 }
 
+.khmer-script {
+  font-family: var(--font-khmer-script), var(--font-body);
+}
+
 button,
 a {
   -webkit-tap-highlight-color: transparent;

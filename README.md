@@ -39,7 +39,7 @@ app/
   layout.js                  Shared page shell and metadata
   page.js                    Home page and opening screen
   about/page.js              About content and two accessible credit-roll copies
-  search/page.js             Search page and lightweight title/summary index
+  search/page.js             Search page and lightweight title/description index
   archive/[slug]/page.js     Static archive-record pages
   archive/loading.js         Record skeleton for pending navigation
 
@@ -85,7 +85,7 @@ data/
   about.js                   Source links, music credits, and contact details
 
 lib/
-  archive-search.mjs         Pure normalized title matching
+  archive-search.mjs         Pure normalized title/description matching and snippets
   archive-swipe.mjs          Pure swipe direction, threshold, and drag math
   archive-validation.mjs     Catalog, rich text, link, and gallery validation
   archive-assets.js           Shared archive image discovery for preload/prefetch
@@ -98,7 +98,7 @@ lib/
 tests/                       Dependency-free regression tests (`pnpm test`)
 
 assets/                      Imported AVIF interface and decorative artwork
-assets/fonts/                Self-hosted Lugrasimo and Overlock SC WOFF2 files
+assets/fonts/                Self-hosted Lugrasimo, Overlock SC, and Khmer WOFF2 files
 assets/legacy/               Replaced or unused source artwork retained for reference
 assets/images/               Optimized archive photographs imported by the catalog
 public/images/               Optional public URL assets for future records
@@ -124,6 +124,7 @@ styles/
 ## Add or edit archive records
 
 Edit `data/archive.js`. Shared placeholder fields live in `archiveEntryDefaults`; the record-specific catalog contains only the values that differ for each entry.
+The current catalog contains eight records; `archiveEntries`, search results, static routes, and previous/next navigation are derived from that catalog automatically.
 
 Add an `images` array only when a real image is available. Imported assets in
 `assets/images/` are optimized by the Next.js image pipeline:
@@ -194,12 +195,16 @@ Keep visual adjustments in the component stylesheet that owns the element. This 
 
 ## Search and navigation
 
-Search matches record titles case-insensitively and ignores Latin accents. Quotes,
+Search matches English and Khmer record titles plus description paragraphs case-insensitively and ignores Latin accents. Quotes,
 punctuation, symbols, and repeated whitespace are treated as separators, so `"met"`,
 `m   et`, and `m @ et` match the same title. The server passes only IDs, slugs,
-titles, and summaries to the search component; full stories and image metadata stay
-out of its interactive data. Matching characters retain their original spelling and
-receive a subtle highlight.
+titles, summaries, and text-only description blocks to the search component; full
+stories, gallery images, and decorative metadata stay out of its interactive data.
+Matching characters retain their original spelling and receive a subtle highlight.
+
+Description matches return only the matching sentence (or a short bounded context
+when a paragraph has no sentence punctuation), with its section label and matching
+characters highlighted. Placeholder prose is excluded from the search index.
 
 Use Arrow Down from the input to focus the first result, Arrow Up/Down to move
 between results, and Enter or Space to open a record. Clear restores input focus.

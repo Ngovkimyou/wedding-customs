@@ -1,8 +1,15 @@
 import { getAssetSource, getImageDimensions } from "../lib/media.js";
 import ImageLightbox from "./ImageLightbox.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 import ProgressiveImage from "./ProgressiveImage.js";
 
 const ENTRY_IMAGE_SIZES = "(max-width: 48rem) 100vw, 48rem";
+
+function getImageCaption(image) {
+  return [image.caption, image.approximateDate]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export default function ArchiveEntryImages({ images }) {
   if (!images.length) {
@@ -24,7 +31,8 @@ export default function ArchiveEntryImages({ images }) {
       {images.map((image, index) => {
         const dimensions = getImageDimensions(image.src, 1600, 1000);
         const imageKey = getAssetSource(image.src) || `${image.alt || "image"}-${index}`;
-        const caption = [image.caption, image.approximateDate]
+        const caption = getImageCaption(image);
+        const displayCaption = [image.caption || "[Image caption]", image.approximateDate]
           .filter(Boolean)
           .join(" · ");
 
@@ -55,8 +63,7 @@ export default function ArchiveEntryImages({ images }) {
             </div>
             {caption ? (
               <figcaption data-archive-dynamic="true">
-                {image.caption || "[Image caption]"}
-                {image.approximateDate ? ` · ${image.approximateDate}` : ""}
+                <KhmerScriptText>{displayCaption}</KhmerScriptText>
               </figcaption>
             ) : null}
           </figure>

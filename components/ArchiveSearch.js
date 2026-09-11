@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import searchBackground from "../assets/search-background.avif";
-import { normalizeSearchText } from "../lib/archive-search.mjs";
+import {
+  getArchiveDescriptionSnippets,
+  getArchiveDescriptionText,
+  normalizeSearchText,
+} from "../lib/archive-search.mjs";
 import HighlightedTitle from "./HighlightedTitle.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 
 export default function ArchiveSearch({ entries = [] }) {
@@ -15,16 +20,36 @@ export default function ArchiveSearch({ entries = [] }) {
   const normalizedQuery = normalizeSearchText(query);
   const displayQuery = query.trim().replace(/\s+/gu, " ");
   const searchIndex = useMemo(
-    () => entries.map((entry) => ({ ...entry, searchTitle: normalizeSearchText(entry.title) })),
+    () => entries.map((entry) => ({
+      ...entry,
+      searchTitle: normalizeSearchText(entry.title),
+      searchKhmerTitle: normalizeSearchText(entry.khmerTitle),
+      searchDescription: normalizeSearchText(getArchiveDescriptionText(entry)),
+    })),
     [entries],
   );
-  const matches = useMemo(
-    () =>
-      normalizedQuery
-        ? searchIndex.filter((entry) => entry.searchTitle.includes(normalizedQuery))
-        : [],
-    [normalizedQuery, searchIndex],
-  );
+  const matches = useMemo(() => {
+    if (!normalizedQuery) {
+      return [];
+    }
+
+    return searchIndex.flatMap((entry) => {
+      const titleMatches = entry.searchTitle.includes(normalizedQuery);
+      const khmerTitleMatches = entry.searchKhmerTitle.includes(normalizedQuery);
+      const descriptionMatches = entry.searchDescription.includes(normalizedQuery);
+
+      if (!titleMatches && !khmerTitleMatches && !descriptionMatches) {
+        return [];
+      }
+
+      return [{
+        ...entry,
+        descriptionSnippets: descriptionMatches
+          ? getArchiveDescriptionSnippets(entry, normalizedQuery)
+          : [],
+      }];
+    });
+  }, [normalizedQuery, searchIndex]);
 
   const focusResult = (index) => {
     const result = resultRefs.current[index];
@@ -73,12 +98,12 @@ export default function ArchiveSearch({ entries = [] }) {
             id="archive-search-input"
             className="archive-search__input"
             type="search"
-            aria-label="Search archive titles"
+            aria-label="Search archive titles and descriptions"
             aria-controls="archive-search-results"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Type a title…"
+            placeholder="Type a title or phrase…"
             autoComplete="off"
             autoFocus
           />
@@ -119,7 +144,33 @@ export default function ArchiveSearch({ entries = [] }) {
             >
               <span className="archive-search__result-meta">{entry.id}</span>
               <h2><HighlightedTitle title={entry.title} query={normalizedQuery} /></h2>
-              {entry.summary ? <p>{entry.summary}</p> : null}
+              {entry.khmerTitle ? (
+                <p className="archive-search__result-khmer-title">
+                  <HighlightedTitle title={entry.khmerTitle} query={normalizedQuery} />
+                </p>
+              ) : null}
+              {entry.descriptionSnippets?.length ? (
+                <div className="archive-search__description-matches">
+                  {entry.descriptionSnippets.map((snippet, snippetIndex) => (
+                    <div className="archive-search__description-match" key={`${snippet.sectionTitle}-${snippetIndex}`}>
+                      {snippet.sectionTitle ? (
+                        <span className="archive-search__description-context">
+                          {snippet.sectionTitle}
+                        </span>
+                      ) : null}
+                      <p>
+                        <HighlightedTitle
+                          title={snippet.text}
+                          query={normalizedQuery}
+                          useKhmerScript
+                        />
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : entry.summary ? (
+                <p><KhmerScriptText>{entry.summary}</KhmerScriptText></p>
+              ) : null}
               <span className="archive-search__result-action">Open record <span aria-hidden="true">→</span></span>
             </Link>
           ))}

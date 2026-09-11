@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
+import KhmerScriptText from "./KhmerScriptText.js";
 
 const CLOSE_DURATION = 180;
 
@@ -147,7 +148,7 @@ export default function ImageLightbox({
               />
             </div>
             <div className="image-lightbox__caption" aria-live="polite">
-              {caption ? <p>{caption}</p> : null}
+              {caption ? <p><KhmerScriptText>{caption}</KhmerScriptText></p> : null}
               <span>Click anywhere to close {"\u00b7"} Esc</span>
             </div>
           </div>,

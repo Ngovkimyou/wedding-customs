@@ -58,6 +58,7 @@ const archiveCatalog = [
     id: "ARCHIVE 001",
     slug: "how-my-parents-met",
     title: "How My Parents First Met",
+    khmerTitle: "ជំនួបគ្នាលើកដំបូង",
     summary: "How the Couple Met",
     aside:
       "In my grandparents’ generation, choosing a partner independently was generally not permitted. " +
@@ -83,6 +84,7 @@ const archiveCatalog = [
     id: "ARCHIVE 002",
     slug: "courtship-and-family-involvement",
     title: "Courtship and Family Involvement",
+    khmerTitle: "ការចែចង់ និងស្វែងយល់គ្នា",
     summary: "Partner introductions, first meetings, and family decisions",
     showAside: false,
     descriptionSections: [
@@ -91,7 +93,7 @@ const archiveCatalog = [
         paragraphs: [
           [
             "After the parents found a suitable partner, a date for the first meeting would be arranged between the parents of both families. The boy and his parents would visit the girl’s house with gifts as a token of gratitude. The meeting was simple and casual, much like visiting a friend’s house. The girl’s family would prepare tea and num (snacks or ",
-            { text: "Num Ansom", archiveSlug: "food" },
+            { text: "Num Ansom" },
             ") to serve the visiting guests.",
           ],
           "During the meeting, the parents on both sides would encourage conversation between the boy and the girl. This was an opportunity for them to get to know each other through their attitudes, manners, and ways of speaking rather than simply judging each other by appearance. At the time, good manners and coming from a respectable family were highly valued in society.",
@@ -122,6 +124,7 @@ const archiveCatalog = [
     id: "ARCHIVE 003",
     slug: "engagement-traditions",
     title: "Engagement Traditions",
+    khmerTitle: "ប្រពៃណីនៃពិធីភ្ជាប់ពាក្យ",
     summary: "Pre-wedding family meeting",
     asideAccentArtwork: aside03Artwork,
     showAsideArtwork: false,
@@ -136,7 +139,7 @@ const archiveCatalog = [
         paragraphs: [
           [
             "Just like the first meeting, the pre-wedding family meeting was simple and casual, with tea being served and ",
-            { text: "num", archiveSlug: "food", emphasis: true },
+            { text: "num", emphasis: true },
             " being prepared. The quantity and quality of the ",
             { text: "num", emphasis: true },
             " depended on the family’s wealth. The two families and their relatives would join this important discussion about the ",
@@ -162,6 +165,7 @@ const archiveCatalog = [
     id: "ARCHIVE 004",
     slug: "wedding-preparation",
     title: "Wedding Preparation",
+    khmerTitle: "ការរៀបចំពិធីមង្គលការ",
     summary: "Wedding preparations, gold contributions, and family customs",
     descriptionArtworkTopLeft: archive04TopArtwork,
     showAside: false,
@@ -223,6 +227,7 @@ const archiveCatalog = [
     id: "ARCHIVE 005",
     slug: "traditional-khmer-wedding-ceremonies",
     title: "Wedding Ceremonies",
+    khmerTitle: "ពិធីរៀបអាពាហ៍ពិពាហ៍",
     summary: "Morning wedding ceremonies and family offerings",
     showAside: false,
     descriptionSections: [
@@ -351,6 +356,7 @@ const archiveCatalog = [
     id: "ARCHIVE 006",
     slug: "wedding-ceremonies-afternoon",
     title: "During the Afternoon",
+    khmerTitle: "អំឡុងពេលរសៀល",
     summary: "Afternoon customs and the Wat Phnom visit",
     showAside: false,
     descriptionSections: [
@@ -456,32 +462,16 @@ const archiveCatalog = [
   },
   {
     id: "ARCHIVE 007",
-    slug: "ceremonial-objects",
-    title: "Ceremonial Objects",
+    slug: "during-the-night",
+    title: "During the Night",
+    khmerTitle: "អំឡុងពេលយប់",
     summary: "",
   },
   {
     id: "ARCHIVE 008",
-    slug: "food",
-    title: "Food",
-    summary: "",
-  },
-  {
-    id: "ARCHIVE 009",
-    slug: "music",
-    title: "Music",
-    summary: "",
-  },
-  {
-    id: "ARCHIVE 010",
-    slug: "family-roles",
-    title: "Family Roles",
-    summary: "",
-  },
-  {
-    id: "ARCHIVE 011",
-    slug: "changes-in-khmer-wedding-traditions",
-    title: "Changes in Khmer Wedding Traditions Over Time",
+    slug: "ceremonial-objects",
+    title: "Ceremonial Objects",
+    khmerTitle: "វត្ថុប្រើប្រាស់ក្នុងពិធី",
     summary: "",
   },
 ];
@@ -494,7 +484,7 @@ export const archiveEntries = archiveCatalog.map((entry) => ({
 
 assertValidArchiveEntries(archiveEntries);
 
-export const archiveSlugs = archiveCatalog.map(({ slug }) => slug);
+export const archiveSlugs = archiveEntries.map(({ slug }) => slug);
 
 export function getArchiveEntry(slug) {
   return archiveEntries.find((entry) => entry.slug === slug);

@@ -1,5 +1,6 @@
 import ArchiveCardLink from "./ArchiveCardLink.js";
 import ProgressiveImage from "./ProgressiveImage.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 import { getArchiveImageSources } from "../lib/archive-assets.js";
 
 export default function ArchiveCard({ entry, eager = false }) {
@@ -18,7 +19,7 @@ export default function ArchiveCard({ entry, eager = false }) {
               loading={eager ? "eager" : "lazy"}
               fetchPriority={eager ? "high" : "auto"}
             />
-            {image.caption ? <figcaption>{image.caption}</figcaption> : null}
+            {image.caption ? <figcaption><KhmerScriptText>{image.caption}</KhmerScriptText></figcaption> : null}
           </figure>
         ) : (
           <div className="archive-card__image-placeholder" role="img" aria-label="Photograph placeholder">
@@ -31,7 +32,9 @@ export default function ArchiveCard({ entry, eager = false }) {
           <p className="archive-card__meta">{entry.id}</p>
           <h3>{entry.title}</h3>
           <p className="archive-card__khmer-title">{entry.khmerTitle}</p>
-          {entry.summary ? <p className="archive-card__summary">{entry.summary}</p> : null}
+          {entry.summary ? (
+            <p className="archive-card__summary"><KhmerScriptText>{entry.summary}</KhmerScriptText></p>
+          ) : null}
         </div>
       </article>
     </ArchiveCardLink>

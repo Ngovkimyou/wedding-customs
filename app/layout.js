@@ -21,6 +21,19 @@ const overlock = localFont({
   variable: "--font-overlock-sc",
 });
 
+const khmerTitle = localFont({
+  src: "../assets/fonts/Khmer-title.woff2",
+  display: "swap",
+  variable: "--font-khmer-title",
+});
+
+const khmerScript = localFont({
+  src: "../assets/fonts/Khmer-script.woff2",
+  display: "swap",
+  variable: "--font-khmer-script",
+  preload: false,
+});
+
 export const metadata = {
   title: {
     default: archiveDetails.name,
@@ -31,7 +44,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${lugrasimo.variable} ${overlock.variable}`}>
+    <html
+      lang="en"
+      className={`${lugrasimo.variable} ${overlock.variable} ${khmerTitle.variable} ${khmerScript.variable}`}
+    >
       <body>
         <LoadingScreen />
         <ArchiveRoutePrefetcher slugs={archiveSlugs} />

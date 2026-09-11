@@ -2,18 +2,19 @@ import Link from "next/link";
 import ProgressiveImage from "./ProgressiveImage.js";
 import ImageLightbox from "./ImageLightbox.js";
 import { DescriptionGallery, DescriptionGalleryStack } from "./ArchiveDescriptionGallery.js";
+import KhmerScriptText from "./KhmerScriptText.js";
 import { getImageDimensions } from "../lib/media.js";
 
-function DescriptionPart({ part }) {
+function DescriptionPart({ part, keyPrefix }) {
   if (typeof part === "string") {
-    return part;
+    return <KhmerScriptText keyPrefix={keyPrefix}>{part}</KhmerScriptText>;
   }
 
   if (!part?.text) {
     return null;
   }
 
-  let content = part.text;
+  let content = <KhmerScriptText keyPrefix={keyPrefix}>{part.text}</KhmerScriptText>;
 
   if (part.archiveSlug) {
     content = (
@@ -48,6 +49,7 @@ function DescriptionParagraph({ paragraph }) {
       {parts.map((part, index) => (
         <DescriptionPart
           part={part}
+          keyPrefix={`description-part-${index}`}
           key={index}
         />
       ))}
@@ -269,7 +271,9 @@ export default function ArchiveDescription({ entry }) {
           ))}
         </div>
       ) : (
-        <p data-archive-dynamic="true">{entry.content}</p>
+        <p data-archive-dynamic="true">
+          <KhmerScriptText keyPrefix="description-content">{entry.content}</KhmerScriptText>
+        </p>
       )}
     </section>
   );
