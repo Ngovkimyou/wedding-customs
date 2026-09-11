@@ -50,6 +50,8 @@ components/
                              Header idle/scroll behavior
   LoadingScreen.js           Loading-gate UI, page lock, and start gesture
   ArchiveRoutePrefetcher.js  Warms About and archive routes after the initial reveal
+  ArchiveCardLink.js         Intent-aware card link and low-priority image warming
+  ArchiveEntryPreloads.js    Route-specific background, frame, and media hints
   MusicControl.js            Persistent audio player and soundtrack dialog
   PlatformClass.js           Platform-specific layout hook
   SiteBrand.js               Home link with same-page smooth scrolling
@@ -86,7 +88,9 @@ lib/
   archive-search.mjs         Pure normalized title matching
   archive-swipe.mjs          Pure swipe direction, threshold, and drag math
   archive-validation.mjs     Catalog, rich text, link, and gallery validation
+  archive-assets.js           Shared archive image discovery for preload/prefetch
   client-navigation.js       Shared route prefetch and archive-ready event
+  client-asset-prefetch.js   Low-priority client image prefetch helper
   initial-asset-loader.js    Cancellable visual, font, and audio readiness checks
   media.js                   Shared imported-asset source and dimension helpers
   scroll-indicator.mjs       Pure scrollbar geometry
@@ -161,13 +165,21 @@ tracks are warmed after playback starts, so one slow optional track cannot delay
 first screen. Archive photos and noncritical route content should not be added to the
 initial blocking preload list.
 
+When a record route is requested, `ArchiveEntryPreloads` emits responsive hints for
+the record background, title/thumbnail frames, and the record's imported media. The
+lead photograph uses Next's optimized image source; the remaining media is scheduled
+at low priority and still keeps its reserved aspect-ratio placeholder. Collection
+cards also warm their record media after pointer, keyboard, or touch intent, reducing
+the delay on a first open without downloading every record during the initial gate.
+
 The petal layer is independent from the fading black loading layer, allowing
 the animation to finish after the opening screen appears. Reduced-motion users
 receive the opening transition without the petal flight.
 
 Archive photographs below the opening screen remain lazy-loaded. The reusable
 `ProgressiveImage` component provides a lightweight placeholder, fade-in, and
-failure state while those images load.
+failure state while those images load. Route loading uses the same paper/frame visual
+language, so a slow RSC response never exposes an empty background or unframed text.
 
 ## Responsive styling
 

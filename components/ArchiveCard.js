@@ -1,15 +1,12 @@
-import Link from "next/link";
+import ArchiveCardLink from "./ArchiveCardLink.js";
 import ProgressiveImage from "./ProgressiveImage.js";
+import { getArchiveImageSources } from "../lib/archive-assets.js";
 
 export default function ArchiveCard({ entry, eager = false }) {
   const image = entry.images?.[0];
 
   return (
-    <Link
-      className="archive-card ornate-frame"
-      href={`/archive/${entry.slug}`}
-      prefetch={true}
-    >
+    <ArchiveCardLink href={`/archive/${entry.slug}`} assets={getArchiveImageSources(entry)}>
       <article>
         {image ? (
           <figure className="archive-card__image">
@@ -37,6 +34,6 @@ export default function ArchiveCard({ entry, eager = false }) {
           {entry.summary ? <p className="archive-card__summary">{entry.summary}</p> : null}
         </div>
       </article>
-    </Link>
+    </ArchiveCardLink>
   );
 }

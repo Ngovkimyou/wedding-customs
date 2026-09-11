@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import ArchiveEntry from "../../../components/ArchiveEntry.js";
+import ArchiveEntryPreloads from "../../../components/ArchiveEntryPreloads.js";
 import { archiveDetails, archiveEntries, getArchiveEntry } from "../../../data/archive.js";
 
 export function generateStaticParams() {
@@ -25,8 +26,11 @@ export default async function ArchiveRecordPage({ params }) {
   }
 
   return (
-    <div className="archive-record-page" data-archive-slug={entry.slug}>
-      <ArchiveEntry entry={entry} />
-    </div>
+    <>
+      <ArchiveEntryPreloads entry={entry} />
+      <div className="archive-record-page" data-archive-slug={entry.slug}>
+        <ArchiveEntry entry={entry} />
+      </div>
+    </>
   );
 }
