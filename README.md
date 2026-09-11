@@ -194,10 +194,12 @@ Keep visual adjustments in the component stylesheet that owns the element. This 
 
 ## Search and navigation
 
-Search matches record titles case-insensitively and ignores Latin accents. The server
-passes only IDs, slugs, titles, and summaries to the search component; full stories
-and image metadata stay out of its interactive data. Matching characters retain
-their original spelling and receive a subtle highlight.
+Search matches record titles case-insensitively and ignores Latin accents. Quotes,
+punctuation, symbols, and repeated whitespace are treated as separators, so `"met"`,
+`m   et`, and `m @ et` match the same title. The server passes only IDs, slugs,
+titles, and summaries to the search component; full stories and image metadata stay
+out of its interactive data. Matching characters retain their original spelling and
+receive a subtle highlight.
 
 Use Arrow Down from the input to focus the first result, Arrow Up/Down to move
 between results, and Enter or Space to open a record. Clear restores input focus.

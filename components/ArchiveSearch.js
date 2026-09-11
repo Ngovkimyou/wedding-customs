@@ -12,7 +12,8 @@ export default function ArchiveSearch({ entries = [] }) {
   const searchRef = useRef(null);
   const inputRef = useRef(null);
   const resultRefs = useRef([]);
-  const normalizedQuery = normalizeSearchText(query.trim());
+  const normalizedQuery = normalizeSearchText(query);
+  const displayQuery = query.trim().replace(/\s+/gu, " ");
   const searchIndex = useMemo(
     () => entries.map((entry) => ({ ...entry, searchTitle: normalizeSearchText(entry.title) })),
     [entries],
@@ -93,7 +94,7 @@ export default function ArchiveSearch({ entries = [] }) {
             : "Start typing to search the archive."}
         </p>
         {normalizedQuery && matches.length === 0 ? (
-          <p className="archive-search__empty">No archive titles match “{query}”.</p>
+          <p className="archive-search__empty">No match found for “{displayQuery}”.</p>
         ) : null}
         {matches.length === 0 ? (
           <div className="archive-search__empty-art" aria-hidden="true">

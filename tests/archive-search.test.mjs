@@ -10,7 +10,16 @@ test("search ignores case and Latin accents without stripping Khmer characters",
 
 test("blank and unmatched searches do not produce highlights", () => {
   assert.deepEqual(findTitleMatches("Wedding", "   "), []);
+  assert.deepEqual(findTitleMatches("Wedding", "---___@@@"), []);
   assert.deepEqual(findTitleMatches("Wedding", "xyz"), []);
+});
+
+test("quotes, punctuation, and repeated spaces do not change a match", () => {
+  assert.equal(normalizeSearchText('  "m   et"  '), "met");
+  assert.deepEqual(findTitleMatches("How My Parents First Met", '"m   et"'), [
+    { start: 21, end: 24 },
+  ]);
+  assert.deepEqual(findTitleMatches("M—et", "m @ et"), [{ start: 0, end: 4 }]);
 });
 
 test("repeated matches preserve the original title text and casing", () => {
