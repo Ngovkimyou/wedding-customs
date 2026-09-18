@@ -10,19 +10,13 @@ export default function HeaderAccountControls({
 }) {
   const placementClass = mobile ? "site-header__auth--mobile" : "site-header__auth--desktop";
 
-  if (isSigningOut && !user) {
-    return (
-      <div className={`site-header__auth ${placementClass} site-header__auth--user`} aria-label="Signing out">
-        <button className="site-header__auth-button" type="button" disabled>
-          <span className="site-header__auth-action">Logging out</span>
-        </button>
-      </div>
-    );
-  }
-
   if (user) {
     return (
-      <div className={`site-header__auth ${placementClass} site-header__auth--user`} aria-label="Account">
+      <div
+        className={`site-header__auth ${placementClass} site-header__auth--user`}
+        role="group"
+        aria-label="Account"
+      >
         <button
           className="site-header__auth-button"
           type="button"
@@ -40,7 +34,7 @@ export default function HeaderAccountControls({
   }
 
   return (
-    <div className={`site-header__auth ${placementClass}`} aria-label="Account">
+    <div className={`site-header__auth ${placementClass}`} role="group" aria-label="Account">
       <Link className="site-header__auth-link" href="/login">Log in</Link>
       <Link className="site-header__auth-link" href="/signup">Sign up</Link>
     </div>

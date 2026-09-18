@@ -8,6 +8,7 @@ import {
   getArchiveDescriptionText,
   normalizeSearchText,
 } from "../lib/archive-search.mjs";
+import { limitCodePoints, SEARCH_QUERY_MAX_LENGTH } from "../lib/security.mjs";
 import HighlightedTitle from "./HighlightedTitle.js";
 import KhmerScriptText from "./KhmerScriptText.js";
 import ScrollIndicator from "./ScrollIndicator.js";
@@ -85,6 +86,10 @@ export default function ArchiveSearch({ entries = [] }) {
     inputRef.current?.focus();
   };
 
+  const handleQueryChange = (event) => {
+    setQuery(limitCodePoints(event.target.value, SEARCH_QUERY_MAX_LENGTH));
+  };
+
   return (
     <section className="archive-search" ref={searchRef} aria-labelledby="archive-search-title">
       <ScrollIndicator scrollRef={searchRef} className="archive-search__scrollbar" />
@@ -101,10 +106,11 @@ export default function ArchiveSearch({ entries = [] }) {
             aria-label="Search archive titles and descriptions"
             aria-controls="archive-search-results"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={handleQueryChange}
             onKeyDown={handleSearchKeyDown}
             placeholder="Type a title or phrase…"
             autoComplete="off"
+            maxLength={SEARCH_QUERY_MAX_LENGTH}
             autoFocus
           />
           {query ? (

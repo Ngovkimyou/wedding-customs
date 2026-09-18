@@ -1,7 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
-
-const AUTH_PATHS = new Set(["/login", "/signup"]);
+import { isAuthPath } from "./lib/auth-routes.mjs";
 
 function copyResponseCookies(source, destination) {
   source.cookies.getAll().forEach((cookie) => destination.cookies.set(cookie));
@@ -33,9 +32,9 @@ export async function middleware(request) {
   // bypassed by typing a protected URL directly into the address bar.
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
-  const isAuthPath = AUTH_PATHS.has(pathname);
+  const onAuthPath = isAuthPath(pathname);
 
-  if (!user && !isAuthPath) {
+  if (!user && !onAuthPath) {
     const signupUrl = request.nextUrl.clone();
     signupUrl.pathname = "/signup";
     signupUrl.search = "";
@@ -44,7 +43,7 @@ export async function middleware(request) {
     return redirectResponse;
   }
 
-  if (user && isAuthPath) {
+  if (user && onAuthPath) {
     const homeUrl = request.nextUrl.clone();
     homeUrl.pathname = "/";
     homeUrl.search = "";

@@ -4,18 +4,25 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client.js";
+import {
+  getAuthErrorMessage,
+  LOGIN_ERROR_MESSAGE,
+  SIGNUP_ERROR_MESSAGE,
+} from "../lib/auth-security.mjs";
+import {
+  countCodePoints,
+  EMAIL_MAX_LENGTH,
+  isValidEmailAddress,
+  limitCodePoints,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+} from "../lib/security.mjs";
 import HCaptchaWidget from "./HCaptchaWidget.js";
 import InteractionLock from "./InteractionLock.js";
 
-const LOGIN_ERROR = "Invalid email or password";
-const SIGNUP_ERROR = "Unable to create account";
 const CAPTCHA_REQUIRED_ERROR = "Please complete the security check";
 const CAPTCHA_UNAVAILABLE_ERROR = "Security verification is unavailable. Please try again later.";
-const PASSWORD_MIN_LENGTH = 8;
-
-function countPasswordCharacters(password) {
-  return Array.from(password).length;
-}
+const PASSWORD_TOO_LONG_ERROR = `Password must be ${PASSWORD_MAX_LENGTH} characters or fewer`;
 
 const styles = {
   page: {
@@ -213,12 +220,21 @@ export default function AuthForm({ mode = "login" }) {
     setMessage("");
     setCaptchaError("");
 
-    if (!email.trim() || !password) {
-      setError(isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
+    const normalizedEmail = email.trim();
+
+    if (!isValidEmailAddress(normalizedEmail) || !password) {
+      setError(isLogin ? LOGIN_ERROR_MESSAGE : SIGNUP_ERROR_MESSAGE);
       return;
     }
 
-    if (!isLogin && countPasswordCharacters(password) < PASSWORD_MIN_LENGTH) {
+    const passwordLength = countCodePoints(password);
+
+    if (passwordLength > PASSWORD_MAX_LENGTH) {
+      setError(isLogin ? LOGIN_ERROR_MESSAGE : PASSWORD_TOO_LONG_ERROR);
+      return;
+    }
+
+    if (!isLogin && passwordLength < PASSWORD_MIN_LENGTH) {
       setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
       return;
     }
@@ -246,20 +262,18 @@ export default function AuthForm({ mode = "login" }) {
       const supabase = createClient();
       const result = isLogin
         ? await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: { captchaToken },
         })
         : await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: { captchaToken },
         });
 
       if (result.error) {
-        setError(result.error.code === "captcha_failed"
-          ? "The security check could not be verified. Please try again."
-          : isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
+        setError(getAuthErrorMessage({ isLogin, error: result.error }));
         return;
       }
 
@@ -271,7 +285,7 @@ export default function AuthForm({ mode = "login" }) {
 
       setMessage("Check your email to confirm your account.");
     } catch {
-      setError(isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
+      setError(isLogin ? LOGIN_ERROR_MESSAGE : SIGNUP_ERROR_MESSAGE);
     } finally {
       if (!keepInteractionLocked) {
         isSubmittingRef.current = false;
@@ -333,8 +347,9 @@ export default function AuthForm({ mode = "login" }) {
               type="email"
               name="email"
               autoComplete="email"
+              maxLength={EMAIL_MAX_LENGTH}
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => setEmail(limitCodePoints(event.target.value, EMAIL_MAX_LENGTH))}
               onFocus={() => setFocusedField("email")}
               onBlur={() => setFocusedField("")}
               disabled={isSubmitting}
@@ -351,8 +366,9 @@ export default function AuthForm({ mode = "login" }) {
               name="password"
               autoComplete={isLogin ? "current-password" : "new-password"}
               minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => setPassword(limitCodePoints(event.target.value, PASSWORD_MAX_LENGTH))}
               onFocus={() => setFocusedField("password")}
               onBlur={() => setFocusedField("")}
               disabled={isSubmitting}
@@ -370,8 +386,9 @@ export default function AuthForm({ mode = "login" }) {
                 name="confirm-password"
                 autoComplete="new-password"
                 minLength={PASSWORD_MIN_LENGTH}
+                maxLength={PASSWORD_MAX_LENGTH}
                 value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
+                onChange={(event) => setConfirmPassword(limitCodePoints(event.target.value, PASSWORD_MAX_LENGTH))}
                 onFocus={() => setFocusedField("confirm-password")}
                 onBlur={() => setFocusedField("")}
                 disabled={isSubmitting}

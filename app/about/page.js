@@ -18,7 +18,7 @@ const CONTACT_ICONS = {
 
 function ExternalLink({ href, children, className, label }) {
   return (
-    <a className={className} href={href} target="_blank" rel="noreferrer" aria-label={label}>
+    <a className={className} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}>
       {children}
     </a>
   );

@@ -37,6 +37,29 @@ pnpm dev
 
 The separate output directories allow `pnpm build` to run without invalidating chunks used by an active development server.
 
+## Authentication security checklist
+
+The app sends hCaptcha tokens to Supabase for both login and sign-up. Configure
+the CAPTCHA provider in Supabase before testing authentication:
+
+1. In **Authentication → Captcha**, select **hCaptcha** and paste the secret
+   key there. Keep the secret in Supabase only; the browser receives only
+   `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` from `.env.local`/Vercel.
+2. In the hCaptcha dashboard, allow the production hostname
+   (`wedding-customs.vercel.app`) and any local development hostname you use.
+3. Review **Authentication → Rate Limits** and keep the sign-in, sign-up, and
+   token/email limits enabled. Tighten them if the project is exposed publicly.
+4. For the class setup, turn **Confirm email** off in Supabase Auth. The app
+   still supports confirmed-email projects, but with confirmation disabled a
+   successful sign-up receives a session and continues to the normal loading
+   gate immediately.
+
+The repository adds CSP and transport/security headers, bounded auth/search
+inputs, generic login errors, and regression tests. The PostCSS audit fix is
+kept as a pnpm override in `package.json`; do not replace it with an unapproved
+dependency. Never commit `.env.local`, a Supabase secret, or an hCaptcha
+secret.
+
 ## Project structure
 
 ```text
@@ -90,6 +113,8 @@ data/
   about.js                   Source links, music credits, and contact details
 
 lib/
+  auth-security.mjs          Generic auth errors that prevent account enumeration
+  auth-routes.mjs            Shared public authentication-route policy
   archive-search.mjs         Pure normalized title/description matching and snippets
   archive-swipe.mjs          Pure swipe direction, threshold, and drag math
   archive-validation.mjs     Catalog, rich text, link, and gallery validation
@@ -98,6 +123,8 @@ lib/
   client-asset-prefetch.js   Low-priority client image prefetch helper
   initial-asset-loader.js    Cancellable visual, font, and audio readiness checks
   media.js                   Shared imported-asset source and dimension helpers
+  security.mjs               Auth/search input limits and conservative validation
+  security-policy.mjs        CSP and transport/security response headers
   scroll-indicator.mjs       Pure scrollbar geometry
 
 tests/                       Dependency-free regression tests (`pnpm test`)
@@ -228,7 +255,7 @@ Music playback remains owned by the persistent `MusicControl` in the shared head
 
 ## Verification before committing
 
-Run `pnpm test`, `pnpm build`, and `git diff --check`. Tests cover normalized title
+Run `pnpm test`, `pnpm build`, `pnpm audit --prod`, and `git diff --check`. Tests cover normalized title
 matches (including Khmer, combining accents, and emoji), archive data validation,
 swipe direction and thresholds, and scroll-indicator geometry.
 

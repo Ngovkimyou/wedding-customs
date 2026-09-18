@@ -12,8 +12,7 @@ import headerFrame from "../assets/header-frame.avif";
 import mediumHeaderFrame from "../assets/medium-header-frame.avif";
 import smallHeaderFrame from "../assets/small-header-frame.avif";
 import { createClient } from "../lib/supabase/client.js";
-
-const AUTH_PATHS = new Set(["/login", "/signup"]);
+import { isAuthPath } from "../lib/auth-routes.mjs";
 
 export default function Header() {
   const pathname = usePathname();
@@ -63,7 +62,7 @@ export default function Header() {
   };
 
   useEffect(() => {
-    if (!AUTH_PATHS.has(pathname)) {
+    if (!isAuthPath(pathname)) {
       return;
     }
 
@@ -73,7 +72,7 @@ export default function Header() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!isSigningOut || AUTH_PATHS.has(pathname)) {
+    if (!isSigningOut || isAuthPath(pathname)) {
       return undefined;
     }
 
@@ -94,7 +93,7 @@ export default function Header() {
     };
   }, [isSigningOut, pathname]);
 
-  if (AUTH_PATHS.has(pathname)) {
+  if (isAuthPath(pathname)) {
     return null;
   }
 

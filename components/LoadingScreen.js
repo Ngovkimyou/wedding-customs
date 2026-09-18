@@ -6,13 +6,13 @@ import champaFlower from "../assets/champa-flower.avif";
 import petalWoosh from "../assets/sound-effects/petals-woosh-se.mp3";
 import { ARCHIVE_READY_EVENT } from "../lib/client-navigation.js";
 import { preloadInitialAssets } from "../lib/initial-asset-loader.js";
+import { isAuthPath } from "../lib/auth-routes.mjs";
 import PetalReveal from "./PetalReveal.js";
 import useSoundEffect from "./useSoundEffect.js";
 
 const REVEAL_FADE_DELAY = 950;
 const PETAL_SEQUENCE_DURATION = 1800;
 const BLOCKED_PAGE_SELECTORS = ["[data-site-header]", "main"];
-const AUTH_PATHS = new Set(["/login", "/signup"]);
 
 function getBlockedPageElements() {
   return BLOCKED_PAGE_SELECTORS
@@ -28,7 +28,7 @@ function setPageElementsInert(elements, isInert) {
 
 export default function LoadingScreen() {
   const pathname = usePathname();
-  const isAuthRoute = AUTH_PATHS.has(pathname);
+  const isAuthRoute = isAuthPath(pathname);
   const previousPathnameRef = useRef(pathname);
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
@@ -82,7 +82,7 @@ export default function LoadingScreen() {
   useEffect(() => {
     const previousPathname = previousPathnameRef.current;
     const isInitialRoute = previousPathname === pathname;
-    const enteredHomeFromAuth = pathname === "/" && AUTH_PATHS.has(previousPathname);
+    const enteredHomeFromAuth = pathname === "/" && isAuthPath(previousPathname);
 
     previousPathnameRef.current = pathname;
     revealTimersRef.current.forEach(window.clearTimeout);
