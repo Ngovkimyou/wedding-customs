@@ -69,6 +69,27 @@ a {
   caret-color: var(--color-text);
 }
 
+.auth-captcha {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+  min-height: 4.8rem;
+  overflow: visible;
+}
+
+.auth-captcha > div {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.auth-captcha__status {
+  color: var(--color-muted);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 :focus-visible {
   outline: 3px solid var(--color-gold-light);
   outline-offset: 4px;

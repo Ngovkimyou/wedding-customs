@@ -29,14 +29,15 @@ function setPageElementsInert(elements, isInert) {
 export default function LoadingScreen() {
   const pathname = usePathname();
   const isAuthRoute = AUTH_PATHS.has(pathname);
+  const previousPathnameRef = useRef(pathname);
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isRevealActive, setIsRevealActive] = useState(false);
-  // Authentication is the entry point for this flow. Keep those forms usable
-  // while the same asset preparation continues in the background; the gate is
-  // shown again as soon as a successful auth redirect reaches the home route.
-  const [isVisible, setIsVisible] = useState(() => !isAuthRoute);
+  // The loading gate belongs to the home experience. Auth pages stay usable
+  // while assets prepare in the background, and a successful auth redirect to
+  // the home route starts the gate exactly once for that transition.
+  const [isVisible, setIsVisible] = useState(() => !isAuthRoute && pathname === "/");
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const revealTimersRef = useRef([]);
@@ -79,12 +80,17 @@ export default function LoadingScreen() {
   }, []);
 
   useEffect(() => {
+    const previousPathname = previousPathnameRef.current;
+    const isInitialRoute = previousPathname === pathname;
+    const enteredHomeFromAuth = pathname === "/" && AUTH_PATHS.has(previousPathname);
+
+    previousPathnameRef.current = pathname;
     revealTimersRef.current.forEach(window.clearTimeout);
     revealTimersRef.current = [];
     setIsRevealActive(false);
     setIsExiting(false);
-    setIsVisible(!isAuthRoute);
-  }, [isAuthRoute]);
+    setIsVisible(pathname === "/" && (isInitialRoute || enteredHomeFromAuth));
+  }, [pathname]);
 
   useEffect(() => {
     if (!isVisible) {

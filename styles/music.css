@@ -77,6 +77,25 @@
   opacity: 0.46;
 }
 
+.music-control--resume-pending .music-control__backdrop {
+  opacity: 0.58;
+  filter: drop-shadow(0 0 0.35rem rgba(201, 169, 104, 0.38));
+  animation: music-resume-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes music-resume-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: scale(1.08);
+  }
+}
+
 .music-control__audio {
   display: none;
 }

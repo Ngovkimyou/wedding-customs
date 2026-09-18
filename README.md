@@ -11,6 +11,11 @@ pnpm install
 pnpm dev
 ```
 
+Before starting the app, copy `.env.example` to `.env.local` and fill in the
+Supabase URL, publishable key, and hCaptcha sitekey. Keep the hCaptcha secret
+key only in Supabase's Auth CAPTCHA settings; it must never be placed in the
+repository or exposed to the browser.
+
 Open [http://localhost:3000](http://localhost:3000). For a production check, run:
 
 ```bash

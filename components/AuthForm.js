@@ -4,10 +4,18 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client.js";
+import HCaptchaWidget from "./HCaptchaWidget.js";
 import InteractionLock from "./InteractionLock.js";
 
 const LOGIN_ERROR = "Invalid email or password";
 const SIGNUP_ERROR = "Unable to create account";
+const CAPTCHA_REQUIRED_ERROR = "Please complete the security check";
+const CAPTCHA_UNAVAILABLE_ERROR = "Security verification is unavailable. Please try again later.";
+const PASSWORD_MIN_LENGTH = 8;
+
+function countPasswordCharacters(password) {
+  return Array.from(password).length;
+}
 
 const styles = {
   page: {
@@ -134,6 +142,23 @@ const styles = {
     minHeight: "1.35rem",
     transition: "opacity 180ms ease",
   },
+  captchaField: {
+    display: "grid",
+    justifyItems: "center",
+    gap: "0.45rem",
+    minHeight: "5.5rem",
+    marginTop: "0.1rem",
+  },
+  captchaLabel: {
+    alignSelf: "stretch",
+    color: "var(--color-brown)",
+    fontFamily: "var(--font-meta)",
+    fontSize: "0.7rem",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    textAlign: "left",
+    textTransform: "uppercase",
+  },
   footer: {
     margin: "1.5rem 0 0",
     color: "var(--color-muted)",
@@ -161,12 +186,16 @@ export default function AuthForm({ mode = "login" }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaError, setCaptchaError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState("");
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isLinkHovered, setIsLinkHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const isSubmittingRef = useRef(false);
+  const captchaRef = useRef(null);
+  const captchaSitekey = process.env.NEXT_PUBLIC_HCAPTCHA_SITE_KEY?.trim() ?? "";
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setIsMounted(true));
@@ -182,14 +211,30 @@ export default function AuthForm({ mode = "login" }) {
 
     setError("");
     setMessage("");
+    setCaptchaError("");
 
     if (!email.trim() || !password) {
       setError(isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
       return;
     }
 
+    if (!isLogin && countPasswordCharacters(password) < PASSWORD_MIN_LENGTH) {
+      setError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+      return;
+    }
+
     if (!isLogin && password !== confirmPassword) {
       setError("Passwords do not match");
+      return;
+    }
+
+    if (!captchaSitekey) {
+      setError(CAPTCHA_UNAVAILABLE_ERROR);
+      return;
+    }
+
+    if (!captchaToken) {
+      setError(CAPTCHA_REQUIRED_ERROR);
       return;
     }
 
@@ -203,14 +248,18 @@ export default function AuthForm({ mode = "login" }) {
         ? await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
+          options: { captchaToken },
         })
         : await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: { captchaToken },
         });
 
       if (result.error) {
-        setError(isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
+        setError(result.error.code === "captcha_failed"
+          ? "The security check could not be verified. Please try again."
+          : isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
         return;
       }
 
@@ -228,7 +277,29 @@ export default function AuthForm({ mode = "login" }) {
         isSubmittingRef.current = false;
         setIsSubmitting(false);
       }
+
+      setCaptchaToken("");
+      captchaRef.current?.reset();
     }
+  };
+
+  const handleCaptchaVerify = (token) => {
+    setCaptchaToken(token);
+
+    if (token) {
+      setCaptchaError("");
+      setError("");
+    }
+  };
+
+  const handleCaptchaExpired = () => {
+    setCaptchaToken("");
+    setCaptchaError("The security check expired. Please complete it again.");
+  };
+
+  const handleCaptchaError = () => {
+    setCaptchaToken("");
+    setCaptchaError("Security check could not load. Please try again later.");
   };
 
   return (
@@ -279,6 +350,7 @@ export default function AuthForm({ mode = "login" }) {
               type="password"
               name="password"
               autoComplete={isLogin ? "current-password" : "new-password"}
+              minLength={PASSWORD_MIN_LENGTH}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               onFocus={() => setFocusedField("password")}
@@ -297,6 +369,7 @@ export default function AuthForm({ mode = "login" }) {
                 type="password"
                 name="confirm-password"
                 autoComplete="new-password"
+                minLength={PASSWORD_MIN_LENGTH}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 onFocus={() => setFocusedField("confirm-password")}
@@ -307,8 +380,21 @@ export default function AuthForm({ mode = "login" }) {
             </label>
           ) : null}
 
+          <div style={styles.captchaField}>
+            <span style={styles.captchaLabel}>Security check</span>
+            <HCaptchaWidget
+              ref={captchaRef}
+              sitekey={captchaSitekey}
+              theme="dark"
+              onVerify={handleCaptchaVerify}
+              onExpired={handleCaptchaExpired}
+              onError={handleCaptchaError}
+            />
+          </div>
+
           <div style={styles.status} aria-live="polite">
             {error ? <p style={styles.message} role="alert">{error}</p> : null}
+            {!error && captchaError ? <p style={styles.message} role="alert">{captchaError}</p> : null}
             {!error && message ? <p style={styles.message} role="status">{message}</p> : null}
           </div>
 

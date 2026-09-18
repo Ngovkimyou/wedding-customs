@@ -20,6 +20,78 @@ import ScrollIndicator from "./ScrollIndicator.js";
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
 const PAGE_MUSIC_FADE_DURATION = 180;
+const MUSIC_STORAGE_KEY = "khmer-wedding-archive:music-session";
+const MUSIC_STORAGE_VERSION = 1;
+
+const MUSIC_TRACK_SOURCES = new Set(
+  Object.values(MUSIC_PLAYLISTS).flat().map((track) => track.source),
+);
+
+function normalizePlaylistIndex(mode, index) {
+  const playlistLength = MUSIC_PLAYLISTS[mode]?.length ?? 1;
+  const numericIndex = Number(index);
+
+  if (!Number.isInteger(numericIndex)) {
+    return 0;
+  }
+
+  return ((numericIndex % playlistLength) + playlistLength) % playlistLength;
+}
+
+function readPersistedMusicState() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const rawState = window.sessionStorage.getItem(MUSIC_STORAGE_KEY);
+    const savedState = rawState ? JSON.parse(rawState) : null;
+
+    if (!savedState || savedState.version !== MUSIC_STORAGE_VERSION) {
+      return null;
+    }
+
+    const savedMode = savedState.mode === DEFAULT_MUSIC_MODE
+      || Object.prototype.hasOwnProperty.call(MUSIC_PLAYLISTS, savedState.mode)
+      ? savedState.mode
+      : DEFAULT_MUSIC_MODE;
+    const savedManualMode = Object.prototype.hasOwnProperty.call(
+      MUSIC_PLAYLISTS,
+      savedState.manualSelection?.mode,
+    )
+      ? savedState.manualSelection.mode
+      : INITIAL_MANUAL_SELECTION.mode;
+    const playlistIndexes = Object.fromEntries(
+      Object.keys(MUSIC_PLAYLISTS).map((playlistMode) => [
+        playlistMode,
+        normalizePlaylistIndex(playlistMode, savedState.playlistIndexes?.[playlistMode]),
+      ]),
+    );
+    const playbackPositions = Object.fromEntries(
+      Object.entries(savedState.playbackPositions ?? {}).filter(([source, position]) => (
+        MUSIC_TRACK_SOURCES.has(source)
+        && Number.isFinite(position)
+        && position >= 0
+      )),
+    );
+
+    return {
+      mode: savedMode,
+      manualSelection: {
+        mode: savedManualMode,
+        trackIndex: normalizePlaylistIndex(
+          savedManualMode,
+          savedState.manualSelection?.trackIndex,
+        ),
+      },
+      playlistIndexes,
+      playbackPositions,
+      wasPlaying: savedState.wasPlaying === true,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function clampVolume(volume) {
   const safeVolume = Number.isFinite(volume) ? volume : 0;
@@ -89,6 +161,8 @@ export default function MusicControl() {
   const panelCloseTimerRef = useRef(null);
   const prefetchedTracksRef = useRef(new Map());
   const shouldResumeRef = useRef(false);
+  const resumePendingRef = useRef(false);
+  const hasRestoredMusicStateRef = useRef(false);
   const currentSourceRef = useRef(null);
   const activeModeRef = useRef(null);
   const playbackPositionsRef = useRef({});
@@ -98,10 +172,18 @@ export default function MusicControl() {
   const [isPanelClosing, setIsPanelClosing] = useState(false);
   const [panelAnimationKey, setPanelAnimationKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isResumePending, setIsResumePending] = useState(false);
   const [hasUserStarted, setHasUserStarted] = useState(false);
   const [mode, setMode] = useState(DEFAULT_MUSIC_MODE);
   const [manualSelection, setManualSelection] = useState(INITIAL_MANUAL_SELECTION);
   const [playlistIndexes, setPlaylistIndexes] = useState(INITIAL_PLAYLIST_INDEXES);
+  const musicStateRef = useRef(null);
+
+  musicStateRef.current = {
+    mode,
+    manualSelection,
+    playlistIndexes,
+  };
 
   const pageMode = getPageMusicMode(pathname);
   const activeMode = mode === DEFAULT_MUSIC_MODE ? pageMode : manualSelection.mode;
@@ -126,6 +208,61 @@ export default function MusicControl() {
 
     playbackPositionsRef.current[currentSource] = audio.ended ? 0 : audio.currentTime;
   }, []);
+
+  const persistMusicState = useCallback((overrides = {}) => {
+    if (!hasRestoredMusicStateRef.current || typeof window === "undefined") {
+      return;
+    }
+
+    saveCurrentPosition();
+    const audio = audioRef.current;
+    const state = {
+      ...musicStateRef.current,
+      ...overrides,
+    };
+
+    try {
+      window.sessionStorage.setItem(MUSIC_STORAGE_KEY, JSON.stringify({
+        version: MUSIC_STORAGE_VERSION,
+        mode: state.mode,
+        manualSelection: state.manualSelection,
+        playlistIndexes: state.playlistIndexes,
+        playbackPositions: playbackPositionsRef.current,
+        wasPlaying: Boolean(
+          resumePendingRef.current || (audio && !audio.paused && !audio.ended),
+        ),
+      }));
+    } catch {
+      // Storage can be unavailable in privacy-restricted browsing contexts.
+    }
+  }, [saveCurrentPosition]);
+
+  const tryResumeMusic = useCallback(() => {
+    const audio = audioRef.current;
+
+    if (!audio || !resumePendingRef.current || document.body.classList.contains("loading-screen-open")) {
+      return;
+    }
+
+    audio.volume = DEFAULT_VOLUME;
+    let playPromise;
+
+    try {
+      playPromise = audio.play();
+    } catch {
+      return;
+    }
+
+    playPromise?.then(() => {
+      resumePendingRef.current = false;
+      setIsResumePending(false);
+      setHasUserStarted(true);
+      setIsPlaying(true);
+      persistMusicState();
+    }).catch(() => {
+      // Keep the pending state so the next user gesture can try again.
+    });
+  }, [persistMusicState]);
 
   const defaultMusicChoice = MUSIC_CHOICES[0];
 
@@ -168,6 +305,46 @@ export default function MusicControl() {
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    const savedState = readPersistedMusicState();
+
+    hasRestoredMusicStateRef.current = true;
+
+    if (!savedState) {
+      return;
+    }
+
+    playbackPositionsRef.current = savedState.playbackPositions;
+    setMode(savedState.mode);
+    setManualSelection(savedState.manualSelection);
+    setPlaylistIndexes(savedState.playlistIndexes);
+
+    if (savedState.wasPlaying) {
+      resumePendingRef.current = true;
+      shouldResumeRef.current = true;
+      setHasUserStarted(true);
+      setIsResumePending(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isResumePending) {
+      return undefined;
+    }
+
+    const handleUserGesture = () => {
+      tryResumeMusic();
+    };
+
+    document.addEventListener("pointerdown", handleUserGesture, true);
+    document.addEventListener("keydown", handleUserGesture, true);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleUserGesture, true);
+      document.removeEventListener("keydown", handleUserGesture, true);
+    };
+  }, [isResumePending, tryResumeMusic]);
+
   useEffect(() => () => {
     if (panelCloseTimerRef.current) {
       window.clearTimeout(panelCloseTimerRef.current);
@@ -180,6 +357,42 @@ export default function MusicControl() {
     });
     prefetchedTracksRef.current.clear();
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return undefined;
+    }
+
+    let lastPersistedAt = 0;
+    const persistDuringPlayback = () => {
+      const now = performance.now();
+
+      if (now - lastPersistedAt < 1000) {
+        return;
+      }
+
+      lastPersistedAt = now;
+      persistMusicState();
+    };
+    const persistWhenHidden = () => {
+      if (document.visibilityState === "hidden") {
+        persistMusicState();
+      }
+    };
+    const persistWhenPageHidden = () => persistMusicState();
+
+    audio.addEventListener("timeupdate", persistDuringPlayback);
+    window.addEventListener("pagehide", persistWhenPageHidden);
+    document.addEventListener("visibilitychange", persistWhenHidden);
+
+    return () => {
+      audio.removeEventListener("timeupdate", persistDuringPlayback);
+      window.removeEventListener("pagehide", persistWhenPageHidden);
+      document.removeEventListener("visibilitychange", persistWhenHidden);
+    };
+  }, [persistMusicState]);
 
   useEffect(() => {
     if (!hasUserStarted || mode !== DEFAULT_MUSIC_MODE || activePlaylist.length < 2) {
@@ -218,6 +431,9 @@ export default function MusicControl() {
       if (currentSourceRef.current) {
         playbackPositionsRef.current[currentSourceRef.current] = 0;
       }
+
+      resumePendingRef.current = false;
+      setIsResumePending(false);
 
       if (mode !== DEFAULT_MUSIC_MODE) {
         audio.currentTime = 0;
@@ -270,6 +486,7 @@ export default function MusicControl() {
         && previousActiveMode !== activeMode;
       const fadeDuration = isDefaultPageChange ? PAGE_MUSIC_FADE_DURATION : MUSIC_FADE_DURATION;
       const wasPlaying = shouldResumeRef.current || hasUserStarted || !audio.paused;
+      const wasResumeAttempt = resumePendingRef.current;
 
       transitionIdRef.current = transitionId;
       activeModeRef.current = activeMode;
@@ -282,7 +499,18 @@ export default function MusicControl() {
         audio.volume = DEFAULT_VOLUME;
 
         if (wasPlaying && audio.paused) {
-          audio.play().catch(() => setIsPlaying(false));
+          audio.play()
+            .then(() => {
+              resumePendingRef.current = false;
+              setIsResumePending(false);
+              setIsPlaying(true);
+            })
+            .catch(() => {
+              setIsPlaying(false);
+              if (wasResumeAttempt) {
+                setIsResumePending(true);
+              }
+            });
         } else {
           setIsPlaying(!audio.paused);
         }
@@ -341,11 +569,16 @@ export default function MusicControl() {
 
       try {
         await audio.play();
+        resumePendingRef.current = false;
+        setIsResumePending(false);
         setIsPlaying(true);
         await fadeAudioVolume(audio, DEFAULT_VOLUME, fadeDuration, transitionId, transitionIdRef);
       } catch {
         audio.volume = DEFAULT_VOLUME;
         setIsPlaying(false);
+        if (wasResumeAttempt) {
+          setIsResumePending(true);
+        }
       }
     };
 
@@ -356,29 +589,42 @@ export default function MusicControl() {
     const handleArchiveStart = () => {
       const audio = audioRef.current;
       const startingTrack = MUSIC_PLAYLISTS[pageMode][0];
+      const nextPlaylistIndexes = {
+        ...musicStateRef.current.playlistIndexes,
+        [pageMode]: 0,
+      };
 
       setMode(DEFAULT_MUSIC_MODE);
-      setPlaylistIndexes((currentIndexes) => ({
-        ...currentIndexes,
-        [pageMode]: 0,
-      }));
+      setPlaylistIndexes(nextPlaylistIndexes);
       shouldResumeRef.current = true;
+      resumePendingRef.current = false;
+      setIsResumePending(false);
       setHasUserStarted(true);
 
-      if (audio && currentSourceRef.current !== startingTrack.source) {
+      if (!audio) {
+        return;
+      }
+
+      if (currentSourceRef.current !== startingTrack.source) {
         setAudioSource(audio, startingTrack.source);
-        audio.loop = MUSIC_PLAYLISTS[pageMode].length === 1;
-        audio.volume = DEFAULT_VOLUME;
         currentSourceRef.current = startingTrack.source;
       }
 
-      audio?.play().catch(() => setIsPlaying(false));
+      audio.loop = MUSIC_PLAYLISTS[pageMode].length === 1;
+      audio.volume = DEFAULT_VOLUME;
+      audio.currentTime = 0;
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+          persistMusicState({ mode: DEFAULT_MUSIC_MODE, playlistIndexes: nextPlaylistIndexes });
+        })
+        .catch(() => setIsPlaying(false));
     };
 
     window.addEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
 
     return () => window.removeEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
-  }, [pageMode]);
+  }, [pageMode, persistMusicState]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -474,8 +720,12 @@ export default function MusicControl() {
 
     if (audio.paused) {
       try {
+        resumePendingRef.current = false;
+        setIsResumePending(false);
         setHasUserStarted(true);
         await audio.play();
+        setIsPlaying(true);
+        persistMusicState();
       } catch {
         setIsPlaying(false);
       }
@@ -483,7 +733,10 @@ export default function MusicControl() {
     }
 
     audio.pause();
+    resumePendingRef.current = false;
+    setIsResumePending(false);
     setHasUserStarted(false);
+    persistMusicState();
   };
 
   const suppressPointerFocus = (event) => {
@@ -495,27 +748,42 @@ export default function MusicControl() {
     const nextPlaylist = nextMode === DEFAULT_MUSIC_MODE
       ? MUSIC_PLAYLISTS[pageMode]
       : MUSIC_PLAYLISTS[nextMode];
-    const nextTrack = nextPlaylist[nextTrackIndex % nextPlaylist.length];
+    const playlistMode = nextMode === DEFAULT_MUSIC_MODE ? pageMode : nextMode;
+    const normalizedTrackIndex = normalizePlaylistIndex(playlistMode, nextTrackIndex);
+    const nextTrack = nextPlaylist[normalizedTrackIndex];
+    const nextPlaylistIndexes = {
+      ...musicStateRef.current.playlistIndexes,
+      ...(nextMode === DEFAULT_MUSIC_MODE
+        ? { [pageMode]: normalizedTrackIndex }
+        : {}),
+    };
+    const nextManualSelection = nextMode === DEFAULT_MUSIC_MODE
+      ? musicStateRef.current.manualSelection
+      : { mode: nextMode, trackIndex: normalizedTrackIndex };
 
     saveCurrentPosition();
+    resumePendingRef.current = false;
+    setIsResumePending(false);
     setMode(nextMode);
     if (nextMode === DEFAULT_MUSIC_MODE) {
-      setPlaylistIndexes((currentIndexes) => ({
-        ...currentIndexes,
-        [pageMode]: nextTrackIndex,
-      }));
+      setPlaylistIndexes(nextPlaylistIndexes);
     } else {
-      setManualSelection({
-        mode: nextMode,
-        trackIndex: nextTrackIndex,
-      });
+      setManualSelection(nextManualSelection);
     }
     shouldResumeRef.current = true;
+    setHasUserStarted(true);
+    persistMusicState({
+      mode: nextMode,
+      manualSelection: nextManualSelection,
+      playlistIndexes: nextPlaylistIndexes,
+    });
 
     if (audio && currentSourceRef.current === nextTrack.source) {
       shouldResumeRef.current = false;
       audio.loop = nextMode !== DEFAULT_MUSIC_MODE || nextPlaylist.length === 1;
-      audio.play().catch(() => setIsPlaying(false));
+      audio.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
       return;
     }
   };
@@ -696,7 +964,7 @@ export default function MusicControl() {
 
   return (
     <>
-      <div className={`music-control${isPlaying ? " music-control--playing" : ""}`}>
+      <div className={`music-control${isPlaying ? " music-control--playing" : ""}${isResumePending ? " music-control--resume-pending" : ""}`}>
         <img
           className="music-control__backdrop"
           src={chanFlowerBackdrop.src}
@@ -706,7 +974,7 @@ export default function MusicControl() {
         <button
           className="music-control__button"
           type="button"
-          aria-label="Open archive music panel"
+          aria-label={isResumePending ? "Resume archive music" : "Open archive music panel"}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           onClick={openPanel}
