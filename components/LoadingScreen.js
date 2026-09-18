@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import champaFlower from "../assets/champa-flower.avif";
 import petalWoosh from "../assets/sound-effects/petals-woosh-se.mp3";
 import { ARCHIVE_READY_EVENT } from "../lib/client-navigation.js";
@@ -11,6 +12,7 @@ import useSoundEffect from "./useSoundEffect.js";
 const REVEAL_FADE_DELAY = 950;
 const PETAL_SEQUENCE_DURATION = 1800;
 const BLOCKED_PAGE_SELECTORS = ["[data-site-header]", "main"];
+const AUTH_PATHS = new Set(["/login", "/signup"]);
 
 function getBlockedPageElements() {
   return BLOCKED_PAGE_SELECTORS
@@ -25,11 +27,16 @@ function setPageElementsInert(elements, isInert) {
 }
 
 export default function LoadingScreen() {
+  const pathname = usePathname();
+  const isAuthRoute = AUTH_PATHS.has(pathname);
   const [progress, setProgress] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isRevealActive, setIsRevealActive] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
+  // Authentication is the entry point for this flow. Keep those forms usable
+  // while the same asset preparation continues in the background; the gate is
+  // shown again as soon as a successful auth redirect reaches the home route.
+  const [isVisible, setIsVisible] = useState(() => !isAuthRoute);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadError, setLoadError] = useState(false);
   const revealTimersRef = useRef([]);
@@ -70,6 +77,14 @@ export default function LoadingScreen() {
   useEffect(() => () => {
     revealTimersRef.current.forEach(window.clearTimeout);
   }, []);
+
+  useEffect(() => {
+    revealTimersRef.current.forEach(window.clearTimeout);
+    revealTimersRef.current = [];
+    setIsRevealActive(false);
+    setIsExiting(false);
+    setIsVisible(!isAuthRoute);
+  }, [isAuthRoute]);
 
   useEffect(() => {
     if (!isVisible) {
