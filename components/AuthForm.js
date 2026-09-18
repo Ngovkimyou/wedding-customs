@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../lib/supabase/client.js";
+import InteractionLock from "./InteractionLock.js";
 
 const LOGIN_ERROR = "Invalid email or password";
 const SIGNUP_ERROR = "Unable to create account";
@@ -165,6 +166,7 @@ export default function AuthForm({ mode = "login" }) {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isLinkHovered, setIsLinkHovered] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const isSubmittingRef = useRef(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setIsMounted(true));
@@ -173,6 +175,11 @@ export default function AuthForm({ mode = "login" }) {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSubmittingRef.current) {
+      return;
+    }
+
     setError("");
     setMessage("");
 
@@ -186,7 +193,9 @@ export default function AuthForm({ mode = "login" }) {
       return;
     }
 
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
+    let keepInteractionLocked = false;
 
     try {
       const supabase = createClient();
@@ -206,6 +215,7 @@ export default function AuthForm({ mode = "login" }) {
       }
 
       if (isLogin || result.data.session) {
+        keepInteractionLocked = true;
         router.replace("/");
         return;
       }
@@ -214,7 +224,10 @@ export default function AuthForm({ mode = "login" }) {
     } catch {
       setError(isLogin ? LOGIN_ERROR : SIGNUP_ERROR);
     } finally {
-      setIsSubmitting(false);
+      if (!keepInteractionLocked) {
+        isSubmittingRef.current = false;
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -222,6 +235,7 @@ export default function AuthForm({ mode = "login" }) {
     <section
       style={{ ...styles.page, opacity: isMounted ? 1 : 0 }}
       aria-labelledby="auth-title"
+      aria-busy={isSubmitting}
     >
       <div
         style={{
@@ -229,6 +243,7 @@ export default function AuthForm({ mode = "login" }) {
           opacity: isMounted ? 1 : 0,
           transform: isMounted ? "translateY(0)" : "translateY(0.75rem)",
         }}
+        inert={isSubmitting}
       >
         <p style={styles.eyebrow}>{isLogin ? "Welcome back" : "Join the archive"}</p>
         <h1 id="auth-title" style={styles.title}>{isLogin ? "Log in" : "Sign up"}</h1>
@@ -242,6 +257,7 @@ export default function AuthForm({ mode = "login" }) {
           <label style={styles.field}>
             <span style={styles.label}>Email</span>
             <input
+              className="auth-form__input"
               style={{ ...styles.input, ...(focusedField === "email" ? styles.inputFocused : {}) }}
               type="email"
               name="email"
@@ -250,6 +266,7 @@ export default function AuthForm({ mode = "login" }) {
               onChange={(event) => setEmail(event.target.value)}
               onFocus={() => setFocusedField("email")}
               onBlur={() => setFocusedField("")}
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -257,6 +274,7 @@ export default function AuthForm({ mode = "login" }) {
           <label style={styles.field}>
             <span style={styles.label}>Password</span>
             <input
+              className="auth-form__input"
               style={{ ...styles.input, ...(focusedField === "password" ? styles.inputFocused : {}) }}
               type="password"
               name="password"
@@ -265,6 +283,7 @@ export default function AuthForm({ mode = "login" }) {
               onChange={(event) => setPassword(event.target.value)}
               onFocus={() => setFocusedField("password")}
               onBlur={() => setFocusedField("")}
+              disabled={isSubmitting}
               required
             />
           </label>
@@ -273,6 +292,7 @@ export default function AuthForm({ mode = "login" }) {
             <label style={styles.field}>
               <span style={styles.label}>Confirm password</span>
               <input
+                className="auth-form__input"
                 style={{ ...styles.input, ...(focusedField === "confirm-password" ? styles.inputFocused : {}) }}
                 type="password"
                 name="confirm-password"
@@ -281,6 +301,7 @@ export default function AuthForm({ mode = "login" }) {
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 onFocus={() => setFocusedField("confirm-password")}
                 onBlur={() => setFocusedField("")}
+                disabled={isSubmitting}
                 required
               />
             </label>
@@ -318,6 +339,9 @@ export default function AuthForm({ mode = "login" }) {
           </Link>
         </p>
       </div>
+      {isSubmitting ? (
+        <InteractionLock message={isLogin ? "Signing in…" : "Creating account…"} />
+      ) : null}
     </section>
   );
 }

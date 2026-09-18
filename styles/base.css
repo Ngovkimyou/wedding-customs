@@ -51,6 +51,24 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Keep browser-suggested account values in the archive palette instead of
+   applying the browser's bright autofill background and text colors. */
+.auth-form__input:-webkit-autofill,
+.auth-form__input:-webkit-autofill:hover,
+.auth-form__input:-webkit-autofill:focus,
+.auth-form__input:-webkit-autofill:active {
+  background-color: rgba(255, 252, 246, 0.78) !important;
+  -webkit-text-fill-color: var(--color-text) !important;
+  -webkit-box-shadow: 0 0 0 1000px rgba(255, 252, 246, 0.78) inset !important;
+  caret-color: var(--color-text);
+}
+
+.auth-form__input:-moz-autofill {
+  background-color: rgba(255, 252, 246, 0.78) !important;
+  color: var(--color-text) !important;
+  caret-color: var(--color-text);
+}
+
 :focus-visible {
   outline: 3px solid var(--color-gold-light);
   outline-offset: 4px;

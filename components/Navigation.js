@@ -28,7 +28,7 @@ function NavigationLinks() {
   ));
 }
 
-export default function Navigation() {
+export default function Navigation({ accountControls = null }) {
   const moreRef = useRef(null);
   const pathname = usePathname();
 
@@ -79,6 +79,7 @@ export default function Navigation() {
         </summary>
         <div className="site-navigation__menu">
           <NavigationLinks />
+          {accountControls}
         </div>
       </details>
     </nav>
