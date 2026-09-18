@@ -28,3 +28,6 @@ pnpm-debug.log*
 .vercel/
 .DS_Store
 Thumbs.db
+
+# Local env files
+.env.local
