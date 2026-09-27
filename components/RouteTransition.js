@@ -9,7 +9,7 @@ import useSoundEffect from "./useSoundEffect.js";
 
 const ABOUT_PATH = "/about";
 const ARCHIVE_RECORD_PATH = /^\/archive\/[^/]+$/;
-const PAGE_FADE_DURATION = 760;
+const PAGE_FADE_DURATION = 340;
 const ARCHIVE_RECORD_FADE_DURATION = 320;
 const ARCHIVE_RECORD_BACKGROUND_FADE_DURATION = 720;
 const ROUTE_SWAP_DELAY = 90;
