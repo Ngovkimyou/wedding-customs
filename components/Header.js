@@ -20,6 +20,15 @@ export default function Header() {
   const [user, setUser] = useState(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isSigningOutRef = useRef(false);
+  const signOutReleaseTimerRef = useRef(null);
+
+  const releaseSignOutLock = () => {
+    window.clearTimeout(signOutReleaseTimerRef.current);
+    signOutReleaseTimerRef.current = null;
+    isSigningOutRef.current = false;
+    setIsSigningOut(false);
+    setUser(null);
+  };
 
   useEffect(() => {
     const supabase = createClient();
@@ -58,18 +67,27 @@ export default function Header() {
       return;
     }
 
-    router.replace("/signup");
+    router.replace("/");
+    // Usually the pathname effect releases the lock after the route commits.
+    // The timer also covers logging out while already on the home page, where
+    // the pathname does not change.
+    signOutReleaseTimerRef.current = window.setTimeout(releaseSignOutLock, 900);
   };
 
   useEffect(() => {
-    if (!isAuthPath(pathname)) {
+    if (isAuthPath(pathname)) {
+      releaseSignOutLock();
       return;
     }
 
-    isSigningOutRef.current = false;
-    setIsSigningOut(false);
-    setUser(null);
+    if (isSigningOutRef.current && pathname === "/") {
+      releaseSignOutLock();
+    }
   }, [pathname]);
+
+  useEffect(() => () => {
+    window.clearTimeout(signOutReleaseTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!isSigningOut || isAuthPath(pathname)) {
@@ -81,15 +99,41 @@ export default function Header() {
       document.querySelector("main"),
     ].filter(Boolean);
     const previousInertValues = blockedElements.map((element) => element.inert);
+    const root = document.documentElement;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    const previousStyles = {
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyWidth: body.style.width,
+      rootOverflow: root.style.overflow,
+    };
+    const preventScroll = (event) => event.preventDefault();
 
     blockedElements.forEach((element) => {
       element.inert = true;
     });
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    root.style.overflow = "hidden";
+    document.addEventListener("wheel", preventScroll, { passive: false });
+    document.addEventListener("touchmove", preventScroll, { passive: false });
 
     return () => {
+      document.removeEventListener("wheel", preventScroll);
+      document.removeEventListener("touchmove", preventScroll);
       blockedElements.forEach((element, index) => {
         element.inert = previousInertValues[index];
       });
+      body.style.overflow = previousStyles.bodyOverflow;
+      body.style.position = previousStyles.bodyPosition;
+      body.style.top = previousStyles.bodyTop;
+      body.style.width = previousStyles.bodyWidth;
+      root.style.overflow = previousStyles.rootOverflow;
+      window.scrollTo(0, scrollY);
     };
   }, [isSigningOut, pathname]);
 

@@ -13,7 +13,7 @@ import HighlightedTitle from "./HighlightedTitle.js";
 import KhmerScriptText from "./KhmerScriptText.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 
-export default function ArchiveSearch({ entries = [] }) {
+export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
   const inputRef = useRef(null);
@@ -120,11 +120,21 @@ export default function ArchiveSearch({ entries = [] }) {
           ) : null}
         </div>
         <p className="archive-search__status" role="status">
-          {normalizedQuery
-            ? `${matches.length} ${matches.length === 1 ? "record" : "records"} found`
-            : "Start typing to search the archive."}
+          {dataStatus === "loading"
+            ? "Loading archive records…"
+            : dataStatus === "error"
+              ? "Search is temporarily unavailable. Please try again shortly."
+              : dataStatus === "empty"
+                ? "No archive records are available yet."
+                : normalizedQuery
+                  ? `${matches.length} ${matches.length === 1 ? "record" : "records"} found`
+                  : "Start typing to search the archive."}
         </p>
-        {normalizedQuery && matches.length === 0 ? (
+        {dataStatus === "error" ? (
+          <p className="archive-search__empty" role="alert">
+            The archive could not be loaded right now.
+          </p>
+        ) : normalizedQuery && matches.length === 0 ? (
           <p className="archive-search__empty">No match found for “{displayQuery}”.</p>
         ) : null}
         {matches.length === 0 ? (
@@ -144,7 +154,7 @@ export default function ArchiveSearch({ entries = [] }) {
               className="archive-search__result ornate-frame"
               href={`/archive/${entry.slug}?from=search`}
               prefetch={true}
-              key={entry.id}
+              key={entry.dbId ?? entry.id}
               ref={(element) => { resultRefs.current[index] = element; }}
               onKeyDown={(event) => handleResultKeyDown(event, index)}
             >

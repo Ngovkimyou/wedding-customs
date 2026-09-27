@@ -10,7 +10,7 @@ import {
   SEARCH_QUERY_MAX_LENGTH,
 } from "../lib/security.mjs";
 import { buildSecurityHeaders } from "../lib/security-policy.mjs";
-import { isAuthPath } from "../lib/auth-routes.mjs";
+import { isAuthPath, isPublicPath } from "../lib/auth-routes.mjs";
 import {
   CAPTCHA_FAILED_ERROR_MESSAGE,
   getAuthErrorMessage,
@@ -53,11 +53,16 @@ test("authentication errors do not reveal account existence", () => {
   );
 });
 
-test("only the login and sign-up routes are public auth routes", () => {
+test("auth and archive route boundaries are explicit", () => {
   assert.equal(isAuthPath("/login"), true);
   assert.equal(isAuthPath("/signup"), true);
   assert.equal(isAuthPath("/"), false);
   assert.equal(isAuthPath("/archive/how-my-parents-met"), false);
+  assert.equal(isPublicPath("/"), true);
+  assert.equal(isPublicPath("/search"), true);
+  assert.equal(isPublicPath("/about"), true);
+  assert.equal(isPublicPath("/archive/how-my-parents-met"), true);
+  assert.equal(isPublicPath("/admin"), false);
 });
 
 test("search input is bounded without changing normal text", () => {

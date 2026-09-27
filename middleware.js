@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
-import { isAuthPath } from "./lib/auth-routes.mjs";
+import { isAuthPath, isPublicPath } from "./lib/auth-routes.mjs";
 
 function copyResponseCookies(source, destination) {
   source.cookies.getAll().forEach((cookie) => destination.cookies.set(cookie));
@@ -33,8 +33,9 @@ export async function middleware(request) {
   const { data: { user } } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
   const onAuthPath = isAuthPath(pathname);
+  const onPublicPath = isPublicPath(pathname);
 
-  if (!user && !onAuthPath) {
+  if (!user && !onAuthPath && !onPublicPath) {
     const signupUrl = request.nextUrl.clone();
     signupUrl.pathname = "/signup";
     signupUrl.search = "";

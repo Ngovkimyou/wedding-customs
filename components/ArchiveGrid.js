@@ -11,7 +11,15 @@ import mobilePkaSlaGarland from "../assets/mobile-pka-sla-garland.avif";
 // the collection approaches the viewport.
 const INITIAL_CARD_COUNT = 1;
 
-export default function ArchiveGrid({ entries }) {
+export default function ArchiveGrid({ entries = [], status = "ready" }) {
+  const statusMessage = status === "loading"
+    ? "Loading archive records…"
+    : status === "error"
+      ? "The archive is temporarily unavailable. Please try again shortly."
+      : status === "empty"
+        ? "No archive records are available yet."
+        : "";
+
   return (
     <section className="archive-collection" aria-labelledby="collection-title">
       <SectionHeading
@@ -19,7 +27,11 @@ export default function ArchiveGrid({ entries }) {
         titleClassName="collection-title"
         id="collection-title"
         title="Preserved records, waiting to be opened."
-        count={`${String(entries.length).padStart(2, "0")} records`}
+        count={status === "loading"
+          ? "Loading"
+          : status === "error"
+            ? "Unavailable"
+            : `${String(entries.length).padStart(2, "0")} records`}
       >
         <p>
           Each record is a placeholder for an interview, photograph, memory, object, or tradition
@@ -30,15 +42,21 @@ export default function ArchiveGrid({ entries }) {
         <div className="archive-collection__body" aria-hidden="true" />
         <div className="archive-collection__body-inner">
           <DecorativeDivider compact loading="lazy" />
-          <div className="archive-grid">
-            {entries.map((entry, index) => (
-              <ArchiveCard
-                entry={entry}
-                eager={index < INITIAL_CARD_COUNT}
-                key={entry.id}
-              />
-            ))}
-          </div>
+          {statusMessage ? (
+            <p className="archive-collection__state" role={status === "error" ? "alert" : "status"}>
+              {statusMessage}
+            </p>
+          ) : (
+            <div className="archive-grid">
+              {entries.map((entry, index) => (
+                <ArchiveCard
+                  entry={entry}
+                  eager={index < INITIAL_CARD_COUNT}
+                  key={entry.dbId ?? entry.id}
+                />
+              ))}
+            </div>
+          )}
         </div>
         <picture className="archive-collection__garland" aria-hidden="true">
           <source media="(max-width: 640px)" srcSet={mobilePkaSlaGarland.src} />
