@@ -85,19 +85,14 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
                     <p className="archive-collection__group-eyebrow">Shared by contributors</p>
                     <h2 id="community-collection-title">Community Contributions</h2>
                   </div>
-                  <div className="archive-collection__group-actions">
-                    <span className="archive-collection__group-count">
-                      {String(communityEntries.length).padStart(2, "0")} {communityEntries.length === 1 ? "entry" : "entries"}
-                    </span>
-                    <Link
-                      aria-label="Contribute an entry"
-                      className="archive-collection__group-cta"
-                      href="/contribute"
-                      prefetch={true}
-                    >
-                      <span aria-hidden="true">+</span>
-                    </Link>
-                  </div>
+                  <Link
+                    aria-label="Contribute an entry"
+                    className="archive-collection__group-cta"
+                    href="/contribute"
+                    prefetch={true}
+                  >
+                    <span aria-hidden="true">+</span>
+                  </Link>
                 </header>
                 {communityEntries.length ? (
                   <div className="archive-grid">

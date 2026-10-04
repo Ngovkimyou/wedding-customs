@@ -6,6 +6,7 @@ import ArchiveDescription from "./ArchiveDescription.js";
 import ArchiveEntryImages from "./ArchiveEntryImages.js";
 import ArchiveMetadata from "./ArchiveMetadata.js";
 import ArchiveNavigation from "./ArchiveNavigation.js";
+import ArchiveOwnerActions from "./ArchiveOwnerActions.js";
 import ArchiveSwipeNavigation from "./ArchiveSwipeNavigation.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 import RelatedTopics from "./RelatedTopics.js";
@@ -27,6 +28,12 @@ export default function ArchiveEntry({ entry }) {
           <p className="eyebrow archive-entry__record-id" data-archive-dynamic="true">
             {entry.id}
           </p>
+          <ArchiveOwnerActions
+            entryId={entry.dbId}
+            ownerId={entry.ownerId}
+            slug={entry.slug}
+            title={entry.title}
+          />
         </div>
 
         <header className="archive-entry__header">

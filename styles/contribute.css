@@ -169,6 +169,30 @@
   line-height: 1.4;
 }
 
+.contribute-current-photo {
+  width: min(100%, 24rem);
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.45;
+}
+
+.contribute-current-photo img {
+  display: block;
+  width: 100%;
+  max-height: 15rem;
+  border: 1px solid var(--color-gold-muted);
+  background: #efe2ca;
+  object-fit: contain;
+}
+
+.contribute-current-photo figcaption {
+  margin-top: 0.35rem;
+}
+
 .contribute-form__row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

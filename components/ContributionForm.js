@@ -1,8 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { createArchiveEntry } from "../app/contribute/actions.js";
+import { createArchiveEntry, updateArchiveEntry } from "../app/contribute/actions.js";
 import { createClient } from "../lib/supabase/client.js";
 import {
   CAMBODIAN_PROVINCES,
@@ -50,11 +51,18 @@ function focusFirstInvalid(errors) {
   }
 }
 
-export default function ContributionForm() {
+export default function ContributionForm({
+  mode = "create",
+  entryId,
+  entrySlug,
+  initialValues,
+  existingThumbnailUrl = null,
+}) {
+  const isEditing = mode === "edit";
   const router = useRouter();
   const photoInputRef = useRef(null);
   const submittingRef = useRef(false);
-  const [fields, setFields] = useState(INITIAL_FIELDS);
+  const [fields, setFields] = useState(() => ({ ...INITIAL_FIELDS, ...initialValues }));
   const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
@@ -84,9 +92,11 @@ export default function ContributionForm() {
     const nextErrors = { ...validation.errors };
     const selectedPhoto = photoInputRef.current?.files?.[0] ?? photo;
 
-    if (!selectedPhoto) {
+    if (!selectedPhoto && !isEditing) {
       nextErrors.photo = "Choose a photograph to upload.";
-    } else if (selectedPhoto.size <= 0 || selectedPhoto.size > CONTRIBUTION_LIMITS.photoMaxBytes) {
+    } else if (selectedPhoto && (
+      selectedPhoto.size <= 0 || selectedPhoto.size > CONTRIBUTION_LIMITS.photoMaxBytes
+    )) {
       nextErrors.photo = "Choose an image that is no larger than 5 MB.";
     }
 
@@ -101,43 +111,53 @@ export default function ContributionForm() {
     setErrors({});
 
     try {
-      const photoHeader = new Uint8Array(await selectedPhoto.slice(0, 12).arrayBuffer());
-      const photoFormat = detectSupportedPhoto(photoHeader);
+      let storagePath = "";
+      if (selectedPhoto) {
+        const photoHeader = new Uint8Array(await selectedPhoto.slice(0, 12).arrayBuffer());
+        const photoFormat = detectSupportedPhoto(photoHeader);
 
-      if (!photoFormat) {
-        setErrors({ photo: "Use a valid JPEG, PNG, or WebP image." });
-        photoInputRef.current?.focus();
-        return;
-      }
+        if (!photoFormat) {
+          setErrors({ photo: "Use a valid JPEG, PNG, or WebP image." });
+          photoInputRef.current?.focus();
+          return;
+        }
 
-      const supabase = createClient();
-      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
-      if (sessionError) {
-        console.error("[contribute] Could not verify the contributor session.", sessionError);
-      }
-      if (!user) {
-        setMessage("Your session has expired. Please log in and try again.");
-        return;
-      }
+        const supabase = createClient();
+        const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+        if (sessionError) {
+          console.error("[contribute] Could not verify the contributor session.", sessionError);
+        }
+        if (!user) {
+          setMessage("Your session has expired. Please log in and try again.");
+          return;
+        }
 
-      const storagePath = `${user.id}/${createPhotoId()}.${photoFormat.extension}`;
-      const { error: uploadError } = await supabase.storage.from("photos").upload(
-        storagePath,
-        selectedPhoto,
-        { contentType: photoFormat.mimeType, upsert: false },
-      );
+        storagePath = `${user.id}/${createPhotoId()}.${photoFormat.extension}`;
+        const { error: uploadError } = await supabase.storage.from("photos").upload(
+          storagePath,
+          selectedPhoto,
+          { contentType: photoFormat.mimeType, upsert: false },
+        );
 
-      if (uploadError) {
-        console.error("[contribute] Photo upload failed.", uploadError);
-        setMessage("The photo could not be uploaded. Please try another image.");
-        return;
+        if (uploadError) {
+          console.error("[contribute] Photo upload failed.", uploadError);
+          setMessage("The photo could not be uploaded. Please try another image.");
+          return;
+        }
       }
 
       const formData = new FormData();
       Object.entries(validation.values).forEach(([field, value]) => formData.set(field, value));
-      formData.set("storagePath", storagePath);
+      if (isEditing) {
+        formData.set("entryId", entryId ?? "");
+      }
+      if (storagePath) {
+        formData.set("storagePath", storagePath);
+      }
 
-      const result = await createArchiveEntry(formData);
+      const result = isEditing
+        ? await updateArchiveEntry(formData)
+        : await createArchiveEntry(formData);
       if (!result?.ok) {
         if (result?.fieldErrors) {
           setErrors(result.fieldErrors);
@@ -147,7 +167,12 @@ export default function ContributionForm() {
         return;
       }
 
-      router.push(`/archive/${encodeURIComponent(result.slug)}`);
+      const destination = `/archive/${encodeURIComponent(result.slug || entrySlug)}`;
+      if (isEditing) {
+        router.replace(destination);
+      } else {
+        router.push(destination);
+      }
     } catch (error) {
       console.error("[contribute] Submission could not be completed.", error);
       setMessage("The entry could not be saved. Please check your connection and try again.");
@@ -241,7 +266,24 @@ export default function ContributionForm() {
       </div>
 
       <label className="contribute-field contribute-field--photo" htmlFor="contribute-photo">
-        <span>{FIELD_LABELS.photo}<span className="contribute-required">Required</span></span>
+        <span>
+          {isEditing ? "Replace photograph" : FIELD_LABELS.photo}
+          <span className={isEditing ? "contribute-optional" : "contribute-required"}>
+            {isEditing ? "Optional" : "Required"}
+          </span>
+        </span>
+        {isEditing && existingThumbnailUrl ? (
+          <figure className="contribute-current-photo">
+            <Image
+              src={existingThumbnailUrl}
+              alt={`Current photograph for ${fields.title_en}`}
+              width={800}
+              height={560}
+              unoptimized
+            />
+            <figcaption>Current photograph. Choose a new file only if you want to replace it.</figcaption>
+          </figure>
+        ) : null}
         <input
           ref={photoInputRef}
           id="contribute-photo"
@@ -252,10 +294,12 @@ export default function ContributionForm() {
           aria-invalid={Boolean(errors.photo)}
           aria-describedby={errors.photo ? "contribute-photo-error" : "contribute-photo-hint"}
           onChange={updatePhoto}
-          required
+          required={!isEditing}
         />
         <span className="contribute-field__hint" id="contribute-photo-hint">
-          JPEG, PNG, or WebP · 5 MB maximum. Photos are publicly viewable with the archive entry.
+          {isEditing
+            ? "Choose a JPEG, PNG, or WebP photo up to 5 MB. Leave this empty to keep the current photograph."
+            : "JPEG, PNG, or WebP · 5 MB maximum. Photos are publicly viewable with the archive entry."}
         </span>
         {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{errors.photo}</small> : null}
       </label>
@@ -265,7 +309,9 @@ export default function ContributionForm() {
       </div>
 
       <button className="contribute-submit" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Uploading and saving…" : "Add to the archive"}
+        {isSubmitting
+          ? (isEditing ? "Saving changes…" : "Uploading and saving…")
+          : (isEditing ? "Save changes" : "Add to the archive")}
       </button>
     </form>
   );

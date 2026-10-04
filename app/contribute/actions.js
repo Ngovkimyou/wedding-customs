@@ -3,48 +3,80 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
 import {
-  CONTRIBUTION_LIMITS,
   CONTRIBUTION_FIELDS,
-  detectSupportedPhoto,
   validateContributionFields,
 } from "../../lib/contribution-validation.mjs";
 import { createClient } from "../../lib/supabase/server.js";
+import { deleteOwnedContributionEntry } from "../../lib/supabase/delete-contribution-entry.mjs";
+import {
+  removeOwnedContributionPhotoIfUnused,
+  removeUnreferencedContributionPhoto,
+  verifyContributionPhoto,
+} from "../../lib/supabase/contribution-photo-storage.mjs";
 
-const PHOTO_BUCKET = "photos";
 const GENERIC_SAVE_ERROR = "The entry could not be saved. Please try again.";
-const UUID_FILENAME_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(?:jpg|png|webp)$/iu;
+const GENERIC_UPDATE_ERROR = "That change wasn't saved.";
+const SESSION_ERROR = "Your session has expired. Please log in and try again.";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+const ARCHIVE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+
+function getTextField(formData, name) {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : "";
+}
 
 function getTextFields(formData) {
   return Object.fromEntries(
-    CONTRIBUTION_FIELDS.map((field) => {
-      const value = formData.get(field);
-      return [field, typeof value === "string" ? value : ""];
-    }),
+    CONTRIBUTION_FIELDS.map((field) => [field, getTextField(formData, field)]),
   );
 }
 
-function getUserPhotoFilename(storagePath, userId) {
-  if (typeof storagePath !== "string") {
+async function getAuthenticatedUser(supabase) {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error("[archive-entry] Could not validate the current session.", error);
+    }
+    return user ?? null;
+  } catch (error) {
+    console.error("[archive-entry] Could not validate the current session.", error);
     return null;
   }
-
-  const separator = storagePath.indexOf("/");
-  if (separator < 0 || storagePath.slice(0, separator) !== userId) {
-    return null;
-  }
-
-  const filename = storagePath.slice(separator + 1);
-  if (filename.includes("/") || !UUID_FILENAME_PATTERN.test(filename)) {
-    return null;
-  }
-
-  return filename;
 }
 
-async function removeUploadedPhoto(supabase, storagePath) {
-  const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([storagePath]);
-  if (error) {
-    console.error("[contribute] Could not remove an unreferenced uploaded photo.", error);
+async function getActionClient(operation) {
+  try {
+    return await createClient();
+  } catch (error) {
+    console.error(`[archive-entry] Could not initialize the ${operation} client.`, error);
+    return null;
+  }
+}
+
+async function getActionContext(operation, failureMessage) {
+  const supabase = await getActionClient(operation);
+  if (!supabase) {
+    return { ok: false, message: failureMessage };
+  }
+
+  const user = await getAuthenticatedUser(supabase);
+  if (!user) {
+    return { ok: false, message: SESSION_ERROR };
+  }
+
+  return { ok: true, supabase, user };
+}
+
+function revalidateArchive(slug) {
+  try {
+    revalidateTag("public-archive-entries");
+    revalidatePath("/", "page");
+    revalidatePath("/search", "page");
+    if (typeof slug === "string" && ARCHIVE_SLUG_PATTERN.test(slug)) {
+      revalidatePath(`/archive/${slug}`, "page");
+    }
+  } catch (error) {
+    console.error("[archive-entry] Saved entry cache could not be refreshed.", error);
   }
 }
 
@@ -67,89 +99,182 @@ export async function createArchiveEntry(formData) {
     return { ok: false, fieldErrors, message: "Please fix the highlighted fields." };
   }
 
-  const supabase = await createClient();
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError) {
-    console.error("[contribute] Could not validate the contributor session.", authError);
-  }
-  if (!user) {
-    return { ok: false, message: "Your session has expired. Please log in and try again." };
-  }
+  const context = await getActionContext("create", GENERIC_SAVE_ERROR);
+  if (!context.ok) return context;
+  const { supabase, user } = context;
 
   const storagePath = formData.get("storagePath");
-  const filename = getUserPhotoFilename(storagePath, user.id);
-  if (!filename) {
-    return { ok: false, fieldErrors: { photo: "Please choose and upload a valid photograph." } };
-  }
-
-  let mayHaveInserted = false;
+  let insertMayHaveSucceeded = false;
 
   try {
-    const { data: photoBlob, error: downloadError } = await supabase.storage
-      .from(PHOTO_BUCKET)
-      .download(storagePath);
-
-    if (downloadError) {
-      console.error("[contribute] Uploaded photo could not be verified.", downloadError);
-      await removeUploadedPhoto(supabase, storagePath);
-      return { ok: false, fieldErrors: { photo: "The uploaded photo could not be verified. Please upload it again." } };
+    const photo = await verifyContributionPhoto(supabase, storagePath, user.id);
+    if (!photo.ok) {
+      return photo;
     }
 
-    if (!photoBlob || photoBlob.size <= 0 || photoBlob.size > CONTRIBUTION_LIMITS.photoMaxBytes) {
-      await removeUploadedPhoto(supabase, storagePath);
-      return { ok: false, fieldErrors: { photo: "Choose an image that is no larger than 5 MB." } };
-    }
-
-    const signature = new Uint8Array(await photoBlob.slice(0, 12).arrayBuffer());
-    const photoFormat = detectSupportedPhoto(signature);
-    const extension = filename.split(".").at(-1)?.toLowerCase();
-
-    if (!photoFormat || photoFormat.extension !== extension) {
-      await removeUploadedPhoto(supabase, storagePath);
-      return { ok: false, fieldErrors: { photo: "Use a valid JPEG, PNG, or WebP image." } };
-    }
-
-    const { data: { publicUrl } } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(storagePath);
     const entry = {
       owner: user.id,
       slug: makeSlug(values.title_en),
       title_en: values.title_en,
       title_kh: values.title_kh,
-      thumbnail_path: publicUrl,
+      thumbnail_path: photo.publicUrl,
       description: values.description,
       ...(values.period_label ? { period_label: values.period_label } : {}),
       ...(values.location ? { location: values.location } : {}),
     };
 
-    mayHaveInserted = true;
-    const { data, error: insertError } = await supabase
+    insertMayHaveSucceeded = true;
+    const { data, error } = await supabase
       .from("entries")
       .insert(entry)
       .select("slug")
       .single();
 
-    if (insertError) {
-      mayHaveInserted = false;
-      console.error("[contribute] Entry insert failed.", insertError);
-      await removeUploadedPhoto(supabase, storagePath);
+    if (error) {
+      insertMayHaveSucceeded = false;
+      console.error("[archive-entry] Entry insert failed.", error);
+      await removeUnreferencedContributionPhoto(supabase, storagePath);
       return { ok: false, message: GENERIC_SAVE_ERROR };
     }
 
-    try {
-      revalidateTag("public-archive-entries");
-      revalidatePath("/", "page");
-      revalidatePath("/search", "page");
-      revalidatePath(`/archive/${data.slug}`, "page");
-    } catch (revalidationError) {
-      console.error("[contribute] Saved entry cache could not be refreshed.", revalidationError);
+    if (!data?.slug) {
+      insertMayHaveSucceeded = false;
+      console.error("[archive-entry] Supabase returned no inserted entry.");
+      await removeUnreferencedContributionPhoto(supabase, storagePath);
+      return { ok: false, message: GENERIC_SAVE_ERROR };
     }
 
+    revalidateArchive(data.slug);
     return { ok: true, slug: data.slug };
   } catch (error) {
-    console.error("[contribute] Submission failed.", error);
-    if (!mayHaveInserted) {
-      await removeUploadedPhoto(supabase, storagePath);
+    console.error("[archive-entry] Entry creation failed.", error);
+    if (!insertMayHaveSucceeded) {
+      await removeUnreferencedContributionPhoto(supabase, storagePath);
     }
     return { ok: false, message: GENERIC_SAVE_ERROR };
+  }
+}
+
+export async function updateArchiveEntry(formData) {
+  const { values, errors: fieldErrors } = validateContributionFields(getTextFields(formData));
+  if (Object.keys(fieldErrors).length) {
+    return { ok: false, fieldErrors, message: "Please fix the highlighted fields." };
+  }
+
+  const entryId = getTextField(formData, "entryId");
+  if (!UUID_PATTERN.test(entryId)) {
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
+  }
+
+  const context = await getActionContext("update", GENERIC_UPDATE_ERROR);
+  if (!context.ok) return context;
+  const { supabase, user } = context;
+
+  const rawStoragePath = formData.get("storagePath");
+  if (rawStoragePath !== null && typeof rawStoragePath !== "string") {
+    return { ok: false, fieldErrors: { photo: "Please choose a valid photograph." } };
+  }
+
+  const storagePath = typeof rawStoragePath === "string" ? rawStoragePath.trim() : "";
+  let photo = null;
+  if (storagePath) {
+    photo = await verifyContributionPhoto(supabase, storagePath, user.id);
+    if (!photo.ok) {
+      return photo;
+    }
+  }
+
+  let previousPhotoUrl = null;
+  if (photo) {
+    try {
+      const { data, error } = await supabase
+        .from("entries")
+        .select("thumbnail_path")
+        .eq("id", entryId)
+        .eq("owner", user.id)
+        .maybeSingle();
+
+      if (error || !data) {
+        if (error) {
+          console.error("[archive-entry] Could not read the previous photograph.", error);
+        }
+        await removeUnreferencedContributionPhoto(supabase, storagePath);
+        return { ok: false, message: GENERIC_UPDATE_ERROR };
+      }
+      previousPhotoUrl = data.thumbnail_path ?? null;
+    } catch (error) {
+      console.error("[archive-entry] Could not read the previous photograph.", error);
+      await removeUnreferencedContributionPhoto(supabase, storagePath);
+      return { ok: false, message: GENERIC_UPDATE_ERROR };
+    }
+  }
+
+  const updates = {
+    title_en: values.title_en,
+    title_kh: values.title_kh,
+    description: values.description,
+    period_label: values.period_label || null,
+    location: values.location || null,
+    ...(photo ? { thumbnail_path: photo.publicUrl } : {}),
+  };
+
+  let updateMayHaveSucceeded = false;
+  try {
+    updateMayHaveSucceeded = true;
+    const { data, error } = await supabase
+      .from("entries")
+      .update(updates)
+      .eq("id", entryId)
+      .eq("owner", user.id)
+      .select("id, slug")
+      .maybeSingle();
+
+    if (error) {
+      updateMayHaveSucceeded = false;
+      console.error("[archive-entry] Entry update failed.", error);
+      if (storagePath) await removeUnreferencedContributionPhoto(supabase, storagePath);
+      return { ok: false, message: GENERIC_UPDATE_ERROR };
+    }
+
+    if (!data) {
+      updateMayHaveSucceeded = false;
+      console.error("[archive-entry] Supabase returned no updated row; RLS may have refused the update.");
+      if (storagePath) await removeUnreferencedContributionPhoto(supabase, storagePath);
+      return { ok: false, message: GENERIC_UPDATE_ERROR };
+    }
+
+    revalidateArchive(data.slug);
+    if (previousPhotoUrl && previousPhotoUrl !== photo?.publicUrl) {
+      await removeOwnedContributionPhotoIfUnused(supabase, previousPhotoUrl, user.id);
+    }
+    return { ok: true, slug: data.slug };
+  } catch (error) {
+    console.error("[archive-entry] Entry update failed.", error);
+    if (!updateMayHaveSucceeded && storagePath) {
+      await removeUnreferencedContributionPhoto(supabase, storagePath);
+    }
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
+  }
+}
+
+export async function deleteArchiveEntry(entryId) {
+  if (typeof entryId !== "string" || !UUID_PATTERN.test(entryId)) {
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
+  }
+
+  const context = await getActionContext("delete", GENERIC_UPDATE_ERROR);
+  if (!context.ok) return context;
+
+  try {
+    const result = await deleteOwnedContributionEntry(context.supabase, entryId, context.user.id);
+    if (!result.ok) {
+      return { ok: false, message: GENERIC_UPDATE_ERROR };
+    }
+
+    revalidateArchive(result.slug);
+    return { ok: true };
+  } catch (error) {
+    console.error("[archive-entry] Entry deletion failed.", error);
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
   }
 }

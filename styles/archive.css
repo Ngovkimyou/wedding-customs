@@ -212,13 +212,6 @@
   white-space: nowrap;
 }
 
-.archive-collection__group-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: clamp(0.5rem, 1.5vw, 1rem);
-}
-
 .archive-collection__group-divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -747,14 +740,77 @@
 
 .archive-entry__topbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: clamp(0.65rem, 2vw, 1.25rem);
 }
 
 .archive-entry__record-id {
   margin: 0;
+  text-align: center;
+}
+
+.archive-entry__owner-actions {
+  display: flex;
+  grid-column: 3;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  color: var(--color-gold-light);
+  font-family: var(--font-meta);
+  font-size: var(--type-meta);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.archive-entry__owner-action {
+  padding: 0.25rem 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  text-underline-offset: 0.2em;
+  transition: color 160ms ease;
+}
+
+.archive-entry__owner-action:hover,
+.archive-entry__owner-action:focus-visible {
+  color: var(--color-on-dark);
+  text-decoration: underline;
+}
+
+.archive-entry__owner-action:focus-visible {
+  outline: 2px solid var(--color-gold-light);
+  outline-offset: 3px;
+}
+
+.archive-entry__owner-action--delete {
+  color: #d38b8d;
+}
+
+.archive-entry__owner-action--delete:hover,
+.archive-entry__owner-action--delete:focus-visible {
+  color: #ffc2c2;
+}
+
+.archive-entry__owner-pending {
+  color: var(--color-muted);
+  font-size: 0.85em;
+}
+
+.archive-entry__owner-message {
+  grid-column: 1 / -1;
+  justify-self: end;
+  margin: 0;
+  color: #ffc2c2;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  letter-spacing: normal;
   text-align: right;
+  text-transform: none;
 }
 
 .archive-entry__title-frame {
@@ -2043,6 +2099,14 @@
   .about-page,
   .not-found {
     padding: 1.45rem 1.15rem;
+  }
+
+  .archive-entry__topbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .archive-entry__owner-actions {
+    grid-column: 1 / -1;
   }
 
   .archive-entry {
