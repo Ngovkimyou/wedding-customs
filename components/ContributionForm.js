@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createArchiveEntry, updateArchiveEntry } from "../app/contribute/actions.js";
 import { createClient } from "../lib/supabase/client.js";
+import { countCodePoints } from "../lib/security.mjs";
 import {
   CAMBODIAN_PROVINCES,
   CONTRIBUTION_LIMITS,
@@ -16,6 +17,7 @@ import {
 const INITIAL_FIELDS = {
   title_en: "",
   title_kh: "",
+  summary: "",
   description: "",
   period_label: "",
   location: "",
@@ -24,11 +26,24 @@ const INITIAL_FIELDS = {
 const FIELD_LABELS = {
   title_en: "English title",
   title_kh: "Khmer title",
+  summary: "Summary",
   description: "Description",
   period_label: "Period",
   location: "Location",
   photo: "Photograph",
 };
+
+function FieldLabel({ children, required = false }) {
+  return (
+    <span className="contribute-field__label">
+      <span className="contribute-field__label-text">
+        {children}
+        {required ? <span className="contribute-required" aria-hidden="true">*</span> : null}
+      </span>
+      {!required ? <span className="contribute-optional">Optional</span> : null}
+    </span>
+  );
+}
 
 function createPhotoId() {
   if (window.crypto?.randomUUID) {
@@ -44,7 +59,9 @@ function createPhotoId() {
 }
 
 function focusFirstInvalid(errors) {
-  const firstField = ["title_en", "title_kh", "photo", "description", "period_label", "location"]
+  const firstField = [
+    "title_en", "title_kh", "summary", "description", "period_label", "location", "photo",
+  ]
     .find((field) => errors[field]);
   if (firstField) {
     document.getElementById(`contribute-${firstField}`)?.focus();
@@ -97,7 +114,7 @@ export default function ContributionForm({
     } else if (selectedPhoto && (
       selectedPhoto.size <= 0 || selectedPhoto.size > CONTRIBUTION_LIMITS.photoMaxBytes
     )) {
-      nextErrors.photo = "Choose an image that is no larger than 5 MB.";
+      nextErrors.photo = "Choose an image that is no larger than 10 MB.";
     }
 
     if (Object.keys(nextErrors).length) {
@@ -113,11 +130,15 @@ export default function ContributionForm({
     try {
       let storagePath = "";
       if (selectedPhoto) {
-        const photoHeader = new Uint8Array(await selectedPhoto.slice(0, 12).arrayBuffer());
+        const photoHeader = new Uint8Array(await selectedPhoto.slice(0, 64).arrayBuffer());
         const photoFormat = detectSupportedPhoto(photoHeader);
+        const declaredMimeType = selectedPhoto.type.toLowerCase();
+        const isMimeTypeCompatible = !declaredMimeType
+          || declaredMimeType === photoFormat?.mimeType
+          || (photoFormat?.extension === "jpg" && declaredMimeType === "image/jpg");
 
-        if (!photoFormat) {
-          setErrors({ photo: "Use a valid JPEG, PNG, or WebP image." });
+        if (!photoFormat || !isMimeTypeCompatible) {
+          setErrors({ photo: "Use a JPEG, PNG, WebP, or AVIF photo with a matching file type." });
           photoInputRef.current?.focus();
           return;
         }
@@ -195,7 +216,7 @@ export default function ContributionForm({
   return (
     <form className="contribute-form" onSubmit={handleSubmit} noValidate aria-busy={isSubmitting}>
       <label className="contribute-field" htmlFor="contribute-title_en">
-        <span>{FIELD_LABELS.title_en}<span className="contribute-required">Required</span></span>
+        <FieldLabel required>{FIELD_LABELS.title_en}</FieldLabel>
         <input
           {...getFieldProps("title_en")}
           type="text"
@@ -209,7 +230,7 @@ export default function ContributionForm({
       </label>
 
       <label className="contribute-field" htmlFor="contribute-title_kh">
-        <span>{FIELD_LABELS.title_kh}<span className="contribute-required">Required</span></span>
+        <FieldLabel required>{FIELD_LABELS.title_kh}</FieldLabel>
         <input
           {...getFieldProps("title_kh")}
           type="text"
@@ -221,8 +242,22 @@ export default function ContributionForm({
         {errors.title_kh ? <small className="contribute-field__error" id="contribute-title_kh-error">{errors.title_kh}</small> : null}
       </label>
 
+      <label className="contribute-field" htmlFor="contribute-summary">
+        <FieldLabel>{FIELD_LABELS.summary}</FieldLabel>
+        <input
+          {...getFieldProps("summary")}
+          type="text"
+          maxLength={CONTRIBUTION_LIMITS.summaryMax}
+          placeholder="A short preview of the story"
+        />
+        <span className="contribute-field__hint">
+          {countCodePoints(fields.summary)}/{CONTRIBUTION_LIMITS.summaryMax} characters
+        </span>
+        {errors.summary ? <small className="contribute-field__error" id="contribute-summary-error">{errors.summary}</small> : null}
+      </label>
+
       <label className="contribute-field" htmlFor="contribute-description">
-        <span>{FIELD_LABELS.description}<span className="contribute-required">Required</span></span>
+        <FieldLabel required>{FIELD_LABELS.description}</FieldLabel>
         <textarea
           {...getFieldProps("description")}
           rows={7}
@@ -231,13 +266,13 @@ export default function ContributionForm({
           placeholder="Write the story or tradition you want to preserve."
           required
         />
-        <span className="contribute-field__hint">{Array.from(fields.description).length}/{CONTRIBUTION_LIMITS.descriptionMax} characters</span>
+        <span className="contribute-field__hint">{countCodePoints(fields.description)}/{CONTRIBUTION_LIMITS.descriptionMax} characters</span>
         {errors.description ? <small className="contribute-field__error" id="contribute-description-error">{errors.description}</small> : null}
       </label>
 
       <div className="contribute-form__row">
         <label className="contribute-field" htmlFor="contribute-period_label">
-          <span>{FIELD_LABELS.period}<span className="contribute-optional">Optional</span></span>
+          <FieldLabel>{FIELD_LABELS.period_label}</FieldLabel>
           <input
             {...getFieldProps("period_label")}
             type="text"
@@ -249,7 +284,7 @@ export default function ContributionForm({
         </label>
 
         <label className="contribute-field" htmlFor="contribute-location">
-          <span>{FIELD_LABELS.location}<span className="contribute-optional">Optional</span></span>
+          <FieldLabel>{FIELD_LABELS.location}</FieldLabel>
           <input
             {...getFieldProps("location")}
             type="text"
@@ -263,15 +298,13 @@ export default function ContributionForm({
           </datalist>
           {errors.location ? <small className="contribute-field__error" id="contribute-location-error">{errors.location}</small> : null}
         </label>
+
       </div>
 
       <label className="contribute-field contribute-field--photo" htmlFor="contribute-photo">
-        <span>
+        <FieldLabel required={!isEditing}>
           {isEditing ? "Replace photograph" : FIELD_LABELS.photo}
-          <span className={isEditing ? "contribute-optional" : "contribute-required"}>
-            {isEditing ? "Optional" : "Required"}
-          </span>
-        </span>
+        </FieldLabel>
         {isEditing && existingThumbnailUrl ? (
           <figure className="contribute-current-photo">
             <Image
@@ -289,18 +322,20 @@ export default function ContributionForm({
           id="contribute-photo"
           name="photo"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/avif"
           disabled={isSubmitting}
           aria-invalid={Boolean(errors.photo)}
-          aria-describedby={errors.photo ? "contribute-photo-error" : "contribute-photo-hint"}
+          aria-describedby={errors.photo
+            ? "contribute-photo-error"
+            : isEditing ? "contribute-photo-hint" : undefined}
           onChange={updatePhoto}
           required={!isEditing}
         />
-        <span className="contribute-field__hint" id="contribute-photo-hint">
-          {isEditing
-            ? "Choose a JPEG, PNG, or WebP photo up to 5 MB. Leave this empty to keep the current photograph."
-            : "JPEG, PNG, or WebP · 5 MB maximum. Photos are publicly viewable with the archive entry."}
-        </span>
+        {isEditing ? (
+          <span className="contribute-field__hint" id="contribute-photo-hint">
+            Choose a JPEG, PNG, WebP, or AVIF photo up to 10 MB. Leave this empty to keep the current photograph.
+          </span>
+        ) : null}
         {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{errors.photo}</small> : null}
       </label>
 

@@ -1479,6 +1479,7 @@
   margin: 0.35rem 0 0;
   color: var(--color-muted);
   font-size: var(--type-value);
+  overflow-wrap: anywhere;
 }
 
 .archive-entry__related-grid {

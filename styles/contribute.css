@@ -66,11 +66,18 @@
   letter-spacing: 0.04em;
 }
 
-.contribute-field > span:first-child {
+.contribute-field__label {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: 0.8rem;
+}
+
+.contribute-field__label-text {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 0.12rem;
 }
 
 .contribute-required,
@@ -84,6 +91,9 @@
 
 .contribute-required {
   color: var(--color-red);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .contribute-field input,
@@ -195,7 +205,7 @@
 
 .contribute-form__row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -283,6 +293,12 @@
 
   .contribute-submit {
     width: 100%;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .contribute-form__row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

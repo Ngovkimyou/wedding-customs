@@ -1,4 +1,6 @@
 import test from "node:test";
+import { readdir, readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import {
   countCodePoints,
@@ -20,6 +22,19 @@ import {
 
 function getHeader(headers, key) {
   return headers.find((header) => header.key === key)?.value;
+}
+
+async function getSourceFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nestedFiles = await Promise.all(entries.map(async (entry) => {
+    const entryPath = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) {
+      return getSourceFiles(entryPath);
+    }
+    return /\.(?:js|jsx|mjs)$/u.test(entry.name) ? [entryPath] : [];
+  }));
+
+  return nestedFiles.flat();
 }
 
 test("auth input validation keeps Unicode passwords and rejects unbounded input", () => {
@@ -87,6 +102,23 @@ test("production security headers protect framing, MIME, referrers and transport
   assert.equal(getHeader(headers, "X-Frame-Options"), "SAMEORIGIN");
   assert.equal(getHeader(headers, "Referrer-Policy"), "strict-origin-when-cross-origin");
   assert.match(getHeader(headers, "Strict-Transport-Security"), /max-age=31536000/u);
+});
+
+test("application source does not inject user-controlled strings as raw HTML", async () => {
+  const projectRoot = new URL("../", import.meta.url);
+  const sourceFiles = (await Promise.all(["app", "components", "lib"].map((directory) => (
+    getSourceFiles(fileURLToPath(new URL(`${directory}/`, projectRoot)))
+  )))).flat();
+  const rawHtmlSink = /\bdangerouslySetInnerHTML\b|\.innerHTML\s*=/u;
+  const unsafeFiles = [];
+
+  for (const file of sourceFiles) {
+    if (rawHtmlSink.test(await readFile(file, "utf8"))) {
+      unsafeFiles.push(file);
+    }
+  }
+
+  assert.deepEqual(unsafeFiles, []);
 });
 
 test("development headers do not force HSTS and allow the local toolchain", () => {

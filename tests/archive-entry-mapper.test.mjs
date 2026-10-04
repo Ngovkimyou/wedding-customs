@@ -16,6 +16,7 @@ test("Supabase rows map to the existing archive card/search projection", () => {
       description: "First paragraph.\n\nSecond paragraph.",
       period_label: "2003",
       location: "Phnom Penh",
+      author_email: null,
       interview_date: "2026-08-15",
       created_at: "2026-09-27T00:00:00Z",
     },
@@ -32,7 +33,19 @@ test("Supabase rows map to the existing archive card/search projection", () => {
   ]);
   assert.equal(entry.content, "First paragraph.\n\nSecond paragraph.");
   assert.equal(entry.descriptionBlocks.at(-1).sectionTitle, "Summary");
-  assert.equal(entry.interviewDate, "2026-08-15");
+  assert.equal(entry.interviewDate, "15/08/26");
+});
+
+test("community records map their registration email for the author note", () => {
+  const entry = mapSupabaseEntry({
+    slug: "community-family-story",
+    title_en: "A family story",
+    title_kh: "រឿងគ្រួសារ",
+    author_email: "contributor@example.com",
+  });
+
+  assert.equal(entry.id, "COMMUNITY ENTRY");
+  assert.equal(entry.authorEmail, "contributor@example.com");
 });
 
 test("placeholder descriptions are not indexed and unknown records get stable labels", () => {

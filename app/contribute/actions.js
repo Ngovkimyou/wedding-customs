@@ -117,6 +117,9 @@ export async function createArchiveEntry(formData) {
       slug: makeSlug(values.title_en),
       title_en: values.title_en,
       title_kh: values.title_kh,
+      summary: values.summary || null,
+      // The database trigger copies the authenticated account email into the
+      // public author field; never accept it from form data.
       thumbnail_path: photo.publicUrl,
       description: values.description,
       ...(values.period_label ? { period_label: values.period_label } : {}),
@@ -212,6 +215,7 @@ export async function updateArchiveEntry(formData) {
   const updates = {
     title_en: values.title_en,
     title_kh: values.title_kh,
+    summary: values.summary || null,
     description: values.description,
     period_label: values.period_label || null,
     location: values.location || null,

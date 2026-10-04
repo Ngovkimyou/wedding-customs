@@ -22,7 +22,12 @@ async function withConsoleErrorsMuted(callback) {
   }
 }
 
-function makeSupabase({ references = [], lookupError = null, removeError = null } = {}) {
+function makeSupabase({
+  references = [],
+  lookupError = null,
+  removeError = null,
+  photoBlob = new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0x00])]),
+} = {}) {
   const calls = [];
   const query = {
     select(...args) { calls.push(["select", ...args]); return this; },
@@ -52,7 +57,7 @@ function makeSupabase({ references = [], lookupError = null, removeError = null 
           },
           async download(path) {
             calls.push(["download", path]);
-            return { data: new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0x00])]), error: null };
+            return { data: photoBlob, error: null };
           },
         };
       },
@@ -63,6 +68,10 @@ function makeSupabase({ references = [], lookupError = null, removeError = null 
 
 test("photo URL parsing only accepts a supported photo in the owner's bucket folder", () => {
   assert.equal(getOwnedContributionPhotoPath(PHOTO_URL, USER_ID, SUPABASE_URL), PHOTO_PATH);
+  assert.equal(
+    getOwnedContributionPhotoPath(PHOTO_URL.replace(/\.jpg$/u, ".avif"), USER_ID, SUPABASE_URL),
+    PHOTO_PATH.replace(/\.jpg$/u, ".avif"),
+  );
   assert.equal(getOwnedContributionPhotoPath(PHOTO_URL, "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", SUPABASE_URL), null);
   assert.equal(
     getOwnedContributionPhotoPath(PHOTO_URL.replace("/photos/", "/other/"), USER_ID, SUPABASE_URL),
@@ -110,4 +119,30 @@ test("uploaded photo verification checks the owner's path and the image signatur
   assert.equal(rejected.ok, false);
   assert.ok(rejected.fieldErrors.photo);
   assert.equal(calls.filter(([method]) => method === "download").length, 1);
+});
+
+test("uploaded photo verification rejects a declared MIME type that disagrees with its bytes", async () => {
+  const mismatched = makeSupabase({
+    photoBlob: new Blob([Uint8Array.from([0xff, 0xd8, 0xff, 0x00])], { type: "image/png" }),
+  });
+
+  const result = await verifyContributionPhoto(mismatched.supabase, PHOTO_PATH, USER_ID);
+  assert.equal(result.ok, false);
+  assert.match(result.fieldErrors.photo, /matching file type/u);
+});
+
+test("uploaded photo verification rejects files above the 10 MiB limit", async () => {
+  const oversized = makeSupabase({
+    photoBlob: {
+      size: 10 * 1024 * 1024 + 1,
+      type: "image/jpeg",
+      slice() {
+        throw new Error("Oversized file bytes should not be read.");
+      },
+    },
+  });
+
+  const result = await verifyContributionPhoto(oversized.supabase, PHOTO_PATH, USER_ID);
+  assert.equal(result.ok, false);
+  assert.match(result.fieldErrors.photo, /10 MB/u);
 });

@@ -11,6 +11,7 @@ export default function ArchiveEntryFormPage({
     ? {
       title_en: entry.title,
       title_kh: entry.khmerTitle,
+      summary: entry.summary,
       description: entry.content,
       period_label: entry.period,
       location: entry.location,
@@ -26,11 +27,11 @@ export default function ArchiveEntryFormPage({
         <h1 id="contribute-title">
           {isEditing ? "Edit archive entry" : "Contribute an archive entry"}
         </h1>
-        <p className="contribute-card__intro">
-          {isEditing
-            ? "Update the story and its details. Leave the photo field empty to keep the current photograph."
-            : "Share a family story and a photograph. New entries are added to the public archive."}
-        </p>
+        {isEditing ? (
+          <p className="contribute-card__intro">
+            Update the story and its details. Leave the photo field empty to keep the current photograph.
+          </p>
+        ) : null}
 
         {isEditing || isAuthenticated ? (
           <ContributionForm
