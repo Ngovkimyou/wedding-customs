@@ -1,7 +1,13 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import ArchiveEntry from "../../../components/ArchiveEntry.js";
 import ArchiveEntryPreloads from "../../../components/ArchiveEntryPreloads.js";
 import { archiveDetails, archiveEntries, getArchiveEntry } from "../../../data/archive.js";
+import { getPublicArchiveEntryBySlug } from "../../../lib/supabase/entries.js";
+
+const findArchiveEntry = cache(async (slug) => (
+  getArchiveEntry(slug) ?? await getPublicArchiveEntryBySlug(slug)
+));
 
 export function generateStaticParams() {
   return archiveEntries.map((entry) => ({ slug: entry.slug }));
@@ -9,17 +15,17 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const entry = getArchiveEntry(slug);
+  const entry = await findArchiveEntry(slug);
 
   return {
     title: entry?.title ?? "Archive record not found",
-    description: entry?.summary || archiveDetails.description,
+    description: entry?.summary || entry?.descriptionBlocks?.[0]?.text || archiveDetails.description,
   };
 }
 
 export default async function ArchiveRecordPage({ params }) {
   const { slug } = await params;
-  const entry = getArchiveEntry(slug);
+  const entry = await findArchiveEntry(slug);
 
   if (!entry) {
     notFound();

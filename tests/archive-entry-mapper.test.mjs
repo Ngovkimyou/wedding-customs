@@ -26,6 +26,11 @@ test("Supabase rows map to the existing archive card/search projection", () => {
   assert.equal(entry.archiveNumber, 1);
   assert.equal(entry.images[0].src, "resolved:assets\\images\\archive-001.avif");
   assert.equal(entry.descriptionBlocks.length, 3);
+  assert.deepEqual(entry.descriptionSections[0].paragraphs, [
+    "First paragraph.",
+    "Second paragraph.",
+  ]);
+  assert.equal(entry.content, "First paragraph.\n\nSecond paragraph.");
   assert.equal(entry.descriptionBlocks.at(-1).sectionTitle, "Summary");
   assert.equal(entry.interviewDate, "2026-08-15");
 });
@@ -36,10 +41,12 @@ test("placeholder descriptions are not indexed and unknown records get stable la
     slug: "new-record",
     title_en: "New Record",
     description: "[Full archive story or tradition description will be added here.]\n\n[Additional context or note to be added.]",
-  }, 3);
+  });
 
-  assert.equal(entry.id, "ARCHIVE 004");
+  assert.equal(entry.id, "COMMUNITY ENTRY");
   assert.deepEqual(entry.descriptionBlocks, []);
+  assert.deepEqual(entry.descriptionSections, []);
+  assert.equal(entry.content, "");
   assert.deepEqual(entry.images, []);
 });
 

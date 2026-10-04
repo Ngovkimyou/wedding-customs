@@ -142,6 +142,7 @@ export default function ImageLightbox({
                 fill
                 sizes={sizes}
                 priority
+                unoptimized={/^https?:\/\//iu.test(src)}
                 draggable={false}
                 onLoad={() => setImageStatus("loaded")}
                 onError={() => setImageStatus("error")}

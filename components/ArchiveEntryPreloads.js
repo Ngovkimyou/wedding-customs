@@ -45,6 +45,11 @@ function preloadOptimizedImage(asset, { fetchPriority = "low" } = {}) {
     return;
   }
 
+  if (/^https?:\/\//iu.test(source)) {
+    preloadSource(source, { fetchPriority });
+    return;
+  }
+
   const dimensions = getImageDimensions(asset, 1600, 1000);
   const { props } = getImageProps({
     src: asset,
@@ -95,7 +100,7 @@ export default function ArchiveEntryPreloads({ entry }) {
   }
 
   const leadSource = getAssetSource(entry.images?.[0]?.src);
-  const seenSources = new Set([leadSource].filter(Boolean));
+  const seenSources = new Set();
 
   collectArchiveImageAssets(entry).forEach((asset) => {
     const source = getAssetSource(asset);

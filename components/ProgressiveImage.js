@@ -16,6 +16,7 @@ export default function ProgressiveImage({
   className = "",
 }) {
   const sourceKey = getAssetSource(src);
+  const isRemoteSource = /^https?:\/\//iu.test(sourceKey);
   const [imageState, setImageState] = useState({
     source: sourceKey,
     status: "loading",
@@ -63,6 +64,7 @@ export default function ProgressiveImage({
           sizes={sizes}
           loading={loading}
           fetchPriority={fetchPriority}
+          unoptimized={isRemoteSource}
           onLoad={() => updateStatus("loaded")}
           onError={() => updateStatus("failed")}
         />

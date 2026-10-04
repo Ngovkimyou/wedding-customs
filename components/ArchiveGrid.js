@@ -1,3 +1,4 @@
+import Link from "next/link";
 import ArchiveCard from "./ArchiveCard.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 import SectionHeading from "./SectionHeading.js";
@@ -12,13 +13,13 @@ import mobilePkaSlaGarland from "../assets/mobile-pka-sla-garland.avif";
 const INITIAL_CARD_COUNT = 1;
 
 export default function ArchiveGrid({ entries = [], status = "ready" }) {
+  const curatorEntries = entries.filter((entry) => Number.isInteger(entry.archiveNumber));
+  const communityEntries = entries.filter((entry) => !Number.isInteger(entry.archiveNumber));
   const statusMessage = status === "loading"
     ? "Loading archive records…"
     : status === "error"
       ? "The archive is temporarily unavailable. Please try again shortly."
-      : status === "empty"
-        ? "No archive records are available yet."
-        : "";
+      : "";
 
   return (
     <section className="archive-collection" aria-labelledby="collection-title">
@@ -26,7 +27,7 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
         eyebrow="The collection"
         titleClassName="collection-title"
         id="collection-title"
-        title="Preserved records, waiting to be opened."
+        title="Stories and traditions, preserved together."
         count={status === "loading"
           ? "Loading"
           : status === "error"
@@ -34,8 +35,7 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
             : `${String(entries.length).padStart(2, "0")} records`}
       >
         <p>
-          Each record is a placeholder for an interview, photograph, memory, object, or tradition
-          to be added to the archive.
+          Browse the numbered archive collection, then explore stories shared by the community.
         </p>
       </SectionHeading>
       <div className="archive-collection__stage">
@@ -47,14 +47,70 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
               {statusMessage}
             </p>
           ) : (
-            <div className="archive-grid">
-              {entries.map((entry, index) => (
-                <ArchiveCard
-                  entry={entry}
-                  eager={index < INITIAL_CARD_COUNT}
-                  key={entry.dbId ?? entry.id}
-                />
-              ))}
+            <div className="archive-collection__groups">
+              <section className="archive-collection__group" aria-labelledby="curated-collection-title">
+                <header className="archive-collection__group-header">
+                  <div>
+                    <p className="archive-collection__group-eyebrow">Curated records</p>
+                    <h2 id="curated-collection-title">Archive Collection</h2>
+                  </div>
+                  <span className="archive-collection__group-count">
+                    {String(curatorEntries.length).padStart(2, "0")} {curatorEntries.length === 1 ? "record" : "records"}
+                  </span>
+                </header>
+                {curatorEntries.length ? (
+                  <div className="archive-grid">
+                    {curatorEntries.map((entry, index) => (
+                      <ArchiveCard
+                        entry={entry}
+                        eager={index < INITIAL_CARD_COUNT}
+                        key={entry.dbId ?? entry.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="archive-collection__group-empty">The numbered archive records will appear here.</p>
+                )}
+              </section>
+
+              <div className="archive-collection__group-divider" aria-hidden="true">
+                <span />
+                <span>Community stories</span>
+                <span />
+              </div>
+
+              <section className="archive-collection__group" aria-labelledby="community-collection-title">
+                <header className="archive-collection__group-header">
+                  <div>
+                    <p className="archive-collection__group-eyebrow">Shared by contributors</p>
+                    <h2 id="community-collection-title">Community Contributions</h2>
+                  </div>
+                  <div className="archive-collection__group-actions">
+                    <span className="archive-collection__group-count">
+                      {String(communityEntries.length).padStart(2, "0")} {communityEntries.length === 1 ? "entry" : "entries"}
+                    </span>
+                    <Link
+                      aria-label="Contribute an entry"
+                      className="archive-collection__group-cta"
+                      href="/contribute"
+                      prefetch={true}
+                    >
+                      <span aria-hidden="true">+</span>
+                    </Link>
+                  </div>
+                </header>
+                {communityEntries.length ? (
+                  <div className="archive-grid">
+                    {communityEntries.map((entry) => (
+                      <ArchiveCard entry={entry} key={entry.dbId ?? entry.slug} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="archive-collection__group-empty">
+                    <p>No community contributions yet. Be the first to share a story.</p>
+                  </div>
+                )}
+              </section>
             </div>
           )}
         </div>
