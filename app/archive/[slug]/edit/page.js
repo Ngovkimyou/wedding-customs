@@ -1,8 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import ArchiveEntryFormPage from "../../../../components/ArchiveEntryFormPage.js";
-import { getPublicArchiveEntryBySlug } from "../../../../lib/supabase/entries.js";
+import {
+  isCommunityArchiveEntry,
+  mapSupabaseEntry,
+} from "../../../../lib/archive-entry-mapper.mjs";
+import { resolveArchiveThumbnail } from "../../../../lib/archive-thumbnail-assets.js";
 import { createClient } from "../../../../lib/supabase/server.js";
-import { isCommunityArchiveEntry } from "../../../../lib/archive-entry-mapper.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,20 @@ export default async function EditArchiveEntryPage({ params }) {
     redirect("/login");
   }
 
-  const entry = await getPublicArchiveEntryBySlug(slug);
+  const { data: row, error: entryError } = await supabase
+    .from("entries")
+    .select("*")
+    .eq("slug", slug)
+    .eq("owner", user.id)
+    .maybeSingle();
+
+  if (entryError) {
+    console.error("[archive-entry] Could not load the contributor's own entry for editing.", entryError);
+  }
+
+  const entry = row
+    ? mapSupabaseEntry(row, { resolveThumbnail: resolveArchiveThumbnail })
+    : null;
   if (!entry?.dbId || !entry.ownerId || !isCommunityArchiveEntry(entry)) {
     notFound();
   }

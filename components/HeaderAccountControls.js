@@ -17,6 +17,9 @@ export default function HeaderAccountControls({
         role="group"
         aria-label="Account"
       >
+        <Link className="site-header__auth-link site-header__auth-my-entries" href="/my-entries">
+          My Entries
+        </Link>
         <button
           className="site-header__auth-button"
           type="button"

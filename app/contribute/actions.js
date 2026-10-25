@@ -73,6 +73,7 @@ function revalidateArchive(slug) {
     revalidateTag("public-archive-entries");
     revalidatePath("/", "page");
     revalidatePath("/search", "page");
+    revalidatePath("/my-entries", "page");
     if (typeof slug === "string" && ARCHIVE_SLUG_PATTERN.test(slug)) {
       revalidatePath(`/archive/${slug}`, "page");
     }
@@ -213,6 +214,18 @@ export async function updateArchiveEntry(formData) {
 
   const previousPhotoUrl = photo ? existingEntry.thumbnail_path ?? null : null;
 
+  let isReviewer = false;
+  try {
+    const { data, error } = await supabase.rpc("is_reviewer");
+    if (error) {
+      console.error("[archive-entry] Reviewer status could not be checked; treating the edit as non-reviewer.", error);
+    } else {
+      isReviewer = data === true;
+    }
+  } catch (error) {
+    console.error("[archive-entry] Reviewer status could not be checked; treating the edit as non-reviewer.", error);
+  }
+
   const updates = {
     title_en: values.title_en,
     title_kh: values.title_kh,
@@ -220,6 +233,7 @@ export async function updateArchiveEntry(formData) {
     description: values.description,
     period_label: values.period_label || null,
     location: values.location || null,
+    ...(!isReviewer ? { status: "pending" } : {}),
     ...(photo ? { thumbnail_path: photo.publicUrl } : {}),
   };
 

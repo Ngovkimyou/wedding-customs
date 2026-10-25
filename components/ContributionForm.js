@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ScrollIndicator from "./ScrollIndicator.js";
@@ -112,7 +113,6 @@ function focusFirstInvalid(errors) {
 export default function ContributionForm({
   mode = "create",
   entryId,
-  entrySlug,
   initialValues,
   existingThumbnailUrl = null,
 }) {
@@ -147,6 +147,7 @@ export default function ContributionForm({
   const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -158,12 +159,14 @@ export default function ContributionForm({
     setFields((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
     setMessage("");
+    setSuccessMessage("");
   };
 
   const updatePeriodValue = (value) => {
     setFields((current) => ({ ...current, period_label: value }));
     setErrors((current) => ({ ...current, period_label: "" }));
     setMessage("");
+    setSuccessMessage("");
   };
 
   const updatePeriodYear = (event) => {
@@ -218,6 +221,7 @@ export default function ContributionForm({
     setPhoto(event.currentTarget.files?.[0] ?? null);
     setErrors((current) => ({ ...current, photo: "" }));
     setMessage("");
+    setSuccessMessage("");
   };
 
   const handleKeyboardNavigation = (event) => {
@@ -334,6 +338,7 @@ export default function ContributionForm({
     if (submittingRef.current) return;
 
     setMessage("");
+    setSuccessMessage("");
     const normalizedFields = normalizeContributionFields(fields);
     setFields(normalizedFields);
     const validation = validateContributionFields(normalizedFields);
@@ -425,11 +430,19 @@ export default function ContributionForm({
         return;
       }
 
-      const destination = `/archive/${encodeURIComponent(result.slug || entrySlug)}`;
       if (isEditing) {
-        router.replace(destination);
+        router.replace("/my-entries");
       } else {
-        router.push(destination);
+        setFields({ ...INITIAL_FIELDS });
+        setPeriodMode("year");
+        setPeriodYear("");
+        setPeriodDateParts(parsePeriodDateParts(""));
+        setPhoto(null);
+        setErrors({});
+        if (photoInputRef.current) {
+          photoInputRef.current.value = "";
+        }
+        setSuccessMessage("Thank you for sharing your story. Your entry is waiting for review and will appear in the public archive if approved.");
       }
     } catch (error) {
       console.error("[contribute] Submission could not be completed.", error);
@@ -742,6 +755,14 @@ export default function ContributionForm({
 
       <div className="contribute-form__status" aria-live="polite">
         {message ? <p role="alert">{message}</p> : null}
+        {successMessage ? (
+          <p className="contribute-form__success" role="status">
+            {successMessage} <Link href="/my-entries">Check its status in My Entries.</Link>
+            <span lang="km" className="contribute-form__success-khmer">
+              សូមអរគុណដែលបានចែករំលែករឿងរ៉ាវរបស់អ្នក។ សាច់រឿងរបស់អ្នកកំពុងរង់ចាំការពិនិត្យ ហើយនឹងបង្ហាញក្នុងបណ្ណសារសាធារណៈ ប្រសិនបើត្រូវបានអនុម័ត។
+            </span>
+          </p>
+        ) : null}
       </div>
 
       <button

@@ -289,7 +289,10 @@
   .site-header__auth--user {
     width: max-content;
     max-width: 11rem;
+    flex-direction: column;
+    align-items: stretch;
     justify-content: center;
+    gap: 0.08rem;
   }
 
   .site-header__auth--user .site-header__auth-button {
@@ -328,6 +331,14 @@
     text-align: center;
     text-overflow: ellipsis;
     text-transform: none;
+    white-space: nowrap;
+  }
+
+  .site-header__auth--user .site-header__auth-my-entries {
+    min-height: 1.55rem;
+    justify-content: center;
+    padding-inline: 0.25rem;
+    font-size: 0.58rem;
     white-space: nowrap;
   }
 
@@ -819,6 +830,14 @@
 
   .site-navigation__menu .site-header__auth--mobile.site-header__auth--user {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .site-navigation__menu .site-header__auth--mobile .site-header__auth-my-entries {
+    width: 100%;
+    min-height: 2.5rem;
+    justify-content: center;
+    border-bottom-color: rgba(201, 169, 104, 0.34);
   }
 
   .site-navigation__menu .site-header__auth--mobile .site-header__auth-button {

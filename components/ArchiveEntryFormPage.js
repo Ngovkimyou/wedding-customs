@@ -34,7 +34,6 @@ export default function ArchiveEntryFormPage({
           <ContributionForm
             mode={mode}
             entryId={entry?.dbId}
-            entrySlug={entry?.slug}
             initialValues={initialValues}
             existingThumbnailUrl={entry?.images?.[0]?.src ?? null}
           />
