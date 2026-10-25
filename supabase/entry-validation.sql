@@ -56,6 +56,14 @@ alter table public.entries
   alter column thumbnail_path type text using thumbnail_path::text,
   alter column author_email type text using author_email::text;
 
+-- Preserve existing dates saved with the previous DD/MM/YY format by
+-- expanding their years to the same 2000-2099 range used by that rule.
+update public.entries
+set period_label = substring(period_label from 1 for 6)
+  || '20'
+  || substring(period_label from 7 for 2)
+where period_label ~ '^[0-9]{2}/[0-9]{2}/[0-9]{2}$';
+
 alter table public.entries
   add constraint entries_title_en_rule_check check (
     title_en is not null
@@ -85,15 +93,25 @@ alter table public.entries
       when period_label <> btrim(period_label) then false
       when period_label = '' then true
       when period_label ~ '^[0-9]{4}$' then period_label::integer > 0
-      when period_label ~ '^[0-9]{2}/[0-9]{2}/[0-9]{2}$' then
-        to_char(
-          make_date(
-            2000 + substring(period_label from 7 for 2)::integer,
-            substring(period_label from 4 for 2)::integer,
-            substring(period_label from 1 for 2)::integer
-          ),
-          'DD/MM/YY'
-        ) = period_label
+      when period_label ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$' then
+        case
+          when substring(period_label from 7 for 4)::integer < 1 then false
+          when substring(period_label from 4 for 2)::integer not between 1 and 12 then false
+          when substring(period_label from 1 for 2)::integer < 1 then false
+          else substring(period_label from 1 for 2)::integer <= case
+            when substring(period_label from 4 for 2)::integer = 2 then
+              case
+                when substring(period_label from 7 for 4)::integer % 400 = 0
+                  or (
+                    substring(period_label from 7 for 4)::integer % 4 = 0
+                    and substring(period_label from 7 for 4)::integer % 100 <> 0
+                  ) then 29
+                else 28
+              end
+            when substring(period_label from 4 for 2)::integer in (4, 6, 9, 11) then 30
+            else 31
+          end
+        end
       else false
     end
   ),

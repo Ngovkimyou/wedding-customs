@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Navigation from "./Navigation.js";
 import MusicControl from "./MusicControl.js";
 import SearchControl from "./SearchControl.js";
+import ContributionControl from "./ContributionControl.js";
 import SiteBrand from "./SiteBrand.js";
 import HeaderAccountControls from "./HeaderAccountControls.js";
 import InteractionLock from "./InteractionLock.js";
@@ -154,6 +155,7 @@ export default function Header() {
             <SiteBrand />
             <div className="site-header__actions">
               <SearchControl />
+              <ContributionControl />
               <MusicControl />
               <Navigation
                 accountControls={(

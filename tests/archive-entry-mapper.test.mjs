@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mapSupabaseEntries, mapSupabaseEntry } from "../lib/archive-entry-mapper.mjs";
+import {
+  isCommunityArchiveEntry,
+  mapSupabaseEntries,
+  mapSupabaseEntry,
+} from "../lib/archive-entry-mapper.mjs";
 import { sortArchiveEntries } from "../lib/archive-entry-order.mjs";
 
 test("Supabase rows map to the existing archive card/search projection", () => {
@@ -38,6 +42,7 @@ test("Supabase rows map to the existing archive card/search projection", () => {
 
 test("community records map their registration email for the author note", () => {
   const entry = mapSupabaseEntry({
+    owner: "owner-user-id",
     slug: "community-family-story",
     title_en: "A family story",
     title_kh: "រឿងគ្រួសារ",
@@ -45,7 +50,24 @@ test("community records map their registration email for the author note", () =>
   });
 
   assert.equal(entry.id, "COMMUNITY ENTRY");
+  assert.equal(entry.ownerId, "owner-user-id");
   assert.equal(entry.authorEmail, "contributor@example.com");
+});
+
+test("legacy two-digit period dates map to four-digit years", () => {
+  const entry = mapSupabaseEntry({
+    slug: "community-wedding-story",
+    title_en: "A community wedding story",
+    period_label: "15/08/26",
+  });
+
+  assert.equal(entry.period, "15/08/2026");
+});
+
+test("only unnumbered community entries are eligible for owner actions", () => {
+  assert.equal(isCommunityArchiveEntry({ slug: "how-my-parents-met" }), false);
+  assert.equal(isCommunityArchiveEntry({ slug: "contributor-story", archive_number: 12 }), false);
+  assert.equal(isCommunityArchiveEntry({ slug: "contributor-story", archiveNumber: null }), true);
 });
 
 test("placeholder descriptions are not indexed and unknown records get stable labels", () => {

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import ArchiveEntryFormPage from "../../../../components/ArchiveEntryFormPage.js";
 import { getPublicArchiveEntryBySlug } from "../../../../lib/supabase/entries.js";
 import { createClient } from "../../../../lib/supabase/server.js";
+import { isCommunityArchiveEntry } from "../../../../lib/archive-entry-mapper.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function EditArchiveEntryPage({ params }) {
   }
 
   const entry = await getPublicArchiveEntryBySlug(slug);
-  if (!entry?.dbId || !entry.ownerId) {
+  if (!entry?.dbId || !entry.ownerId || !isCommunityArchiveEntry(entry)) {
     notFound();
   }
 

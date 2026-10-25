@@ -160,3 +160,19 @@ test("an entry owned by someone else is not deleted or used for storage cleanup"
   assert.deepEqual(result, { ok: false });
   assert.equal(events.length, 1);
 });
+
+test("a curated archive record is not deleted through community contribution actions", async () => {
+  const curatedEntry = {
+    id: ENTRY_ID,
+    owner: USER_ID,
+    slug: "during-the-night",
+    thumbnail_path: PHOTO_URL,
+  };
+  const { supabase, events } = makeSupabase({ entry: curatedEntry });
+
+  const result = await withConsoleErrorsMuted(() =>
+    deleteOwnedContributionEntry(supabase, ENTRY_ID, USER_ID, SUPABASE_URL));
+
+  assert.deepEqual(result, { ok: false });
+  assert.deepEqual(events, ["read-entry"]);
+});

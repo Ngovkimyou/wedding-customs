@@ -85,26 +85,25 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
                     <p className="archive-collection__group-eyebrow">Shared by contributors</p>
                     <h2 id="community-collection-title">Community Contributions</h2>
                   </div>
+                </header>
+                {communityEntries.length === 0 ? (
+                  <div className="archive-collection__group-empty">
+                    <p>No community contributions yet. Be the first to share a story.</p>
+                  </div>
+                ) : null}
+                <div className="archive-grid archive-grid--community">
+                  {communityEntries.map((entry) => (
+                    <ArchiveCard entry={entry} key={entry.dbId ?? entry.slug} />
+                  ))}
                   <Link
                     aria-label="Contribute an entry"
-                    className="archive-collection__group-cta"
+                    className="archive-grid__contribute"
                     href="/contribute"
                     prefetch={true}
                   >
                     <span aria-hidden="true">+</span>
                   </Link>
-                </header>
-                {communityEntries.length ? (
-                  <div className="archive-grid">
-                    {communityEntries.map((entry) => (
-                      <ArchiveCard entry={entry} key={entry.dbId ?? entry.slug} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="archive-collection__group-empty">
-                    <p>No community contributions yet. Be the first to share a story.</p>
-                  </div>
-                )}
+                </div>
               </section>
             </div>
           )}

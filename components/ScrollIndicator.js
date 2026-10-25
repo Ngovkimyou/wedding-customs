@@ -45,11 +45,13 @@ export default function ScrollIndicator({ scrollRef, className = "" }) {
     mutationObserver.observe(viewport, { childList: true, subtree: true, characterData: true });
     observeContent();
     viewport.addEventListener("scroll", scheduleUpdate, { passive: true });
+    viewport.addEventListener("input", scheduleUpdate);
     window.addEventListener("resize", scheduleUpdate);
 
     return () => {
       window.cancelAnimationFrame(frame);
       viewport.removeEventListener("scroll", scheduleUpdate);
+      viewport.removeEventListener("input", scheduleUpdate);
       window.removeEventListener("resize", scheduleUpdate);
       resizeObserver.disconnect();
       mutationObserver.disconnect();

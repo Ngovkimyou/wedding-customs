@@ -21,9 +21,6 @@ export default function ArchiveEntryFormPage({
   return (
     <main className="contribute-page" aria-labelledby="contribute-title">
       <section className="contribute-card">
-        <p className="contribute-card__eyebrow">
-          {isEditing ? "Update your story" : "Grow the collection"}
-        </p>
         <h1 id="contribute-title">
           {isEditing ? "Edit archive entry" : "Contribute an archive entry"}
         </h1>

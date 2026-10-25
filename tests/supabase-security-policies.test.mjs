@@ -47,6 +47,14 @@ test("photo bucket configuration limits upload size and declared types", () => {
   );
 });
 
+test("period dates use four-digit years and migrate legacy two-digit labels", () => {
+  assert.ok(validationSql.includes("set period_label = substring(period_label from 1 for 6)"));
+  assert.ok(validationSql.includes("|| '20'"));
+  assert.ok(validationSql.includes("where period_label ~ '^[0-9]{2}/[0-9]{2}/[0-9]{2}$'"));
+  assert.ok(validationSql.includes("when period_label ~ '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'"));
+  assert.ok(validationSql.includes("substring(period_label from 7 for 4)"));
+});
+
 test("author email is sourced from the account and cannot be changed through entry edits", () => {
   assert.match(validationSql, /add column if not exists author_email text/iu);
   assert.match(validationSql, /security definer\s+set search_path = ''/iu);

@@ -28,6 +28,7 @@ export default function HeaderAccountControls({
           <span className="site-header__auth-action">
             {isSigningOut ? "Logging out" : "Log out"}
           </span>
+          <span className="site-header__auth-divider" aria-hidden="true" />
         </button>
       </div>
     );

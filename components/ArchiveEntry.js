@@ -10,10 +10,13 @@ import ArchiveOwnerActions from "./ArchiveOwnerActions.js";
 import ArchiveSwipeNavigation from "./ArchiveSwipeNavigation.js";
 import DecorativeDivider from "./DecorativeDivider.js";
 import RelatedTopics from "./RelatedTopics.js";
+import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
 
 export default function ArchiveEntry({ entry }) {
   const { previous, next, position, total } = getAdjacentEntries(entry.slug);
   const relatedEntries = getRelatedEntries(entry.slug);
+  const isCommunityEntry = isCommunityArchiveEntry(entry);
+  const canManageEntry = Boolean(entry.dbId && isCommunityEntry);
 
   return (
     <>
@@ -25,15 +28,19 @@ export default function ArchiveEntry({ entry }) {
           <Suspense fallback={<CollectionBackLink />}>
             <ArchiveBackLink />
           </Suspense>
-          <p className="eyebrow archive-entry__record-id" data-archive-dynamic="true">
-            {entry.id}
-          </p>
-          <ArchiveOwnerActions
-            entryId={entry.dbId}
-            ownerId={entry.ownerId}
-            slug={entry.slug}
-            title={entry.title}
-          />
+          {!isCommunityEntry && entry.id ? (
+            <p className="eyebrow archive-entry__record-id" data-archive-dynamic="true">
+              {entry.id}
+            </p>
+          ) : null}
+          {canManageEntry ? (
+            <ArchiveOwnerActions
+              entryId={entry.dbId}
+              ownerId={entry.ownerId}
+              slug={entry.slug}
+              title={entry.title}
+            />
+          ) : null}
         </div>
 
         <header className="archive-entry__header">

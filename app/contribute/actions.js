@@ -6,6 +6,7 @@ import {
   CONTRIBUTION_FIELDS,
   validateContributionFields,
 } from "../../lib/contribution-validation.mjs";
+import { isCommunityArchiveEntry } from "../../lib/archive-entry-mapper.mjs";
 import { createClient } from "../../lib/supabase/server.js";
 import { deleteOwnedContributionEntry } from "../../lib/supabase/delete-contribution-entry.mjs";
 import {
@@ -173,6 +174,29 @@ export async function updateArchiveEntry(formData) {
   if (!context.ok) return context;
   const { supabase, user } = context;
 
+  let existingEntry;
+  try {
+    const { data, error } = await supabase
+      .from("entries")
+      .select("*")
+      .eq("id", entryId)
+      .eq("owner", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[archive-entry] Could not confirm the entry is a community contribution.", error);
+      return { ok: false, message: GENERIC_UPDATE_ERROR };
+    }
+    existingEntry = data;
+  } catch (error) {
+    console.error("[archive-entry] Could not confirm the entry is a community contribution.", error);
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
+  }
+
+  if (!isCommunityArchiveEntry(existingEntry)) {
+    return { ok: false, message: GENERIC_UPDATE_ERROR };
+  }
+
   const rawStoragePath = formData.get("storagePath");
   if (rawStoragePath !== null && typeof rawStoragePath !== "string") {
     return { ok: false, fieldErrors: { photo: "Please choose a valid photograph." } };
@@ -187,30 +211,7 @@ export async function updateArchiveEntry(formData) {
     }
   }
 
-  let previousPhotoUrl = null;
-  if (photo) {
-    try {
-      const { data, error } = await supabase
-        .from("entries")
-        .select("thumbnail_path")
-        .eq("id", entryId)
-        .eq("owner", user.id)
-        .maybeSingle();
-
-      if (error || !data) {
-        if (error) {
-          console.error("[archive-entry] Could not read the previous photograph.", error);
-        }
-        await removeUnreferencedContributionPhoto(supabase, storagePath);
-        return { ok: false, message: GENERIC_UPDATE_ERROR };
-      }
-      previousPhotoUrl = data.thumbnail_path ?? null;
-    } catch (error) {
-      console.error("[archive-entry] Could not read the previous photograph.", error);
-      await removeUnreferencedContributionPhoto(supabase, storagePath);
-      return { ok: false, message: GENERIC_UPDATE_ERROR };
-    }
-  }
+  const previousPhotoUrl = photo ? existingEntry.thumbnail_path ?? null : null;
 
   const updates = {
     title_en: values.title_en,

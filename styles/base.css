@@ -51,22 +51,58 @@ a {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Keep browser-suggested account values in the archive palette instead of
-   applying the browser's bright autofill background and text colors. */
-.auth-form__input:-webkit-autofill,
-.auth-form__input:-webkit-autofill:hover,
-.auth-form__input:-webkit-autofill:focus,
-.auth-form__input:-webkit-autofill:active {
-  background-color: rgba(255, 252, 246, 0.78) !important;
-  -webkit-text-fill-color: var(--color-text) !important;
-  -webkit-box-shadow: 0 0 0 1000px rgba(255, 252, 246, 0.78) inset !important;
-  caret-color: var(--color-text);
+/* Keep selected browser suggestions in each input's existing palette without
+   disabling the native suggestion menu. */
+.auth-form__input {
+  --input-autofill-background: rgba(255, 252, 246, 0.78);
+  --input-autofill-color: var(--color-text);
+  --input-autofill-focus-shadow: 0 0 0 3px rgba(201, 169, 104, 0.2);
 }
 
-.auth-form__input:-moz-autofill {
-  background-color: rgba(255, 252, 246, 0.78) !important;
-  color: var(--color-text) !important;
-  caret-color: var(--color-text);
+.contribute-field input:not([type="file"]),
+.contribute-field textarea {
+  --input-autofill-background: rgba(255, 252, 246, 0.9);
+  --input-autofill-color: var(--color-text);
+  --input-autofill-focus-shadow: 0 0 0 3px rgba(201, 169, 104, 0.23);
+}
+
+.archive-search__input {
+  --input-autofill-background: rgba(16, 8, 6, 0.2);
+  --input-autofill-color: var(--color-gold);
+  --input-autofill-focus-shadow: 0 0 0 0 transparent;
+}
+
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-webkit-autofill,
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-webkit-autofill:hover,
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-webkit-autofill:focus,
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-webkit-autofill:active {
+  background-color: transparent !important;
+  -webkit-text-fill-color: var(--input-autofill-color) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--input-autofill-background) inset !important;
+  box-shadow: 0 0 0 1000px var(--input-autofill-background) inset !important;
+  caret-color: var(--input-autofill-color);
+}
+
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-webkit-autofill:focus {
+  -webkit-box-shadow:
+    0 0 0 1000px var(--input-autofill-background) inset,
+    var(--input-autofill-focus-shadow) !important;
+  box-shadow:
+    0 0 0 1000px var(--input-autofill-background) inset,
+    var(--input-autofill-focus-shadow) !important;
+}
+
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-moz-autofill {
+  background-color: transparent !important;
+  color: var(--input-autofill-color) !important;
+  box-shadow: 0 0 0 1000px var(--input-autofill-background) inset !important;
+  caret-color: var(--input-autofill-color);
+}
+
+:is(.auth-form__input, .contribute-field input:not([type="file"]), .contribute-field textarea, .archive-search__input):-moz-autofill:focus {
+  box-shadow:
+    0 0 0 1000px var(--input-autofill-background) inset,
+    var(--input-autofill-focus-shadow) !important;
 }
 
 .auth-captcha {

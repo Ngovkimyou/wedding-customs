@@ -3,7 +3,14 @@ import test from "node:test";
 import {
   detectSupportedPhoto,
   formatInterviewDateForInput,
+  isValidPeriodForMode,
+  normalizePeriodLabel,
   normalizeContributionFields,
+  padPeriodDatePart,
+  parsePeriodDateParts,
+  sanitizePeriodDatePart,
+  sanitizePeriodYear,
+  serializePeriodDateParts,
   validateContributionFields,
 } from "../lib/contribution-validation.mjs";
 
@@ -12,7 +19,7 @@ const VALID_FIELDS = {
   title_kh: "ពិធីមង្គលការ",
   summary: "Family wedding story",
   description: "A story about a family's wedding tradition.",
-  period_label: "15/08/26",
+  period_label: "15/08/2026",
   location: "Phnom Penh",
 };
 
@@ -38,6 +45,42 @@ test("valid Khmer content, optional fields, and supported period formats are acc
   }).errors, {});
 });
 
+test("period format selection accepts only the selected optional format", () => {
+  assert.equal(isValidPeriodForMode("", "year"), true);
+  assert.equal(isValidPeriodForMode(" 2003 ", "year"), true);
+  assert.equal(isValidPeriodForMode("15/08/2026", "date"), true);
+  assert.equal(isValidPeriodForMode("29/02/2024", "date"), true);
+  assert.equal(isValidPeriodForMode("31/02/2026", "date"), false);
+  assert.equal(isValidPeriodForMode("15/08/26", "date"), false);
+  assert.equal(isValidPeriodForMode("15/08/2026", "year"), false);
+  assert.equal(isValidPeriodForMode("2003", "date"), false);
+});
+
+test("period date entry strips nondigits, pads single-digit day/month values, and serializes components", () => {
+  assert.equal(sanitizePeriodYear("20a3"), "203");
+  assert.equal(sanitizePeriodDatePart("1/5"), "15");
+  assert.equal(sanitizePeriodDatePart("20a26", 4), "2026");
+  assert.equal(padPeriodDatePart("5"), "05");
+  assert.equal(padPeriodDatePart("15"), "15");
+  assert.deepEqual(parsePeriodDateParts("15/08/2026"), {
+    day: "15",
+    month: "08",
+    year: "2026",
+  });
+  assert.deepEqual(parsePeriodDateParts("15082026"), {
+    day: "15",
+    month: "08",
+    year: "2026",
+  });
+  assert.deepEqual(parsePeriodDateParts("15/08/26"), {
+    day: "15",
+    month: "08",
+    year: "2026",
+  });
+  assert.equal(serializePeriodDateParts({ day: "05", month: "08", year: "2026" }), "05/08/2026");
+  assert.equal(normalizePeriodLabel("15/08/26"), "15/08/2026");
+});
+
 test("script-like titles remain ordinary bounded text for React to render safely", () => {
   const title = "<script>alert(1)</script>";
   const { values, errors } = validateContributionFields({
@@ -55,7 +98,7 @@ test("maximum field lengths are accepted and values above them are rejected", ()
     title_kh: "ក".repeat(128),
     summary: "S".repeat(128),
     description: "D".repeat(2000),
-    period_label: "31/12/99",
+    period_label: "31/12/9999",
     location: "L".repeat(30),
   });
   assert.deepEqual(atLimits.errors, {});
@@ -84,7 +127,7 @@ test("invalid lengths, controls, and impossible dates are rejected per field", (
     title_en: " ab ",
     title_kh: "",
     description: "Too short\u0000",
-    period_label: "31/02/26",
+    period_label: "31/02/2026",
     location: "x",
   });
 

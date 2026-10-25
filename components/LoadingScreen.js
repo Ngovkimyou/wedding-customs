@@ -165,6 +165,12 @@ export default function LoadingScreen() {
     }
   };
 
+  const continueWithoutVisuals = () => {
+    setLoadError(false);
+    setProgress(100);
+    setIsReady(true);
+  };
+
   const handleKeyDown = (event) => {
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -190,7 +196,7 @@ export default function LoadingScreen() {
         aria-label={isReady
           ? "Start Khmer Wedding Tradition Archive"
           : loadError
-            ? "Archive assets could not be loaded"
+            ? "Opening visuals could not be loaded"
             : "Loading archive"}
         aria-valuemin={isLoading ? 0 : undefined}
         aria-valuemax={isLoading ? 100 : undefined}
@@ -222,8 +228,9 @@ export default function LoadingScreen() {
           {isReady ? <p className="loading-screen__prompt">Click to start</p> : null}
           {loadError ? (
             <div className="loading-screen__error" role="alert">
-              <span>Some archive assets could not be loaded.</span>
+              <span>Some opening visuals could not be loaded.</span>
               <button type="button" onClick={retryLoading}>Try again</button>
+              <button type="button" onClick={continueWithoutVisuals}>Continue anyway</button>
             </div>
           ) : null}
         </div>

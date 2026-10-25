@@ -14,7 +14,7 @@ import {
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
-import { ARCHIVE_READY_EVENT } from "../lib/client-navigation.js";
+import { ARCHIVE_READY_EVENT, OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 
 const DEFAULT_VOLUME = 1;
@@ -701,7 +701,7 @@ export default function MusicControl() {
     }, 260);
   };
 
-  const openPanel = () => {
+  const openPanel = useCallback(() => {
     if (panelCloseTimerRef.current) {
       window.clearTimeout(panelCloseTimerRef.current);
       panelCloseTimerRef.current = null;
@@ -709,7 +709,12 @@ export default function MusicControl() {
     setIsPanelClosing(false);
     setPanelAnimationKey((key) => key + 1);
     setIsOpen(true);
-  };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(OPEN_MUSIC_PANEL_EVENT, openPanel);
+    return () => window.removeEventListener(OPEN_MUSIC_PANEL_EVENT, openPanel);
+  }, [openPanel]);
 
   const togglePlayback = async () => {
     const audio = audioRef.current;

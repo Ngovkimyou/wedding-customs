@@ -5,9 +5,13 @@ import { getArchiveImageSources } from "../lib/archive-assets.js";
 
 export default function ArchiveCard({ entry, eager = false }) {
   const image = entry.images?.[0];
+  const isNumberedArchiveEntry = Number.isInteger(entry.archiveNumber);
 
   return (
-    <ArchiveCardLink href={`/archive/${entry.slug}`} assets={getArchiveImageSources(entry)}>
+    <ArchiveCardLink
+      href={`/archive/${entry.slug}`}
+      assets={getArchiveImageSources(entry)}
+    >
       <article>
         {image ? (
           <figure className="archive-card__image">
@@ -29,7 +33,11 @@ export default function ArchiveCard({ entry, eager = false }) {
         )}
 
         <div className="archive-card__body">
-          <p className="archive-card__meta">{entry.id}</p>
+          {isNumberedArchiveEntry ? (
+            <p className="archive-card__meta">{entry.id}</p>
+          ) : (
+            <div className="archive-card__meta-spacer" aria-hidden="true" />
+          )}
           <h3>{entry.title}</h3>
           <p className="archive-card__khmer-title">{entry.khmerTitle}</p>
           {entry.summary ? (

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import aboutIcon from "../assets/icons/about-icon.avif";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
+import { OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
 
 const NAVIGATION_ITEMS = [
   { href: "/about", label: "About" },
@@ -31,6 +32,15 @@ function NavigationLinks() {
 export default function Navigation({ accountControls = null }) {
   const moreRef = useRef(null);
   const pathname = usePathname();
+
+  const openMusicPanel = () => {
+    const more = moreRef.current;
+    const summary = more?.querySelector("summary");
+
+    more?.removeAttribute("open");
+    summary?.focus();
+    window.dispatchEvent(new Event(OPEN_MUSIC_PANEL_EVENT));
+  };
 
   useEffect(() => {
     moreRef.current?.removeAttribute("open");
@@ -79,6 +89,14 @@ export default function Navigation({ accountControls = null }) {
         </summary>
         <div className="site-navigation__menu">
           <NavigationLinks />
+          <button
+            className="site-navigation__music"
+            type="button"
+            aria-haspopup="dialog"
+            onClick={openMusicPanel}
+          >
+            <span>Music</span>
+          </button>
           {accountControls}
         </div>
       </details>
