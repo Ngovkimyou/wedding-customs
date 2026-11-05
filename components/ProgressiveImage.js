@@ -14,6 +14,7 @@ export default function ProgressiveImage({
   loading = "lazy",
   fetchPriority,
   className = "",
+  fallbackContent = "Image unavailable",
 }) {
   const sourceKey = getAssetSource(src);
   const isRemoteSource = /^https?:\/\//iu.test(sourceKey);
@@ -53,7 +54,7 @@ export default function ProgressiveImage({
     >
       {isLoading ? <span className="progressive-image__placeholder" aria-hidden="true" /> : null}
       {hasFailed ? (
-        <span className="progressive-image__fallback">Image unavailable</span>
+        <span className="progressive-image__fallback">{fallbackContent}</span>
       ) : (
         <Image
           ref={imageRef}

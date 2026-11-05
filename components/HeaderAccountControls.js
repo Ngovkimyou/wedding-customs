@@ -4,6 +4,7 @@ import Link from "next/link";
 
 export default function HeaderAccountControls({
   user,
+  isReviewer = false,
   isSigningOut,
   onSignOut,
   mobile = false,
@@ -17,6 +18,12 @@ export default function HeaderAccountControls({
         role="group"
         aria-label="Account"
       >
+        {isReviewer ? (
+          <Link className="site-header__auth-link site-header__auth-review" href="/review">
+            <span>Review Queue</span>
+            <span lang="km" dir="auto">ជួរពិនិត្យ</span>
+          </Link>
+        ) : null}
         <Link className="site-header__auth-link site-header__auth-my-entries" href="/my-entries">
           My Entries
         </Link>

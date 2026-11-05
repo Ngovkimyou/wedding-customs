@@ -19,6 +19,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [isReviewer, setIsReviewer] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isSigningOutRef = useRef(false);
   const signOutReleaseTimerRef = useRef(null);
@@ -29,26 +30,61 @@ export default function Header() {
     isSigningOutRef.current = false;
     setIsSigningOut(false);
     setUser(null);
+    setIsReviewer(false);
   };
 
   useEffect(() => {
     const supabase = createClient();
     let isMounted = true;
+    let authStateChanged = false;
+    let authRevision = 0;
+    let reviewerCheckTimer = null;
+
+    const syncSession = (session) => {
+      const revision = ++authRevision;
+      const nextUser = session?.user ?? null;
+
+      setUser(nextUser);
+      setIsReviewer(false);
+      window.clearTimeout(reviewerCheckTimer);
+
+      if (!nextUser) {
+        return;
+      }
+
+      // Defer the RPC so it runs after Supabase finishes its auth-state callback.
+      reviewerCheckTimer = window.setTimeout(() => {
+        supabase.rpc("is_reviewer")
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("[header] Reviewer access could not be checked.", error);
+            }
+            if (isMounted && revision === authRevision) {
+              setIsReviewer(!error && data === true);
+            }
+          })
+          .catch((error) => {
+            console.error("[header] Reviewer access could not be checked.", error);
+          });
+      }, 0);
+    };
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (isMounted && !isSigningOutRef.current) {
-        setUser(session?.user ?? null);
+      if (isMounted && !authStateChanged && !isSigningOutRef.current) {
+        syncSession(session);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      authStateChanged = true;
       if (isMounted && !isSigningOutRef.current) {
-        setUser(session?.user ?? null);
+        syncSession(session);
       }
     });
 
     return () => {
       isMounted = false;
+      window.clearTimeout(reviewerCheckTimer);
       subscription.unsubscribe();
     };
   }, []);
@@ -161,6 +197,7 @@ export default function Header() {
                 accountControls={(
                   <HeaderAccountControls
                     user={user}
+                    isReviewer={isReviewer}
                     isSigningOut={isSigningOut}
                     onSignOut={handleSignOut}
                     mobile
@@ -169,6 +206,7 @@ export default function Header() {
               />
               <HeaderAccountControls
                 user={user}
+                isReviewer={isReviewer}
                 isSigningOut={isSigningOut}
                 onSignOut={handleSignOut}
               />

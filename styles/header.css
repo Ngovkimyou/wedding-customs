@@ -271,6 +271,20 @@
     opacity 180ms ease;
 }
 
+.site-header__auth-review {
+  flex-direction: column;
+  gap: 0.08rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.site-header__auth-review span[lang="km"] {
+  font-family: var(--font-khmer-script), var(--font-body);
+  font-size: 0.88em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .site-header__auth-link:hover,
 .site-header__auth-link:focus-visible,
 .site-header__auth-button:hover:not(:disabled),
@@ -334,7 +348,8 @@
     white-space: nowrap;
   }
 
-  .site-header__auth--user .site-header__auth-my-entries {
+  .site-header__auth--user .site-header__auth-my-entries,
+  .site-header__auth--user .site-header__auth-review {
     min-height: 1.55rem;
     justify-content: center;
     padding-inline: 0.25rem;
@@ -833,7 +848,8 @@
     flex-direction: column;
   }
 
-  .site-navigation__menu .site-header__auth--mobile .site-header__auth-my-entries {
+  .site-navigation__menu .site-header__auth--mobile .site-header__auth-my-entries,
+  .site-navigation__menu .site-header__auth--mobile .site-header__auth-review {
     width: 100%;
     min-height: 2.5rem;
     justify-content: center;
