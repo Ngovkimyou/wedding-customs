@@ -27,6 +27,7 @@ import goldArtwork from "../assets/images/gold.avif";
 import aside02Artwork from "../assets/aside-02.avif";
 import aside03Artwork from "../assets/aside-03.avif";
 import { assertValidArchiveEntries } from "../lib/archive-validation.mjs";
+import { getCircularAdjacentEntries } from "../lib/archive-entry-order.mjs";
 
 export const archiveDetails = {
   name: "Khmer Wedding Tradition Archive",
@@ -491,23 +492,7 @@ export function getArchiveEntry(slug) {
 }
 
 export function getAdjacentEntries(slug) {
-  const currentIndex = archiveEntries.findIndex((entry) => entry.slug === slug);
-
-  if (currentIndex === -1) {
-    return { previous: null, next: null, position: null, total: archiveEntries.length };
-  }
-
-  const total = archiveEntries.length;
-
-  // Keep archive navigation continuous. The collection behaves like a loop:
-  // Previous from the first record reaches the last, and Next from the last
-  // record returns to the first.
-  return {
-    previous: archiveEntries[(currentIndex - 1 + total) % total],
-    next: archiveEntries[(currentIndex + 1) % total],
-    position: currentIndex + 1,
-    total,
-  };
+  return getCircularAdjacentEntries(archiveEntries, slug);
 }
 
 export function getRelatedEntries(slug, limit = 3) {

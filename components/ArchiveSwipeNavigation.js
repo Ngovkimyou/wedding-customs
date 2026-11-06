@@ -26,7 +26,10 @@ const SWIPE_RETURN_DURATION = 460;
 // space between records while the 460/500ms transforms remain unhurried.
 const SWIPE_ROUTE_PUSH_DELAY = 150;
 const SWIPE_ENTER_DURATION = 500;
-const SWIPE_TRANSITION_CLEANUP_DELAY = 1700;
+// Community detail routes are server-rendered from Supabase and may take a
+// couple of seconds on a cold production request. Keep the transition state
+// long enough for that route to commit; this is only a recovery timeout.
+const SWIPE_TRANSITION_CLEANUP_DELAY = 5000;
 const DESKTOP_QUERY = "(min-width: 60.0625rem) and (pointer: fine)";
 const INTERACTIVE_TARGET = "a, button, input, textarea, select, summary, [contenteditable=\"true\"], [role=\"button\"]";
 const SWIPE_BODY_CLASSES = [
@@ -241,7 +244,7 @@ export default function ArchiveSwipeNavigation({ previousSlug, nextSlug }) {
 
       cleanedUp = true;
       window.clearTimeout(cleanupTimer);
-      if (entry && !entry.classList.contains("archive-entry--loading")) {
+      if (entry) {
         entry.classList.remove(
           "archive-entry--swipe-dragging",
           "archive-entry--swipe-returning",
@@ -259,13 +262,12 @@ export default function ArchiveSwipeNavigation({ previousSlug, nextSlug }) {
       }
     };
 
-    if (entry && !entry.classList.contains("archive-entry--loading") && expectedAnimation) {
+    if (entry && expectedAnimation) {
       entry.addEventListener("animationend", handleAnimationEnd);
       cleanupTimer = window.setTimeout(cleanup, SWIPE_ENTER_DURATION + 260);
     } else {
-      // Keep the class available for a slow RSC response. The loading shell
-      // must not consume the incoming-record animation before the real entry
-      // is mounted.
+      // Keep the class available briefly if the destination has not mounted
+      // yet, then recover cleanly if the route update is interrupted.
       cleanupTimer = window.setTimeout(cleanup, SWIPE_TRANSITION_CLEANUP_DELAY);
     }
 

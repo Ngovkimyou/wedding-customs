@@ -27,12 +27,12 @@ body.archive-record-transition [data-archive-dynamic="true"] {
 /* The body class is added just before router.push while the outgoing record
    is still mounted. Exclude that record so its exit transform is never
    overwritten by the incoming-record animation. */
-body.archive-swipe-transition--next .archive-entry:not(.archive-entry--swipe-exiting):not(.archive-entry--loading) {
+body.archive-swipe-transition--next .archive-entry:not(.archive-entry--swipe-exiting) {
   animation: archive-entry-swipe-in-from-right 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity;
 }
 
-body.archive-swipe-transition--previous .archive-entry:not(.archive-entry--swipe-exiting):not(.archive-entry--loading) {
+body.archive-swipe-transition--previous .archive-entry:not(.archive-entry--swipe-exiting) {
   animation: archive-entry-swipe-in-from-left 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
   will-change: transform, opacity;
 }

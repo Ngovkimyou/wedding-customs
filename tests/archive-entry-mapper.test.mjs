@@ -45,13 +45,18 @@ test("community records map their registration email for the author note", () =>
     owner: "owner-user-id",
     slug: "community-family-story",
     title_en: "A family story",
+    thumbnail_path: "community/family-story.avif",
     title_kh: "រឿងគ្រួសារ",
     author_email: "contributor@example.com",
-  });
+  }, { resolveThumbnail: (path) => `resolved:${path}` });
 
   assert.equal(entry.id, "COMMUNITY ENTRY");
   assert.equal(entry.ownerId, "owner-user-id");
   assert.equal(entry.authorEmail, "contributor@example.com");
+  assert.deepEqual(entry.images, [{
+    src: "resolved:community/family-story.avif",
+    alt: "Photograph for COMMUNITY ENTRY",
+  }]);
 });
 
 test("legacy two-digit period dates map to four-digit years", () => {

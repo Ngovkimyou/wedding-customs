@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import ArchiveEntry from "../../../components/ArchiveEntry.js";
 import ArchiveEntryPreloads from "../../../components/ArchiveEntryPreloads.js";
 import { archiveDetails, archiveEntries, getArchiveEntry } from "../../../data/archive.js";
-import { getPublicArchiveEntryBySlug } from "../../../lib/supabase/entries.js";
+import { isCommunityArchiveEntry } from "../../../lib/archive-entry-mapper.mjs";
+import {
+  getCommunityAdjacentEntries,
+  getPublicArchiveEntryBySlug,
+} from "../../../lib/supabase/entries.js";
 
 const findArchiveEntry = cache(async (slug) => (
   getArchiveEntry(slug) ?? await getPublicArchiveEntryBySlug(slug)
@@ -31,11 +35,15 @@ export default async function ArchiveRecordPage({ params }) {
     notFound();
   }
 
+  const communityNavigation = isCommunityArchiveEntry(entry)
+    ? await getCommunityAdjacentEntries(entry.slug)
+    : null;
+
   return (
     <>
       <ArchiveEntryPreloads entry={entry} />
       <div className="archive-record-page" data-archive-slug={entry.slug}>
-        <ArchiveEntry entry={entry} />
+        <ArchiveEntry entry={entry} communityNavigation={communityNavigation} />
       </div>
     </>
   );

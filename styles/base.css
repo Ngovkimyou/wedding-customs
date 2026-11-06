@@ -277,7 +277,6 @@ a {
   }
 
   .progressive-image__placeholder,
-  .archive-entry__loading-line,
   .about-page__credit-track,
   .archive-search__result::after {
     animation: none !important;
