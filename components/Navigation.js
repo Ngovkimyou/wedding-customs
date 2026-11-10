@@ -88,16 +88,18 @@ export default function Navigation({ accountControls = null }) {
           </span>
         </summary>
         <div className="site-navigation__menu">
-          <NavigationLinks />
-          <button
-            className="site-navigation__music"
-            type="button"
-            aria-haspopup="dialog"
-            onClick={openMusicPanel}
-          >
-            <span>Music</span>
-          </button>
-          {accountControls}
+          <div className="site-navigation__menu-items">
+            <NavigationLinks />
+            <button
+              className="site-navigation__music"
+              type="button"
+              aria-haspopup="dialog"
+              onClick={openMusicPanel}
+            >
+              <span>Music</span>
+            </button>
+            {accountControls}
+          </div>
         </div>
       </details>
     </nav>

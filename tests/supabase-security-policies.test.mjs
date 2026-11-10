@@ -10,6 +10,10 @@ const validationSql = await readFile(
   new URL("../supabase/entry-validation.sql", import.meta.url),
   "utf8",
 );
+const usernameMigrationSql = await readFile(
+  new URL("../supabase/username-migration.sql", import.meta.url),
+  "utf8",
+);
 
 test("database policies allow public reads but constrain entry writes to the owner", () => {
   assert.match(policySql, /alter table public\.entries enable row level security/iu);
@@ -55,11 +59,23 @@ test("period dates use four-digit years and migrate legacy two-digit labels", ()
   assert.ok(validationSql.includes("substring(period_label from 7 for 4)"));
 });
 
-test("author email is sourced from the account and cannot be changed through entry edits", () => {
-  assert.match(validationSql, /add column if not exists author_email text/iu);
+test("public author usernames come from private profiles and emails are removed", () => {
+  assert.match(validationSql, /create table if not exists public\.profiles/iu);
+  assert.match(validationSql, /new\.raw_user_meta_data ->> 'username'/iu);
+  assert.match(validationSql, /revoke all on table public\.profiles from public, anon, authenticated/iu);
+  assert.match(validationSql, /add column if not exists author_username text/iu);
   assert.match(validationSql, /security definer\s+set search_path = ''/iu);
   assert.match(validationSql, /new\.owner = auth\.uid\(\)/iu);
-  assert.match(validationSql, /from auth\.users as account/iu);
-  assert.match(validationSql, /new\.author_email := old\.author_email/iu);
-  assert.match(validationSql, /revoke all on function public\.set_entry_author_email\(\) from public, anon, authenticated/iu);
+  assert.match(validationSql, /from public\.profiles as profile/iu);
+  assert.match(validationSql, /new\.author_username := old\.author_username/iu);
+  assert.match(validationSql, /revoke all on function public\.set_entry_author_username\(\) from public, anon, authenticated/iu);
+  assert.match(validationSql, /drop column if exists author_email/iu);
+});
+
+test("the focused username migration does not reapply unrelated entry or storage rules", () => {
+  assert.match(usernameMigrationSql, /create table if not exists public\.profiles/iu);
+  assert.match(usernameMigrationSql, /create trigger auth_users_create_public_profile/iu);
+  assert.match(usernameMigrationSql, /create trigger entries_sync_author_username/iu);
+  assert.match(usernameMigrationSql, /drop column if exists author_email/iu);
+  assert.doesNotMatch(usernameMigrationSql, /entries_description_rule_check|storage\.buckets/iu);
 });

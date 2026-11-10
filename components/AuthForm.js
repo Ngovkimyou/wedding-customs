@@ -13,9 +13,11 @@ import {
   countCodePoints,
   EMAIL_MAX_LENGTH,
   isValidEmailAddress,
+  isValidUsername,
   limitCodePoints,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
 } from "../lib/security.mjs";
 import HCaptchaWidget from "./HCaptchaWidget.js";
 import InteractionLock from "./InteractionLock.js";
@@ -188,6 +190,7 @@ const styles = {
 export default function AuthForm({ mode = "login" }) {
   const isLogin = mode === "login";
   const router = useRouter();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -220,7 +223,13 @@ export default function AuthForm({ mode = "login" }) {
     setMessage("");
     setCaptchaError("");
 
+    const normalizedUsername = username.trim();
     const normalizedEmail = email.trim();
+
+    if (!isLogin && !isValidUsername(normalizedUsername)) {
+      setError(`Enter a username of up to ${USERNAME_MAX_LENGTH} characters.`);
+      return;
+    }
 
     if (!isValidEmailAddress(normalizedEmail) || !password) {
       setError(isLogin ? LOGIN_ERROR_MESSAGE : SIGNUP_ERROR_MESSAGE);
@@ -269,7 +278,10 @@ export default function AuthForm({ mode = "login" }) {
         : await supabase.auth.signUp({
           email: normalizedEmail,
           password,
-          options: { captchaToken },
+          options: {
+            captchaToken,
+            data: { username: normalizedUsername },
+          },
         });
 
       if (result.error) {
@@ -339,6 +351,26 @@ export default function AuthForm({ mode = "login" }) {
         </p>
 
         <form style={styles.form} onSubmit={handleSubmit} noValidate>
+          {!isLogin ? (
+            <label style={styles.field}>
+              <span style={styles.label}>Username</span>
+              <input
+                className="auth-form__input"
+                style={{ ...styles.input, ...(focusedField === "username" ? styles.inputFocused : {}) }}
+                type="text"
+                name="username"
+                autoComplete="nickname"
+                maxLength={USERNAME_MAX_LENGTH}
+                value={username}
+                onChange={(event) => setUsername(limitCodePoints(event.target.value, USERNAME_MAX_LENGTH))}
+                onFocus={() => setFocusedField("username")}
+                onBlur={() => setFocusedField("")}
+                disabled={isSubmitting}
+                required
+              />
+            </label>
+          ) : null}
+
           <label style={styles.field}>
             <span style={styles.label}>Email</span>
             <input

@@ -1,14 +1,99 @@
 -- Apply in the Supabase SQL Editor after reviewing existing entries.
 -- This updates the schema and enforces the contribution rules in PostgreSQL
--- and Supabase Storage. It preserves story data and backfills public author
--- email only for community rows.
+-- and Supabase Storage. It preserves story data and migrates community author
+-- attribution from public email addresses to public usernames.
 
 begin;
+
+-- Keep profile data private. Only the username snapshot on a public archive
+-- entry is readable through the entries table.
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  username text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+revoke all on table public.profiles from public, anon, authenticated;
+
+-- Existing accounts did not collect a public username. Use any valid username
+-- already present in auth metadata; otherwise assign a non-identifying fallback
+-- instead of exposing part of the account email.
+insert into public.profiles (user_id, username)
+select
+  account.id,
+  case
+    when candidate.username is not null
+      and candidate.username = btrim(candidate.username)
+      and char_length(candidate.username) between 1 and 64
+      and candidate.username !~ '[[:cntrl:]]'
+      then candidate.username
+    else 'contributor-' || substring(account.id::text from 1 for 8)
+  end
+from auth.users as account
+cross join lateral (
+  select btrim(coalesce(account.raw_user_meta_data ->> 'username', '')) as username
+) as candidate
+on conflict (user_id) do nothing;
+
+update public.profiles
+set username = 'contributor-' || substring(user_id::text from 1 for 8)
+where username is null
+  or username <> btrim(username)
+  or char_length(btrim(username)) not between 1 and 64
+  or username ~ '[[:cntrl:]]';
+
+alter table public.profiles
+  alter column username set not null,
+  drop constraint if exists profiles_username_rule_check,
+  add constraint profiles_username_rule_check check (
+    username = btrim(username)
+    and char_length(btrim(username)) between 1 and 64
+    and username !~ '[[:cntrl:]]'
+  );
+
+create or replace function public.create_profile_for_auth_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  requested_username text;
+begin
+  requested_username := pg_catalog.btrim(
+    coalesce(new.raw_user_meta_data ->> 'username', '')
+  );
+
+  if char_length(requested_username) not between 1 and 64
+    or requested_username ~ '[[:cntrl:]]' then
+    raise exception using
+      errcode = '22023',
+      message = 'A valid username is required.';
+  end if;
+
+  insert into public.profiles (user_id, username)
+  values (new.id, requested_username);
+
+  return new;
+end;
+$$;
+
+revoke all on function public.create_profile_for_auth_user() from public, anon, authenticated;
+
+drop trigger if exists auth_users_create_public_profile on auth.users;
+create trigger auth_users_create_public_profile
+after insert on auth.users
+for each row
+execute function public.create_profile_for_auth_user();
 
 alter table public.entries
   add column if not exists summary text,
   add column if not exists interview_date date,
-  add column if not exists author_email text;
+  add column if not exists author_username text;
+
+drop trigger if exists entries_sync_author_email on public.entries;
+drop function if exists public.set_entry_author_email();
 
 alter table public.entries
   -- Remove the previous ruleset's conventional names if it was applied.
@@ -42,7 +127,8 @@ alter table public.entries
   drop constraint if exists entries_location_rule_check,
   drop constraint if exists entries_interview_date_rule_check,
   drop constraint if exists entries_thumbnail_path_rule_check,
-  drop constraint if exists entries_author_email_rule_check;
+  drop constraint if exists entries_author_email_rule_check,
+  drop constraint if exists entries_author_username_rule_check;
 
 -- Use text columns so the explicit character checks, rather than an older
 -- VARCHAR limit, define the accepted lengths.
@@ -54,7 +140,7 @@ alter table public.entries
   alter column period_label type text using period_label::text,
   alter column location type text using location::text,
   alter column thumbnail_path type text using thumbnail_path::text,
-  alter column author_email type text using author_email::text;
+  alter column author_username type text using author_username::text;
 
 -- Preserve existing dates saved with the previous DD/MM/YY format by
 -- expanding their years to the same 2000-2099 range used by that rule.
@@ -139,23 +225,24 @@ alter table public.entries
     )
     or (thumbnail_path is not null and char_length(btrim(thumbnail_path)) > 0)
   ),
-  add constraint entries_author_email_rule_check check (
-    author_email is null
+  add constraint entries_author_username_rule_check check (
+    author_username is null
     or (
-      author_email = btrim(author_email)
-      and char_length(author_email) between 3 and 320
+      author_username = btrim(author_username)
+      and char_length(btrim(author_username)) between 1 and 64
+      and author_username !~ '[[:cntrl:]]'
     )
   );
 
--- Author emails are intentionally public for community-entry attribution.
 -- Existing numbered archive records remain curator-authored and keep their
--- interview dates. Backfill community emails before adding the immutability trigger.
-drop trigger if exists entries_sync_author_email on public.entries;
+-- interview dates. Attribute community entries with a profile username and
+-- never derive a public value from auth.users.email.
+drop trigger if exists entries_sync_author_username on public.entries;
 
 update public.entries as entry
-set author_email = account.email
-from auth.users as account
-where entry.owner = account.id
+set author_username = profile.username
+from public.profiles as profile
+where entry.owner = profile.user_id
   and entry.slug not in (
     'how-my-parents-met',
     'courtship-and-family-involvement',
@@ -166,12 +253,11 @@ where entry.owner = account.id
     'during-the-night',
     'ceremonial-objects'
   )
-  and account.email is not null
-  and entry.author_email is distinct from account.email;
+  and entry.author_username is distinct from profile.username;
 
--- Source the public author email from the authenticated owner, never from a
--- submitted form field. Preserve the original email on later edits.
-create or replace function public.set_entry_author_email()
+-- Source the public author username from the private profiles table, never
+-- from a submitted entry field. Preserve the snapshot on later edits.
+create or replace function public.set_entry_author_username()
 returns trigger
 language plpgsql
 security definer
@@ -180,27 +266,37 @@ as $$
 begin
   if tg_op = 'INSERT' then
     if new.owner is not null and new.owner = auth.uid() then
-      select account.email
-        into new.author_email
-        from auth.users as account
-       where account.id = new.owner;
+      select profile.username
+        into new.author_username
+        from public.profiles as profile
+       where profile.user_id = new.owner;
+
+      if not found then
+        raise exception using
+          errcode = '23514',
+          message = 'A contributor profile is required to create an archive entry.';
+      end if;
     else
-      new.author_email := null;
+      new.author_username := null;
     end if;
   else
-    new.author_email := old.author_email;
+    new.author_username := old.author_username;
   end if;
 
   return new;
 end;
 $$;
 
-revoke all on function public.set_entry_author_email() from public, anon, authenticated;
+revoke all on function public.set_entry_author_username() from public, anon, authenticated;
 
-create trigger entries_sync_author_email
-before insert or update of owner, author_email on public.entries
+create trigger entries_sync_author_username
+before insert or update of owner, author_username on public.entries
 for each row
-execute function public.set_entry_author_email();
+execute function public.set_entry_author_username();
+
+-- Remove the formerly public email column entirely. Public entry reads must
+-- not leak account email addresses through select(*), REST, or direct API use.
+alter table public.entries drop column if exists author_email;
 
 -- Bucket metadata also rejects unapproved declared MIME types and files over
 -- 10 MiB. The application additionally verifies bytes against the MIME type.

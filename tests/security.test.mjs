@@ -6,10 +6,12 @@ import {
   countCodePoints,
   EMAIL_MAX_LENGTH,
   isValidEmailAddress,
+  isValidUsername,
   limitCodePoints,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   SEARCH_QUERY_MAX_LENGTH,
+  USERNAME_MAX_LENGTH,
 } from "../lib/security.mjs";
 import { buildSecurityHeaders } from "../lib/security-policy.mjs";
 import { isAuthPath, isPublicPath } from "../lib/auth-routes.mjs";
@@ -48,6 +50,14 @@ test("auth input validation keeps Unicode passwords and rejects unbounded input"
   assert.equal(PASSWORD_MIN_LENGTH, 8);
   assert.equal(PASSWORD_MAX_LENGTH >= PASSWORD_MIN_LENGTH, true);
   assert.equal(limitCodePoints("a".repeat(500), PASSWORD_MAX_LENGTH).length, PASSWORD_MAX_LENGTH);
+});
+
+test("public usernames allow Khmer text but reject blank, control, and overlong values", () => {
+  assert.equal(isValidUsername("សុខា"), true);
+  assert.equal(isValidUsername("  Sophea  ".trim()), true);
+  assert.equal(isValidUsername("  "), false);
+  assert.equal(isValidUsername(`x`.repeat(USERNAME_MAX_LENGTH + 1)), false);
+  assert.equal(isValidUsername("name\nother"), false);
 });
 
 test("authentication errors do not reveal account existence", () => {

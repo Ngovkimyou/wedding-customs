@@ -1,10 +1,10 @@
 import KhmerScriptText from "./KhmerScriptText.js";
 
 export default function ArchiveMetadata({ entry }) {
-  const isCommunityEntry = entry.id === "COMMUNITY ENTRY" || Boolean(entry.authorEmail);
+  const isCommunityEntry = entry.id === "COMMUNITY ENTRY" || Boolean(entry.authorUsername);
   const metadataFields = isCommunityEntry
     ? [
-      ["Author", "authorEmail"],
+      ["Author", "authorUsername"],
       ["Archive ID", "id"],
       ["Period", "period"],
       ["Location", "location"],
@@ -22,11 +22,17 @@ export default function ArchiveMetadata({ entry }) {
         <div key={label}>
           <dt>{label}</dt>
           <dd>
-            <KhmerScriptText>
-              {field === "authorEmail"
-                ? entry.authorEmail || "Email unavailable"
-                : entry[field] || "Not provided"}
-            </KhmerScriptText>
+            {field === "authorUsername" ? (
+              <span className="archive-metadata__author-value">
+                <KhmerScriptText>
+                  {entry.authorUsername || "Name unavailable"}
+                </KhmerScriptText>
+              </span>
+            ) : (
+              <KhmerScriptText>
+                {entry[field] || "Not provided"}
+              </KhmerScriptText>
+            )}
           </dd>
         </div>
       ))}

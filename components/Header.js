@@ -8,6 +8,7 @@ import SearchControl from "./SearchControl.js";
 import ContributionControl from "./ContributionControl.js";
 import SiteBrand from "./SiteBrand.js";
 import HeaderAccountControls from "./HeaderAccountControls.js";
+import HeaderAccountMenu from "./HeaderAccountMenu.js";
 import InteractionLock from "./InteractionLock.js";
 import headerFrame from "../assets/header-frame.avif";
 import mediumHeaderFrame from "../assets/medium-header-frame.avif";
@@ -22,12 +23,14 @@ export default function Header() {
   const [isReviewer, setIsReviewer] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const isSigningOutRef = useRef(false);
+  const reviewerUserIdRef = useRef(null);
   const signOutReleaseTimerRef = useRef(null);
 
   const releaseSignOutLock = () => {
     window.clearTimeout(signOutReleaseTimerRef.current);
     signOutReleaseTimerRef.current = null;
     isSigningOutRef.current = false;
+    reviewerUserIdRef.current = null;
     setIsSigningOut(false);
     setUser(null);
     setIsReviewer(false);
@@ -41,10 +44,16 @@ export default function Header() {
     let reviewerCheckTimer = null;
 
     const syncSession = (session) => {
-      const revision = ++authRevision;
       const nextUser = session?.user ?? null;
-
       setUser(nextUser);
+
+      // Session refreshes keep the same user; preserve their reviewer state to avoid menu flicker.
+      if ((nextUser?.id ?? null) === reviewerUserIdRef.current) {
+        return;
+      }
+
+      reviewerUserIdRef.current = nextUser?.id ?? null;
+      const revision = ++authRevision;
       setIsReviewer(false);
       window.clearTimeout(reviewerCheckTimer);
 
@@ -59,7 +68,11 @@ export default function Header() {
             if (error) {
               console.error("[header] Reviewer access could not be checked.", error);
             }
-            if (isMounted && revision === authRevision) {
+            if (
+              isMounted
+              && revision === authRevision
+              && reviewerUserIdRef.current === nextUser.id
+            ) {
               setIsReviewer(!error && data === true);
             }
           })
@@ -200,11 +213,10 @@ export default function Header() {
                     isReviewer={isReviewer}
                     isSigningOut={isSigningOut}
                     onSignOut={handleSignOut}
-                    mobile
                   />
                 )}
               />
-              <HeaderAccountControls
+              <HeaderAccountMenu
                 user={user}
                 isReviewer={isReviewer}
                 isSigningOut={isSigningOut}

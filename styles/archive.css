@@ -1480,6 +1480,11 @@
   overflow-wrap: anywhere;
 }
 
+.archive-metadata__author-value {
+  color: var(--color-red-dark);
+  font-weight: 600;
+}
+
 .archive-entry__related-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
