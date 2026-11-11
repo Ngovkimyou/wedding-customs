@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import ScrollIndicator from "./ScrollIndicator.js";
 import { createArchiveEntry, updateArchiveEntry } from "../app/contribute/actions.js";
@@ -43,16 +44,35 @@ const FIELD_LABELS = {
 };
 
 const KEYBOARD_NAVIGATION_FIELD_SELECTOR = "[data-contribution-keyboard-field]";
+const CONTRIBUTION_FIELD_KEYBOARD_ORDER = {
+  title_en: 10,
+  title_kh: 20,
+  description: 30,
+  photo: 40,
+  summary: 50,
+  period_label: 60,
+  location: 70,
+};
 
 function focusAdjacentContributionField(form, field, direction, focusSubmitAtEnd = false) {
   const fields = Array.from(form.querySelectorAll(KEYBOARD_NAVIGATION_FIELD_SELECTOR))
-    .filter((candidate) => !candidate.disabled && candidate.type !== "radio");
+    .filter((candidate) => !candidate.disabled && candidate.type !== "radio")
+    .sort((first, second) => Number(first.dataset.contributionKeyboardOrder)
+      - Number(second.dataset.contributionKeyboardOrder));
   const currentIndex = fields.indexOf(field);
   if (currentIndex < 0) return;
 
   const nextField = fields[currentIndex + direction];
   if (nextField) {
-    nextField.focus();
+    const firstPeriodInput = fields.find((candidate) => candidate.hasAttribute("data-contribution-period-input"));
+    const isEnteringPeriod = direction > 0
+      && nextField === firstPeriodInput
+      && !field.hasAttribute("data-contribution-period-input");
+    if (isEnteringPeriod) {
+      focusPeriodMode(form, "year");
+    } else {
+      nextField.focus();
+    }
   } else if (focusSubmitAtEnd && direction > 0) {
     form.querySelector(".contribute-submit:not(:disabled)")?.focus();
   }
@@ -73,6 +93,10 @@ function focusSelectedPeriodMode(form) {
 function isCaretAtTextAreaEnd(textarea) {
   return textarea.selectionStart === textarea.value.length
     && textarea.selectionEnd === textarea.value.length;
+}
+
+function isCaretAtTextAreaStart(textarea) {
+  return textarea.selectionStart === 0 && textarea.selectionEnd === 0;
 }
 
 function FieldLabel({ children, required = false }) {
@@ -122,6 +146,9 @@ export default function ContributionForm({
   const titleEnRef = useRef(null);
   const descriptionRef = useRef(null);
   const photoInputRef = useRef(null);
+  const photoPreviewButtonRef = useRef(null);
+  const photoPreviewDialogRef = useRef(null);
+  const restorePhotoPreviewFocusRef = useRef(false);
   const periodMonthRef = useRef(null);
   const periodYearRef = useRef(null);
   const submittingRef = useRef(false);
@@ -145,28 +172,79 @@ export default function ContributionForm({
     () => parsePeriodDateParts(initialPeriodValue),
   );
   const [photo, setPhoto] = useState(null);
+  const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
+  const [isPhotoPreviewOpen, setIsPhotoPreviewOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    titleEnRef.current?.focus({ preventScroll: true });
-  }, []);
+    if (!isSubmissionComplete) {
+      titleEnRef.current?.focus({ preventScroll: true });
+    }
+  }, [isSubmissionComplete]);
+
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreviewUrl("");
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(photo);
+    setPhotoPreviewUrl(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [photo]);
+
+  useEffect(() => {
+    if (!isPhotoPreviewOpen) return undefined;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    const closeOnKeyDown = (event) => {
+      if (event.key === "Escape" || event.key === " " || event.code === "Space") {
+        event.preventDefault();
+        restorePhotoPreviewFocusRef.current = true;
+        setIsPhotoPreviewOpen(false);
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        photoPreviewDialogRef.current?.focus({ preventScroll: true });
+      }
+    };
+
+    document.addEventListener("keydown", closeOnKeyDown);
+    const focusDialogFrame = window.requestAnimationFrame(() => {
+      photoPreviewDialogRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      document.removeEventListener("keydown", closeOnKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+      window.cancelAnimationFrame(focusDialogFrame);
+      if (restorePhotoPreviewFocusRef.current) {
+        window.requestAnimationFrame(() => {
+          photoPreviewButtonRef.current?.focus({ preventScroll: true });
+        });
+        restorePhotoPreviewFocusRef.current = false;
+      }
+    };
+  }, [isPhotoPreviewOpen]);
 
   const updateField = (event) => {
     const { name, value } = event.currentTarget;
     setFields((current) => ({ ...current, [name]: value }));
     setErrors((current) => ({ ...current, [name]: "" }));
     setMessage("");
-    setSuccessMessage("");
   };
 
   const updatePeriodValue = (value) => {
     setFields((current) => ({ ...current, period_label: value }));
     setErrors((current) => ({ ...current, period_label: "" }));
     setMessage("");
-    setSuccessMessage("");
   };
 
   const updatePeriodYear = (event) => {
@@ -221,7 +299,15 @@ export default function ContributionForm({
     setPhoto(event.currentTarget.files?.[0] ?? null);
     setErrors((current) => ({ ...current, photo: "" }));
     setMessage("");
-    setSuccessMessage("");
+  };
+
+  const removeSelectedPhoto = () => {
+    setPhoto(null);
+    if (photoInputRef.current) {
+      photoInputRef.current.value = "";
+    }
+    setErrors((current) => ({ ...current, photo: "" }));
+    setMessage("");
   };
 
   const handleKeyboardNavigation = (event) => {
@@ -238,11 +324,12 @@ export default function ContributionForm({
     }
 
     if (field.tagName === "BUTTON") {
-      if (event.key === "ArrowUp") {
+      if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault();
-        focusAdjacentContributionField(form, field, -1);
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        if (field.type !== "submit" || direction < 0) {
+          focusAdjacentContributionField(form, field, direction, direction > 0);
+        }
       }
       return;
     }
@@ -263,7 +350,8 @@ export default function ContributionForm({
         focusPeriodInput(form);
       } else if (event.key === "ArrowUp") {
         event.preventDefault();
-        form.querySelector("#contribute-description")?.focus();
+        const firstPeriodInput = form.querySelector("[data-contribution-period-input]:not(:disabled)");
+        if (firstPeriodInput) focusAdjacentContributionField(form, firstPeriodInput, -1);
       }
       return;
     }
@@ -274,7 +362,10 @@ export default function ContributionForm({
       // Keep arrow keys in the form flow instead of moving through browser
       // autofill or datalist suggestion panels.
       event.preventDefault();
-      if (field.hasAttribute("data-contribution-period-input") && event.key === "ArrowUp") {
+      const periodInputs = Array.from(form.querySelectorAll("[data-contribution-period-input]:not(:disabled)"));
+      if (field.hasAttribute("data-contribution-period-input")
+        && event.key === "ArrowUp"
+        && field === periodInputs[0]) {
         focusSelectedPeriodMode(form);
         return;
       }
@@ -288,17 +379,22 @@ export default function ContributionForm({
     }
 
     if (isMultiline) {
-      // Keep normal caret movement and paragraph breaks. At the end of the
-      // story, Down moves into the period controls; Ctrl/Cmd+Enter also advances.
+      // Keep normal caret movement and paragraph breaks. At either text edge,
+      // the arrow key can move to the adjacent field in the displayed order.
       if (event.key === "ArrowDown" && isCaretAtTextAreaEnd(field)) {
         event.preventDefault();
-        focusPeriodMode(form, "year");
+        focusAdjacentContributionField(form, field, 1, true);
+        return;
+      }
+      if (event.key === "ArrowUp" && isCaretAtTextAreaStart(field)) {
+        event.preventDefault();
+        focusAdjacentContributionField(form, field, -1);
         return;
       }
       if (event.ctrlKey || event.metaKey) {
         if (event.key === "Enter") {
           event.preventDefault();
-          focusPeriodMode(form, "year");
+          focusAdjacentContributionField(form, field, 1, true);
         }
       }
       return;
@@ -338,7 +434,6 @@ export default function ContributionForm({
     if (submittingRef.current) return;
 
     setMessage("");
-    setSuccessMessage("");
     const normalizedFields = normalizeContributionFields(fields);
     setFields(normalizedFields);
     const validation = validateContributionFields(normalizedFields);
@@ -442,7 +537,7 @@ export default function ContributionForm({
         if (photoInputRef.current) {
           photoInputRef.current.value = "";
         }
-        setSuccessMessage("Thank you for sharing your story. Your entry is waiting for review and will appear in the public archive if approved.");
+        setIsSubmissionComplete(true);
       }
     } catch (error) {
       console.error("[contribute] Submission could not be completed.", error);
@@ -460,6 +555,7 @@ export default function ContributionForm({
     onChange: updateField,
     disabled: isSubmitting,
     "data-contribution-keyboard-field": "true",
+    "data-contribution-keyboard-order": CONTRIBUTION_FIELD_KEYBOARD_ORDER[field] ?? 100,
     "aria-invalid": Boolean(errors[field]),
     "aria-describedby": errors[field] ? `contribute-${field}-error` : undefined,
   });
@@ -473,14 +569,42 @@ export default function ContributionForm({
     additionalId,
   ].filter(Boolean).join(" ") || undefined;
 
+  if (isSubmissionComplete) {
+    return (
+      <section
+        className="contribution-success"
+        aria-labelledby="contribution-success-title"
+      >
+        <span className="contribution-success__mark" aria-hidden="true">✓</span>
+        <h1 id="contribution-success-title">Thank you for sharing your story</h1>
+        <p className="contribution-success__message" role="status">
+          Your entry is waiting for review and will appear in the public archive if approved.
+        </p>
+        <div className="contribution-success__actions">
+          <Link className="contribution-success__action contribution-success__action--status" href="/my-entries">
+            <span className="contribution-success__action-title">Check your status</span>
+          </Link>
+          <button
+            className="contribution-success__action contribution-success__action--another"
+            type="button"
+            onClick={() => setIsSubmissionComplete(false)}
+          >
+            <span className="contribution-success__action-title">Contribute another story</span>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <form
-      className="contribute-form"
-      onSubmit={handleSubmit}
-      onKeyDown={handleKeyboardNavigation}
-      noValidate
-      aria-busy={isSubmitting}
-    >
+    <>
+      <form
+        className="contribute-form"
+        onSubmit={handleSubmit}
+        onKeyDown={handleKeyboardNavigation}
+        noValidate
+        aria-busy={isSubmitting}
+      >
       <label className="contribute-field" htmlFor="contribute-title_en">
         <FieldLabel required>{FIELD_LABELS.title_en}</FieldLabel>
         <input
@@ -529,7 +653,7 @@ export default function ContributionForm({
         {errors.title_kh ? <small className="contribute-field__error" id="contribute-title_kh-error">{errors.title_kh}</small> : null}
       </label>
 
-      <label className="contribute-field" htmlFor="contribute-summary">
+      <label className="contribute-field contribute-form__optional-summary" htmlFor="contribute-summary">
         <FieldLabel>{FIELD_LABELS.summary}</FieldLabel>
         <input
           {...getFieldProps("summary")}
@@ -545,7 +669,7 @@ export default function ContributionForm({
         {errors.summary ? <small className="contribute-field__error" id="contribute-summary-error">{errors.summary}</small> : null}
       </label>
 
-      <div className="contribute-field">
+      <div className="contribute-field contribute-form__required-description">
         <label htmlFor="contribute-description">
           <FieldLabel required>{FIELD_LABELS.description}</FieldLabel>
         </label>
@@ -572,7 +696,89 @@ export default function ContributionForm({
         {errors.description ? <small className="contribute-field__error" id="contribute-description-error">{errors.description}</small> : null}
       </div>
 
-      <div className="contribute-form__row">
+      <div className={`contribute-field contribute-field--photo ${isEditing ? "contribute-form__optional-photo" : "contribute-form__required-photo"}`}>
+        <label className="contribute-field__label" htmlFor="contribute-photo">
+          <FieldLabel required={!isEditing}>
+            {isEditing ? "Replace photograph" : FIELD_LABELS.photo}
+          </FieldLabel>
+        </label>
+        {isEditing && existingThumbnailUrl ? (
+          <figure className="contribute-current-photo">
+            <Image
+              src={existingThumbnailUrl}
+              alt={`Current photograph for ${fields.title_en}`}
+              width={800}
+              height={560}
+              unoptimized
+            />
+            <figcaption>Current photograph. Choose a new file only if you want to replace it.</figcaption>
+          </figure>
+        ) : null}
+        <input
+          ref={photoInputRef}
+          id="contribute-photo"
+          data-contribution-keyboard-field
+          data-contribution-keyboard-order={isEditing ? "75" : CONTRIBUTION_FIELD_KEYBOARD_ORDER.photo}
+          name="photo"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          disabled={isSubmitting}
+          aria-invalid={Boolean(errors.photo)}
+          aria-describedby={errors.photo
+            ? "contribute-photo-error"
+            : isEditing ? "contribute-photo-hint" : undefined}
+          onChange={updatePhoto}
+          required={!isEditing}
+        />
+        {photo && photoPreviewUrl ? (
+          <figure className="contribute-selected-photo">
+            <button
+              ref={photoPreviewButtonRef}
+              className="contribute-selected-photo__open"
+              type="button"
+              data-contribution-keyboard-field="true"
+              data-contribution-keyboard-order={isEditing ? "76" : "45"}
+              aria-label={`Open full-size preview of ${photo.name}`}
+              aria-haspopup="dialog"
+              disabled={isSubmitting}
+              onClick={() => {
+                restorePhotoPreviewFocusRef.current = true;
+                setIsPhotoPreviewOpen(true);
+              }}
+            >
+              <Image
+                src={photoPreviewUrl}
+                alt=""
+                width={800}
+                height={560}
+                unoptimized
+              />
+            </button>
+            <button
+              className="contribute-selected-photo__remove"
+              type="button"
+              data-contribution-keyboard-field="true"
+              data-contribution-keyboard-order={isEditing ? "77" : "46"}
+              aria-label="Remove selected photograph"
+              title="Remove selected photograph"
+              disabled={isSubmitting}
+              onClick={removeSelectedPhoto}
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m5 5 10 10M15 5 5 15" />
+              </svg>
+            </button>
+          </figure>
+        ) : null}
+        {isEditing ? (
+          <span className="contribute-field__hint" id="contribute-photo-hint">
+            Choose a JPEG, PNG, WebP, or AVIF photo up to 10 MB. Leave this empty to keep the current photograph.
+          </span>
+        ) : null}
+        {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{errors.photo}</small> : null}
+      </div>
+
+      <div className="contribute-form__row contribute-form__optional-row">
         <div className="contribute-field">
           <label htmlFor="contribute-period_label">
             <FieldLabel>{FIELD_LABELS.period_label}</FieldLabel>
@@ -594,6 +800,7 @@ export default function ContributionForm({
                   type="radio"
                   name="period-mode"
                   data-contribution-keyboard-field="true"
+                  data-contribution-keyboard-order={CONTRIBUTION_FIELD_KEYBOARD_ORDER.period_label}
                   value={option.value}
                   checked={periodMode === option.value}
                   onChange={() => selectPeriodMode(option.value)}
@@ -623,6 +830,7 @@ export default function ContributionForm({
               <input
                 id="contribute-period_label"
                 data-contribution-keyboard-field
+                data-contribution-keyboard-order="60"
                 data-contribution-period-input="true"
                 name="period-day"
                 type="text"
@@ -645,6 +853,7 @@ export default function ContributionForm({
                 ref={periodMonthRef}
                 id="contribute-period-month"
                 data-contribution-keyboard-field
+                data-contribution-keyboard-order="61"
                 name="period-month"
                 type="text"
                 inputMode="numeric"
@@ -666,6 +875,7 @@ export default function ContributionForm({
                 ref={periodYearRef}
                 id="contribute-period-year"
                 data-contribution-keyboard-field
+                data-contribution-keyboard-order="62"
                 name="period-year"
                 type="text"
                 inputMode="numeric"
@@ -714,67 +924,48 @@ export default function ContributionForm({
 
       </div>
 
-      <label className="contribute-field contribute-field--photo" htmlFor="contribute-photo">
-        <FieldLabel required={!isEditing}>
-          {isEditing ? "Replace photograph" : FIELD_LABELS.photo}
-        </FieldLabel>
-        {isEditing && existingThumbnailUrl ? (
-          <figure className="contribute-current-photo">
-            <Image
-              src={existingThumbnailUrl}
-              alt={`Current photograph for ${fields.title_en}`}
-              width={800}
-              height={560}
-              unoptimized
-            />
-            <figcaption>Current photograph. Choose a new file only if you want to replace it.</figcaption>
-          </figure>
-        ) : null}
-        <input
-          ref={photoInputRef}
-          id="contribute-photo"
-          data-contribution-keyboard-field
-          name="photo"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
-          disabled={isSubmitting}
-          aria-invalid={Boolean(errors.photo)}
-          aria-describedby={errors.photo
-            ? "contribute-photo-error"
-            : isEditing ? "contribute-photo-hint" : undefined}
-          onChange={updatePhoto}
-          required={!isEditing}
-        />
-        {isEditing ? (
-          <span className="contribute-field__hint" id="contribute-photo-hint">
-            Choose a JPEG, PNG, WebP, or AVIF photo up to 10 MB. Leave this empty to keep the current photograph.
-          </span>
-        ) : null}
-        {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{errors.photo}</small> : null}
-      </label>
-
       <div className="contribute-form__status" aria-live="polite">
         {message ? <p role="alert">{message}</p> : null}
-        {successMessage ? (
-          <p className="contribute-form__success" role="status">
-            {successMessage} <Link href="/my-entries">Check its status in My Entries.</Link>
-            <span lang="km" className="contribute-form__success-khmer">
-              សូមអរគុណដែលបានចែករំលែករឿងរ៉ាវរបស់អ្នក។ សាច់រឿងរបស់អ្នកកំពុងរង់ចាំការពិនិត្យ ហើយនឹងបង្ហាញក្នុងបណ្ណសារសាធារណៈ ប្រសិនបើត្រូវបានអនុម័ត។
-            </span>
-          </p>
-        ) : null}
       </div>
 
       <button
         className="contribute-submit"
         type="submit"
         data-contribution-keyboard-field="true"
+        data-contribution-keyboard-order="80"
         disabled={isSubmitting}
       >
         {isSubmitting
           ? (isEditing ? "Saving changes…" : "Uploading and saving…")
           : (isEditing ? "Save changes" : "Add to the archive")}
       </button>
-    </form>
+      </form>
+      {isPhotoPreviewOpen && photoPreviewUrl && typeof document !== "undefined"
+        ? createPortal(
+          <div
+            ref={photoPreviewDialogRef}
+            className="contribution-photo-preview"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Full-size preview of ${photo?.name ?? "selected photograph"}`}
+            tabIndex={-1}
+            onClick={() => {
+              restorePhotoPreviewFocusRef.current = false;
+              setIsPhotoPreviewOpen(false);
+            }}
+          >
+            <Image
+              className="contribution-photo-preview__image"
+              src={photoPreviewUrl}
+              alt={photo?.name ? `Full-size preview of ${photo.name}` : "Full-size photo preview"}
+              width={1600}
+              height={1200}
+              unoptimized
+            />
+          </div>,
+          document.body,
+        )
+        : null}
+    </>
   );
 }
