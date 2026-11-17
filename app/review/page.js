@@ -5,8 +5,8 @@ import { createClient } from "../../lib/supabase/server.js";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Review Queue | ជួរពិនិត្យ",
-  description: "Review pending community archive entries. ពិនិត្យធាតុសហគមន៍ដែលកំពុងរង់ចាំការពិនិត្យ។",
+  title: "Review Queue",
+  description: "Review pending community archive entries.",
 };
 
 function formatSubmittedAt(value) {
@@ -26,22 +26,10 @@ function AccessNotice() {
   return (
     <main className="contribute-page review-page" aria-labelledby="review-title">
       <section className="contribute-card review-card review-card--notice">
-        <p className="contribute-card__eyebrow review-card__eyebrow">
-          <span>Reviewer access</span>
-          <span lang="km" dir="auto">សិទ្ធិអ្នកពិនិត្យ</span>
-        </p>
-        <h1 id="review-title">
-          <span>Review Queue</span>
-          <span className="review-card__khmer-title" lang="km" dir="auto">ជួរពិនិត្យ</span>
-        </h1>
-        <p className="review-notice" role="status">
-          <span>You don’t have permission to review entries.</span>
-          <span lang="km" dir="auto">អ្នកមិនមានសិទ្ធិចូលប្រើជួរពិនិត្យទេ។</span>
-        </p>
-        <Link className="review-notice__link" href="/">
-          <span>Back to the archive</span>
-          <span lang="km" dir="auto">ត្រឡប់ទៅបណ្ណសារ</span>
-        </Link>
+        <p className="contribute-card__eyebrow review-card__eyebrow">Reviewer access</p>
+        <h1 id="review-title">Review Queue</h1>
+        <p className="review-notice" role="status">You don’t have permission to review entries.</p>
+        <Link className="review-notice__link" href="/">Back to the archive</Link>
       </section>
     </main>
   );
@@ -98,23 +86,15 @@ export default async function ReviewPage() {
   return (
     <main className="contribute-page review-page" aria-labelledby="review-title">
       <section className="contribute-card review-card">
-        <p className="contribute-card__eyebrow review-card__eyebrow">
-          <span>Community archive</span>
-          <span lang="km" dir="auto">បណ្ណសារសហគមន៍</span>
-        </p>
-        <h1 id="review-title">
-          <span>Review Queue</span>
-          <span className="review-card__khmer-title" lang="km" dir="auto">ជួរពិនិត្យ</span>
-        </h1>
+        <p className="contribute-card__eyebrow review-card__eyebrow">Community archive</p>
+        <h1 id="review-title">Review Queue</h1>
         <p className="contribute-card__intro review-card__intro">
-          <span>Review community stories in the order they were submitted.</span>
-          <span lang="km" dir="auto">ពិនិត្យសាច់រឿងសហគមន៍តាមលំដាប់ពេលដាក់ស្នើ។</span>
+          Review community stories in the order they were submitted.
         </p>
 
         {loadError ? (
           <p className="review-page__error" role="alert">
-            <span>The review queue couldn’t be loaded. Please try again later.</span>
-            <span lang="km" dir="auto">មិនអាចបើកជួរពិនិត្យបានទេ។ សូមព្យាយាមម្ដងទៀតពេលក្រោយ។</span>
+            The review queue couldn’t be loaded. Please try again later.
           </p>
         ) : (
           <ReviewQueue entries={entries ?? []} />

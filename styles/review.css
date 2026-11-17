@@ -6,34 +6,9 @@
   width: min(100%, 42rem);
 }
 
-.review-card__khmer-title {
-  display: block;
-  margin-top: 0.35rem;
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 1.1rem;
-  line-height: 1.5;
-}
-
-.review-card__eyebrow,
-.review-card__intro {
-  display: grid;
-  gap: 0.25rem;
-}
-
-.review-card__eyebrow span[lang="km"],
-.review-card__intro span[lang="km"],
-.review-notice__link span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 0.9em;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
 .review-page__error,
 .review-notice,
 .review-empty {
-  display: grid;
-  gap: 0.4rem;
   margin: 1.5rem 0;
   color: var(--color-muted);
   line-height: 1.6;
@@ -41,12 +16,6 @@
 
 .review-page__error {
   color: var(--color-red);
-}
-
-.review-page__error span[lang="km"],
-.review-notice span[lang="km"],
-.review-empty span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
 }
 
 .review-notice {
@@ -92,7 +61,7 @@
 
 .review-entry {
   display: grid;
-  grid-template-columns: minmax(14rem, 0.82fr) minmax(0, 1.18fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
   overflow: hidden;
   border: 1px solid rgba(142, 107, 61, 0.55);
   background: rgba(255, 252, 246, 0.62);
@@ -101,14 +70,42 @@
 
 .review-entry__photo {
   position: relative;
-  min-height: 100%;
-  aspect-ratio: 4 / 3;
+  min-width: 0;
+  min-height: 0;
   overflow: hidden;
   background: var(--color-paper-deep);
 }
 
+.review-entry__image-trigger {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  touch-action: manipulation;
+}
+
+.review-entry__image-trigger:focus-visible {
+  outline: 2px solid var(--color-title-gold);
+  outline-offset: -2px;
+}
+
 .review-entry__image .progressive-image__image {
   object-fit: cover;
+  transition: filter 200ms ease, transform 240ms ease;
+}
+
+.review-entry__image-trigger:hover .progressive-image__image,
+.review-entry__image-trigger:focus-visible .progressive-image__image {
+  filter: brightness(1.04);
+  transform: scale(1.025);
 }
 
 .review-entry__photo-fallback {
@@ -145,11 +142,6 @@
 .review-entry__submitted time {
   display: grid;
   gap: 0.12rem;
-}
-
-.review-entry__submitted-label span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  letter-spacing: 0;
 }
 
 .review-entry__content h2 {
@@ -196,14 +188,6 @@
   text-transform: uppercase;
 }
 
-.review-entry__field-label span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 1rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
 .review-entry__description {
   max-height: 15rem;
   margin-top: 0.75rem;
@@ -224,14 +208,6 @@
 .review-entry__photo-fallback {
   gap: 0.35rem;
   text-align: center;
-}
-
-.review-entry__image .progressive-image__fallback span[lang="km"],
-.review-entry__photo-fallback span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 0.95rem;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 .review-entry__description::-webkit-scrollbar {
@@ -271,14 +247,6 @@
   display: block;
 }
 
-.review-entry__metadata dt span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 0.95rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
 .review-entry__metadata dd {
   margin: 0.2rem 0 0;
   color: var(--color-muted);
@@ -311,14 +279,6 @@
   text-align: center;
   text-transform: uppercase;
   transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
-}
-
-.review-decision span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-  font-size: 0.82rem;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 .review-decision--return {
@@ -355,16 +315,8 @@
   color: var(--color-muted);
 }
 
-.review-entry__saving span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
-}
-
 .review-entry__error {
   color: var(--color-red);
-}
-
-.review-entry__error span[lang="km"] {
-  font-family: var(--font-khmer-script), var(--font-body);
 }
 
 @media (max-width: 760px) {
@@ -375,6 +327,7 @@
   .review-entry__photo {
     min-height: 12rem;
     max-height: 24rem;
+    aspect-ratio: 4 / 3;
   }
 }
 

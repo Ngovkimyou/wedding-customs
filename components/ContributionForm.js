@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import ScrollIndicator from "./ScrollIndicator.js";
+import FullScreenPhotoPreview from "./FullScreenPhotoPreview.js";
+import InteractionLock from "./InteractionLock.js";
 import { createArchiveEntry, updateArchiveEntry } from "../app/contribute/actions.js";
 import { createClient } from "../lib/supabase/client.js";
 import { countCodePoints } from "../lib/security.mjs";
@@ -146,9 +147,6 @@ export default function ContributionForm({
   const titleEnRef = useRef(null);
   const descriptionRef = useRef(null);
   const photoInputRef = useRef(null);
-  const photoPreviewButtonRef = useRef(null);
-  const photoPreviewDialogRef = useRef(null);
-  const restorePhotoPreviewFocusRef = useRef(false);
   const periodMonthRef = useRef(null);
   const periodYearRef = useRef(null);
   const submittingRef = useRef(false);
@@ -173,7 +171,6 @@ export default function ContributionForm({
   );
   const [photo, setPhoto] = useState(null);
   const [photoPreviewUrl, setPhotoPreviewUrl] = useState("");
-  const [isPhotoPreviewOpen, setIsPhotoPreviewOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState("");
   const [isSubmissionComplete, setIsSubmissionComplete] = useState(false);
@@ -195,44 +192,6 @@ export default function ContributionForm({
     setPhotoPreviewUrl(previewUrl);
     return () => URL.revokeObjectURL(previewUrl);
   }, [photo]);
-
-  useEffect(() => {
-    if (!isPhotoPreviewOpen) return undefined;
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousRootOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    const closeOnKeyDown = (event) => {
-      if (event.key === "Escape" || event.key === " " || event.code === "Space") {
-        event.preventDefault();
-        restorePhotoPreviewFocusRef.current = true;
-        setIsPhotoPreviewOpen(false);
-      } else if (event.key === "Tab") {
-        event.preventDefault();
-        photoPreviewDialogRef.current?.focus({ preventScroll: true });
-      }
-    };
-
-    document.addEventListener("keydown", closeOnKeyDown);
-    const focusDialogFrame = window.requestAnimationFrame(() => {
-      photoPreviewDialogRef.current?.focus({ preventScroll: true });
-    });
-
-    return () => {
-      document.removeEventListener("keydown", closeOnKeyDown);
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousRootOverflow;
-      window.cancelAnimationFrame(focusDialogFrame);
-      if (restorePhotoPreviewFocusRef.current) {
-        window.requestAnimationFrame(() => {
-          photoPreviewButtonRef.current?.focus({ preventScroll: true });
-        });
-        restorePhotoPreviewFocusRef.current = false;
-      }
-    };
-  }, [isPhotoPreviewOpen]);
 
   const updateField = (event) => {
     const { name, value } = event.currentTarget;
@@ -604,6 +563,7 @@ export default function ContributionForm({
         onKeyDown={handleKeyboardNavigation}
         noValidate
         aria-busy={isSubmitting}
+        inert={isSubmitting}
       >
       <label className="contribute-field" htmlFor="contribute-title_en">
         <FieldLabel required>{FIELD_LABELS.title_en}</FieldLabel>
@@ -732,18 +692,14 @@ export default function ContributionForm({
         />
         {photo && photoPreviewUrl ? (
           <figure className="contribute-selected-photo">
-            <button
-              ref={photoPreviewButtonRef}
+            <FullScreenPhotoPreview
+              src={photoPreviewUrl}
+              alt={`Photograph ${photo.name}`}
               className="contribute-selected-photo__open"
-              type="button"
-              data-contribution-keyboard-field="true"
-              data-contribution-keyboard-order={isEditing ? "76" : "45"}
-              aria-label={`Open full-size preview of ${photo.name}`}
-              aria-haspopup="dialog"
               disabled={isSubmitting}
-              onClick={() => {
-                restorePhotoPreviewFocusRef.current = true;
-                setIsPhotoPreviewOpen(true);
+              triggerProps={{
+                "data-contribution-keyboard-field": "true",
+                "data-contribution-keyboard-order": isEditing ? "76" : "45",
               }}
             >
               <Image
@@ -753,7 +709,7 @@ export default function ContributionForm({
                 height={560}
                 unoptimized
               />
-            </button>
+            </FullScreenPhotoPreview>
             <button
               className="contribute-selected-photo__remove"
               type="button"
@@ -940,32 +896,11 @@ export default function ContributionForm({
           : (isEditing ? "Save changes" : "Add to the archive")}
       </button>
       </form>
-      {isPhotoPreviewOpen && photoPreviewUrl && typeof document !== "undefined"
-        ? createPortal(
-          <div
-            ref={photoPreviewDialogRef}
-            className="contribution-photo-preview"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Full-size preview of ${photo?.name ?? "selected photograph"}`}
-            tabIndex={-1}
-            onClick={() => {
-              restorePhotoPreviewFocusRef.current = false;
-              setIsPhotoPreviewOpen(false);
-            }}
-          >
-            <Image
-              className="contribution-photo-preview__image"
-              src={photoPreviewUrl}
-              alt={photo?.name ? `Full-size preview of ${photo.name}` : "Full-size photo preview"}
-              width={1600}
-              height={1200}
-              unoptimized
-            />
-          </div>,
-          document.body,
-        )
-        : null}
+      {isSubmitting ? (
+        <InteractionLock
+          message={isEditing ? "Saving changes..." : "Uploading and saving..."}
+        />
+      ) : null}
     </>
   );
 }

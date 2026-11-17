@@ -10,9 +10,9 @@ export const metadata = {
 };
 
 const STATUS_LABELS = {
-  pending: { english: "Pending review", khmer: "កំពុងរង់ចាំការពិនិត្យ" },
-  published: { english: "Published", khmer: "បានផ្សព្វផ្សាយ" },
-  returned: { english: "Changes requested", khmer: "សូមកែសម្រួល" },
+  pending: "Pending review",
+  published: "Published",
+  returned: "Changes requested",
 };
 
 export default async function MyEntriesPage() {
@@ -28,7 +28,7 @@ export default async function MyEntriesPage() {
 
   const { data, error } = await supabase
     .from("entries")
-    .select("id, slug, title_en, title_kh, status")
+    .select("id, slug, title_en, status")
     .eq("owner", user.id)
     .order("created_at", { ascending: false });
 
@@ -54,24 +54,16 @@ export default async function MyEntriesPage() {
         ) : entries.length ? (
           <ul className="my-entries-list">
             {entries.map((entry) => {
-              const status = STATUS_LABELS[entry.status] ?? {
-                english: "Status unavailable",
-                khmer: "មិនអាចកំណត់ស្ថានភាពបាន",
-              };
+              const statusVariant = STATUS_LABELS[entry.status] ? entry.status : "unknown";
+              const status = STATUS_LABELS[statusVariant] ?? "Status unavailable";
 
               return (
-                <li className="my-entries-list__item" key={entry.id}>
+                <li className={`my-entries-list__item my-entries-list__item--${statusVariant}`} key={entry.id}>
                   <div className="my-entries-list__story">
                     <h2>{entry.title_en}</h2>
-                    {entry.title_kh ? (
-                      <p className="my-entries-list__khmer" lang="km" dir="auto">
-                        {entry.title_kh}
-                      </p>
-                    ) : null}
                   </div>
-                  <div className={`my-entries-list__status my-entries-list__status--${STATUS_LABELS[entry.status] ? entry.status : "unknown"}`}>
-                    <span>{status.english}</span>
-                    <span lang="km" dir="auto">{status.khmer}</span>
+                  <div className={`my-entries-list__status my-entries-list__status--${statusVariant}`}>
+                    <span>{status}</span>
                   </div>
                   <Link
                     className="my-entries-list__edit"
@@ -84,9 +76,7 @@ export default async function MyEntriesPage() {
             })}
           </ul>
         ) : (
-          <p className="my-entries-message">
-            You haven’t contributed an entry yet. / អ្នកមិនទាន់បានបន្ថែមសាច់រឿងនៅឡើយទេ។
-          </p>
+          <p className="my-entries-message">You haven’t contributed an entry yet.</p>
         )}
 
         <Link className="my-entries-contribute" href="/contribute">
