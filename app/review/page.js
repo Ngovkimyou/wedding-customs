@@ -10,13 +10,19 @@ export const metadata = {
   description: "Review pending community archive entries.",
 };
 
-function AccessNotice() {
+function AccessNotice({ unavailable = false }) {
   return (
     <main className="contribute-page review-page" aria-labelledby="review-title">
       <section className="contribute-card review-card review-card--notice">
         <p className="contribute-card__eyebrow review-card__eyebrow"><LocaleText>Reviewer access</LocaleText></p>
         <h1 id="review-title"><LocaleText>Review Queue</LocaleText></h1>
-        <p className="review-notice" role="status"><LocaleText>You don’t have permission to review entries.</LocaleText></p>
+        <p className="review-notice" role={unavailable ? "alert" : "status"}>
+          <LocaleText>
+            {unavailable
+              ? "Reviewer access could not be checked. Please try again later."
+              : "You don’t have permission to review entries."}
+          </LocaleText>
+        </p>
         <Link className="review-notice__link" href="/"><LocaleText>Back to the archive</LocaleText></Link>
       </section>
     </main>
@@ -29,19 +35,26 @@ export default async function ReviewPage() {
     supabase = await createClient();
   } catch (error) {
     console.error("[review] Supabase could not be initialized.", error);
-    return <AccessNotice />;
+    return <AccessNotice unavailable />;
   }
 
   let isReviewer = false;
+  let reviewerCheckFailed = false;
   try {
     const { data, error } = await supabase.rpc("is_reviewer");
     if (error) {
       console.error("[review] Reviewer access could not be checked.", error);
+      reviewerCheckFailed = true;
     } else {
       isReviewer = data === true;
     }
   } catch (error) {
     console.error("[review] Reviewer access could not be checked.", error);
+    reviewerCheckFailed = true;
+  }
+
+  if (reviewerCheckFailed) {
+    return <AccessNotice unavailable />;
   }
 
   if (!isReviewer) {

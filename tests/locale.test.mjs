@@ -207,6 +207,15 @@ test("search, photo-picker, and music-panel strings have Khmer translations", ()
   }
 });
 
+test("review access failures and denials have distinct Khmer messages", () => {
+  for (const label of [
+    "Reviewer access could not be checked. Please try again later.",
+    "You don’t have permission to review entries.",
+  ]) {
+    assert.match(translate("km", label), /[\u1780-\u17ff]/u, `${label} should have Khmer copy`);
+  }
+});
+
 test("About-page image and design credits have Khmer translations", () => {
   for (const label of [
     "Images & design assets",
