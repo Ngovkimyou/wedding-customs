@@ -4,16 +4,27 @@ import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import searchBackground from "../assets/search-background.avif";
 import {
+  getArchiveDescriptionBlocks,
+  getArchiveSearchMatchFlags,
   getArchiveDescriptionSnippets,
   getArchiveDescriptionText,
+  keepKhmerSearchText,
   normalizeSearchText,
 } from "../lib/archive-search.mjs";
 import { limitCodePoints, SEARCH_QUERY_MAX_LENGTH } from "../lib/security.mjs";
+import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
+import {
+  translateArchiveContent,
+  translateArchiveSearchSnippet,
+  translateArchiveSearchText,
+} from "../lib/archive-content-km.js";
 import HighlightedTitle from "./HighlightedTitle.js";
 import KhmerScriptText from "./KhmerScriptText.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 import { getLocalizedTitles, translate } from "../lib/locale.js";
 import { useLocale } from "./LocaleProvider.js";
+
+const KHMER_SCRIPT_PATTERN = /[\u1780-\u17ff\u19e0-\u19ff]/u;
 
 export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   const { locale } = useLocale();
@@ -24,12 +35,36 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   const normalizedQuery = normalizeSearchText(query);
   const displayQuery = query.trim().replace(/\s+/gu, " ");
   const searchIndex = useMemo(
-    () => entries.map((entry) => ({
-      ...entry,
-      searchTitle: normalizeSearchText(entry.title),
-      searchKhmerTitle: normalizeSearchText(entry.khmerTitle),
-      searchDescription: normalizeSearchText(getArchiveDescriptionText(entry)),
-    })),
+    () => entries.map((entry) => {
+      const isCommunityEntry = isCommunityArchiveEntry(entry);
+      const khmerDescriptionBlocks = getArchiveDescriptionBlocks(entry)
+        .map((block) => ({
+          sectionTitle: isCommunityEntry
+            ? keepKhmerSearchText(block.sectionTitle)
+            : translate("km", translateArchiveContent("km", block.sectionTitle)),
+          text: isCommunityEntry
+            ? keepKhmerSearchText(block.text)
+            : translateArchiveSearchText("km", block.text),
+        }))
+        .filter((block) => block.text && KHMER_SCRIPT_PATTERN.test(block.text));
+      const khmerSearchBlocks = khmerDescriptionBlocks.map((block) => ({
+        ...block,
+        text: keepKhmerSearchText(block.text),
+      })).filter((block) => block.text);
+
+      return {
+        ...entry,
+        isCommunityEntry,
+        khmerDescriptionBlocks,
+        searchTitle: normalizeSearchText(entry.title),
+        searchKhmerTitle: normalizeSearchText(keepKhmerSearchText(entry.khmerTitle)),
+        searchDescription: normalizeSearchText(getArchiveDescriptionText(entry)),
+        searchKhmerDescription: normalizeSearchText(getArchiveDescriptionText({
+          ...entry,
+          descriptionBlocks: khmerSearchBlocks,
+        })),
+      };
+    }),
     [entries],
   );
   const matches = useMemo(() => {
@@ -38,22 +73,31 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
     }
 
     return searchIndex.flatMap((entry) => {
-      const titleMatches = entry.searchTitle.includes(normalizedQuery);
-      const khmerTitleMatches = entry.searchKhmerTitle.includes(normalizedQuery);
-      const descriptionMatches = entry.searchDescription.includes(normalizedQuery);
+      const { titleMatches, descriptionMatches } = getArchiveSearchMatchFlags(
+        entry,
+        normalizedQuery,
+        locale,
+      );
 
-      if (!titleMatches && !khmerTitleMatches && !descriptionMatches) {
+      if (!titleMatches && !descriptionMatches) {
         return [];
       }
 
       return [{
         ...entry,
+        useKhmerDescription: KHMER_SCRIPT_PATTERN.test(normalizedQuery)
+          && entry.searchKhmerDescription.includes(normalizedQuery),
         descriptionSnippets: descriptionMatches
-          ? getArchiveDescriptionSnippets(entry, normalizedQuery)
+          ? getArchiveDescriptionSnippets(
+            KHMER_SCRIPT_PATTERN.test(normalizedQuery)
+              ? { ...entry, descriptionBlocks: entry.khmerDescriptionBlocks }
+              : entry,
+            normalizedQuery,
+          )
           : [],
       }];
     });
-  }, [normalizedQuery, searchIndex]);
+  }, [locale, normalizedQuery, searchIndex]);
 
   const focusResult = (index) => {
     const result = resultRefs.current[index];
@@ -130,7 +174,7 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
               ? translate(locale, "Search is temporarily unavailable. Please try again shortly.")
               : dataStatus === "empty"
                 ? translate(locale, "No archive records are available yet.")
-                : normalizedQuery
+                : displayQuery
                   ? `${matches.length} ${translate(locale, matches.length === 1 ? "record" : "records")} ${translate(locale, "found")}`
                   : translate(locale, "Start typing to search the archive.")}
         </p>
@@ -138,7 +182,7 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
           <p className="archive-search__empty" role="alert">
             {translate(locale, "The archive could not be loaded right now.")}
           </p>
-        ) : normalizedQuery && matches.length === 0 ? (
+        ) : displayQuery && matches.length === 0 ? (
           <p className="archive-search__empty">{translate(locale, "No match found for")} “{displayQuery}”.</p>
         ) : null}
         {matches.length === 0 ? (
@@ -154,6 +198,23 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
         ) : null}
         <div className="archive-search__results" id="archive-search-results">
           {matches.map((entry, index) => {
+            const isCommunityEntry = entry.isCommunityEntry;
+            const descriptionSnippets = entry.descriptionSnippets?.map((snippet) => ({
+              ...snippet,
+              localizedContext: isCommunityEntry
+                ? translate(locale, snippet.sectionTitle)
+                : translate(locale, translateArchiveContent(locale, snippet.sectionTitle)),
+              localizedText: isCommunityEntry || entry.useKhmerDescription
+                ? snippet.text
+                : translateArchiveSearchSnippet(locale, snippet.text),
+            })).filter((snippet) => (
+              locale !== "km"
+              || isCommunityEntry
+              || KHMER_SCRIPT_PATTERN.test(snippet.localizedText)
+            ));
+            const localizedSummary = isCommunityEntry
+              ? entry.summary
+              : translateArchiveSearchText(locale, entry.summary);
             const {
               primaryTitle,
               alternateTitle,
@@ -179,18 +240,19 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
                     <HighlightedTitle title={alternateTitle} query={normalizedQuery} />
                   </p>
                 ) : null}
-                {entry.descriptionSnippets?.length ? (
+                {descriptionSnippets?.length ? (
                   <div className="archive-search__description-matches">
-                    {entry.descriptionSnippets.map((snippet, snippetIndex) => (
+                    {descriptionSnippets.map((snippet, snippetIndex) => (
                       <div className="archive-search__description-match" key={`${snippet.sectionTitle}-${snippetIndex}`}>
-                        {snippet.sectionTitle ? (
-                          <span className="archive-search__description-context">
-                            {snippet.sectionTitle}
-                          </span>
-                        ) : null}
-                        <p>
+                        {snippet.sectionTitle
+                          && (locale !== "km" || isCommunityEntry || KHMER_SCRIPT_PATTERN.test(snippet.localizedContext)) ? (
+                            <span className="archive-search__description-context">
+                              {snippet.localizedContext}
+                            </span>
+                          ) : null}
+                        <p lang={KHMER_SCRIPT_PATTERN.test(snippet.localizedText) ? "km" : "en"}>
                           <HighlightedTitle
-                            title={snippet.text}
+                            title={snippet.localizedText}
                             query={normalizedQuery}
                             useKhmerScript
                           />
@@ -198,8 +260,10 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
                       </div>
                     ))}
                   </div>
-                ) : entry.summary ? (
-                  <p><KhmerScriptText>{entry.summary}</KhmerScriptText></p>
+                ) : localizedSummary ? (
+                  <p lang={locale}>
+                    <KhmerScriptText>{localizedSummary}</KhmerScriptText>
+                  </p>
                 ) : null}
                 <span className="archive-search__result-action">{translate(locale, "Open record")} <span aria-hidden="true">→</span></span>
               </Link>

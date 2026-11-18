@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { getLocalizedTitles, translate } from "../lib/locale.js";
-import { translateArchiveContent } from "../lib/archive-content-km.js";
+import {
+  translateArchiveContent,
+  translateArchiveSearchSnippet,
+  translateArchiveSearchText,
+} from "../lib/archive-content-km.js";
+import { getArchiveDescriptionSnippets, normalizeSearchText } from "../lib/archive-search.mjs";
 
 test("archive titles follow the selected language and retain the alternate title", () => {
   const titles = {
@@ -176,6 +181,40 @@ test("curated archive detail copy has Khmer translations and preserves English m
       `${text} should have Khmer copy`,
     );
     assert.equal(translateArchiveContent("en", text), text, `${text} should remain English in English mode`);
+  }
+});
+
+test("search snippets reuse the Khmer translation of their full curated paragraph", () => {
+  const snippet = "People could still choose a partner on their own, but the final decision remained subject to parental approval.";
+  const translated = translateArchiveSearchSnippet("km", snippet);
+
+  assert.notEqual(translated, snippet);
+  assert.match(translated, /[\u1780-\u17ff]/u);
+  assert.equal(translateArchiveSearchSnippet("en", snippet), snippet);
+});
+
+test("Khmer archive descriptions are translated and searchable by Khmer text", () => {
+  const paragraph = "Up until the early 2000s, when family rules were strict and highly respected, parents often introduced partners to one another. People could still choose a partner on their own, but the final decision remained subject to parental approval.";
+  const translatedParagraph = translateArchiveSearchText("km", paragraph);
+  const query = Array.from(translatedParagraph).slice(0, 5).join("");
+
+  assert.match(translatedParagraph, /[\u1780-\u17ff]/u);
+  assert.notEqual(normalizeSearchText(translatedParagraph), normalizeSearchText(paragraph));
+  assert.ok(getArchiveDescriptionSnippets({
+    descriptionBlocks: [{ sectionTitle: "ទំនៀមទម្លាប់", text: translatedParagraph }],
+  }, query).length > 0);
+  assert.equal(translateArchiveSearchText("km", "This paragraph has no Khmer translation."), "");
+});
+
+test("English search matches use Khmer excerpts in Khmer locale", () => {
+  const paragraph = "Up until the early 2000s, when family rules were strict and highly respected, parents often introduced partners to one another. People could still choose a partner on their own, but the final decision remained subject to parental approval.";
+  const matches = getArchiveDescriptionSnippets({
+    descriptionBlocks: [{ sectionTitle: "How My Parents First Met", text: paragraph }],
+  }, "a");
+
+  assert.ok(matches.length > 0);
+  for (const match of matches) {
+    assert.match(translateArchiveSearchSnippet("km", match.text), /[\u1780-\u17ff]/u);
   }
 });
 

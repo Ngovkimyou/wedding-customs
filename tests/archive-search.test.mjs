@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   findTitleMatches,
+  getArchiveSearchMatchFlags,
   getArchiveDescriptionSnippets,
   getArchiveDescriptionText,
+  keepKhmerSearchText,
   normalizeSearchText,
 } from "../lib/archive-search.mjs";
 
@@ -17,6 +19,43 @@ test("blank and unmatched searches do not produce highlights", () => {
   assert.deepEqual(findTitleMatches("Wedding", "   "), []);
   assert.deepEqual(findTitleMatches("Wedding", "---___@@@"), []);
   assert.deepEqual(findTitleMatches("Wedding", "xyz"), []);
+});
+
+test("Khmer locale searches Khmer indexes only while English also accepts Khmer queries", () => {
+  const entry = {
+    searchTitle: "wedding organization",
+    searchKhmerTitle: "ពិធីអាពាហ៍ពិពាហ៍",
+    searchDescription: "family organization customs",
+    searchKhmerDescription: "ទំនៀមគ្រួសារ",
+  };
+
+  assert.deepEqual(getArchiveSearchMatchFlags(entry, "z", "km"), {
+    titleMatches: false,
+    descriptionMatches: false,
+  });
+  assert.deepEqual(getArchiveSearchMatchFlags(entry, "wedding", "km"), {
+    titleMatches: false,
+    descriptionMatches: false,
+  });
+  assert.deepEqual(getArchiveSearchMatchFlags(entry, "ពិធី", "km"), {
+    titleMatches: true,
+    descriptionMatches: false,
+  });
+  assert.deepEqual(getArchiveSearchMatchFlags(entry, "ពិធី", "en"), {
+    titleMatches: true,
+    descriptionMatches: false,
+  });
+  assert.deepEqual(getArchiveSearchMatchFlags(entry, "wedding", "en"), {
+    titleMatches: true,
+    descriptionMatches: false,
+  });
+});
+
+test("Khmer search indexing excludes Latin words even in bilingual archive translations", () => {
+  const khmerOnly = keepKhmerSearchText("ទំនៀម wedding Zara 2003");
+
+  assert.equal(khmerOnly, "ទំនៀម");
+  assert.equal(normalizeSearchText(khmerOnly).includes("zara"), false);
 });
 
 test("quotes, punctuation, and repeated spaces do not change a match", () => {
