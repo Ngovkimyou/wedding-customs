@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useRef } from "react";
+import { useLocale } from "./LocaleProvider.js";
+import { getLocalizedTitles } from "../lib/locale.js";
 import useResponsiveTextFit from "./useResponsiveTextFit.js";
 
 const MAX_KHMER_TITLE_LINES = 3;
@@ -19,9 +21,14 @@ function countRenderedLines(element) {
   return lineTops.size;
 }
 
-export default function ArchiveKhmerTitle({ children }) {
+export default function ArchiveKhmerTitle({ title, khmerTitle }) {
+  const { locale } = useLocale();
   const titleRef = useRef(null);
-  const titleText = typeof children === "string" ? children : "";
+  const { alternateTitle: titleText, alternateLocale: titleLanguage } = getLocalizedTitles(
+    locale,
+    title,
+    khmerTitle,
+  );
 
   const fitTitle = useCallback((title) => {
     title.style.setProperty("--archive-khmer-fit-scale", "1");
@@ -53,14 +60,19 @@ export default function ArchiveKhmerTitle({ children }) {
 
   useResponsiveTextFit(titleRef, titleText, fitTitle);
 
+  if (!titleText?.trim()) {
+    return null;
+  }
+
   return (
     <p
       ref={titleRef}
       className="archive-entry__khmer-title"
       data-archive-dynamic="true"
+      lang={titleLanguage}
       style={{ "--archive-khmer-fit-scale": 1 }}
     >
-      {children}
+      {titleText}
     </p>
   );
 }

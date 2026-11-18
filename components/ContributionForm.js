@@ -7,9 +7,11 @@ import { useRouter } from "next/navigation";
 import ScrollIndicator from "./ScrollIndicator.js";
 import FullScreenPhotoPreview from "./FullScreenPhotoPreview.js";
 import InteractionLock from "./InteractionLock.js";
+import { useLocale } from "./LocaleProvider.js";
 import { createArchiveEntry, updateArchiveEntry } from "../app/contribute/actions.js";
 import { createClient } from "../lib/supabase/client.js";
 import { countCodePoints } from "../lib/security.mjs";
+import { translate } from "../lib/locale.js";
 import {
   CAMBODIAN_PROVINCES,
   CONTRIBUTION_LIMITS,
@@ -101,12 +103,13 @@ function isCaretAtTextAreaStart(textarea) {
 }
 
 function FieldLabel({ children, required = false }) {
+  const { locale } = useLocale();
   return (
     <span className="contribute-field__label">
       <span className="contribute-field__label-text">
-        {children}
+        {translate(locale, children)}
         {required ? <span className="contribute-required" aria-hidden="true">*</span> : null}
-        {!required ? <span className="contribute-optional">(Optional)</span> : null}
+        {!required ? <span className="contribute-optional">{translate(locale, "(Optional)")}</span> : null}
       </span>
     </span>
   );
@@ -141,6 +144,7 @@ export default function ContributionForm({
   initialValues,
   existingThumbnailUrl = null,
 }) {
+  const { locale } = useLocale();
   const isEditing = mode === "edit";
   const initialPeriodValue = normalizePeriodLabel(initialValues?.period_label);
   const router = useRouter();
@@ -532,23 +536,24 @@ export default function ContributionForm({
     return (
       <section
         className="contribution-success"
+        lang={locale}
         aria-labelledby="contribution-success-title"
       >
         <span className="contribution-success__mark" aria-hidden="true">✓</span>
-        <h1 id="contribution-success-title">Thank you for sharing your story</h1>
+        <h1 id="contribution-success-title">{translate(locale, "Thank you for sharing your story")}</h1>
         <p className="contribution-success__message" role="status">
-          Your entry is waiting for review and will appear in the public archive if approved.
+          {translate(locale, "Your entry is waiting for review and will appear in the public archive if approved.")}
         </p>
         <div className="contribution-success__actions">
           <Link className="contribution-success__action contribution-success__action--status" href="/my-entries">
-            <span className="contribution-success__action-title">Check your status</span>
+            <span className="contribution-success__action-title">{translate(locale, "Check your status")}</span>
           </Link>
           <button
             className="contribution-success__action contribution-success__action--another"
             type="button"
             onClick={() => setIsSubmissionComplete(false)}
           >
-            <span className="contribution-success__action-title">Contribute another story</span>
+            <span className="contribution-success__action-title">{translate(locale, "Contribute another story")}</span>
           </button>
         </div>
       </section>
@@ -575,7 +580,7 @@ export default function ContributionForm({
           autoComplete="off"
           maxLength={CONTRIBUTION_LIMITS.titleEnMax}
           minLength={CONTRIBUTION_LIMITS.titleEnMin}
-          placeholder="A short English title"
+          placeholder={translate(locale, "A short English title")}
           required
           aria-describedby={getFieldDescriptionIds(
             "title_en",
@@ -584,10 +589,10 @@ export default function ContributionForm({
         />
         {titleEnAtLimit ? (
           <small className="contribute-field__limit-reached" id="contribute-title_en-limit" role="status">
-            Maximum of {CONTRIBUTION_LIMITS.titleEnMax} characters reached.
+            {translate(locale, `Maximum of ${CONTRIBUTION_LIMITS.titleEnMax} characters reached.`)}
           </small>
         ) : null}
-        {errors.title_en ? <small className="contribute-field__error" id="contribute-title_en-error">{errors.title_en}</small> : null}
+        {errors.title_en ? <small className="contribute-field__error" id="contribute-title_en-error">{translate(locale, errors.title_en)}</small> : null}
       </label>
 
       <label className="contribute-field" htmlFor="contribute-title_kh">
@@ -598,7 +603,7 @@ export default function ContributionForm({
           type="text"
           lang="km"
           maxLength={CONTRIBUTION_LIMITS.titleKhMax}
-          placeholder="Enter the title in Khmer"
+          placeholder={translate(locale, "Enter the title in Khmer")}
           required
           aria-describedby={getFieldDescriptionIds(
             "title_kh",
@@ -607,10 +612,10 @@ export default function ContributionForm({
         />
         {titleKhAtLimit ? (
           <small className="contribute-field__limit-reached" id="contribute-title_kh-limit" role="status">
-            Maximum of {CONTRIBUTION_LIMITS.titleKhMax} characters reached.
+            {translate(locale, `Maximum of ${CONTRIBUTION_LIMITS.titleKhMax} characters reached.`)}
           </small>
         ) : null}
-        {errors.title_kh ? <small className="contribute-field__error" id="contribute-title_kh-error">{errors.title_kh}</small> : null}
+        {errors.title_kh ? <small className="contribute-field__error" id="contribute-title_kh-error">{translate(locale, errors.title_kh)}</small> : null}
       </label>
 
       <label className="contribute-field contribute-form__optional-summary" htmlFor="contribute-summary">
@@ -620,13 +625,13 @@ export default function ContributionForm({
           className={summaryAtLimit ? "contribute-field__input--limit-reached" : undefined}
           type="text"
           maxLength={CONTRIBUTION_LIMITS.summaryMax}
-          placeholder="A short preview of the story"
+          placeholder={translate(locale, "A short preview of the story")}
         />
         <span className={`contribute-field__hint${summaryAtLimit ? " contribute-field__hint--limit-reached" : ""}`}>
-          {countCodePoints(fields.summary)}/{CONTRIBUTION_LIMITS.summaryMax} characters
-          {summaryAtLimit ? " — maximum reached" : ""}
+          {countCodePoints(fields.summary)}/{CONTRIBUTION_LIMITS.summaryMax} {translate(locale, "characters")}
+          {summaryAtLimit ? ` — ${translate(locale, "maximum reached")}` : ""}
         </span>
-        {errors.summary ? <small className="contribute-field__error" id="contribute-summary-error">{errors.summary}</small> : null}
+        {errors.summary ? <small className="contribute-field__error" id="contribute-summary-error">{translate(locale, errors.summary)}</small> : null}
       </label>
 
       <div className="contribute-field contribute-form__required-description">
@@ -641,7 +646,7 @@ export default function ContributionForm({
             rows={7}
             maxLength={CONTRIBUTION_LIMITS.descriptionMax}
             minLength={CONTRIBUTION_LIMITS.descriptionMin}
-            placeholder="Write the story or tradition you want to preserve."
+            placeholder={translate(locale, "Write the story or tradition you want to preserve.")}
             required
           />
           <ScrollIndicator
@@ -650,51 +655,60 @@ export default function ContributionForm({
           />
         </div>
         <span className={`contribute-field__hint${descriptionAtLimit ? " contribute-field__hint--limit-reached" : ""}`}>
-          {countCodePoints(fields.description)}/{CONTRIBUTION_LIMITS.descriptionMax} characters
-          {descriptionAtLimit ? " — maximum reached" : ""}
+          {countCodePoints(fields.description)}/{CONTRIBUTION_LIMITS.descriptionMax} {translate(locale, "characters")}
+          {descriptionAtLimit ? ` — ${translate(locale, "maximum reached")}` : ""}
         </span>
-        {errors.description ? <small className="contribute-field__error" id="contribute-description-error">{errors.description}</small> : null}
+        {errors.description ? <small className="contribute-field__error" id="contribute-description-error">{translate(locale, errors.description)}</small> : null}
       </div>
 
       <div className={`contribute-field contribute-field--photo ${isEditing ? "contribute-form__optional-photo" : "contribute-form__required-photo"}`}>
         <label className="contribute-field__label" htmlFor="contribute-photo">
           <FieldLabel required={!isEditing}>
-            {isEditing ? "Replace photograph" : FIELD_LABELS.photo}
+            {translate(locale, isEditing ? "Replace photograph" : FIELD_LABELS.photo)}
           </FieldLabel>
         </label>
         {isEditing && existingThumbnailUrl ? (
           <figure className="contribute-current-photo">
             <Image
               src={existingThumbnailUrl}
-              alt={`Current photograph for ${fields.title_en}`}
+              alt={`${translate(locale, "Photograph for")} ${fields.title_en}`}
               width={800}
               height={560}
               unoptimized
             />
-            <figcaption>Current photograph. Choose a new file only if you want to replace it.</figcaption>
+            <figcaption>{translate(locale, "Current photograph. Choose a new file only if you want to replace it.")}</figcaption>
           </figure>
         ) : null}
-        <input
-          ref={photoInputRef}
-          id="contribute-photo"
-          data-contribution-keyboard-field
-          data-contribution-keyboard-order={isEditing ? "75" : CONTRIBUTION_FIELD_KEYBOARD_ORDER.photo}
-          name="photo"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/avif"
-          disabled={isSubmitting}
-          aria-invalid={Boolean(errors.photo)}
-          aria-describedby={errors.photo
-            ? "contribute-photo-error"
-            : isEditing ? "contribute-photo-hint" : undefined}
-          onChange={updatePhoto}
-          required={!isEditing}
-        />
+        <div className="contribute-photo-picker" data-invalid={Boolean(errors.photo)}>
+          <input
+            ref={photoInputRef}
+            className="contribute-photo-picker__input"
+            id="contribute-photo"
+            data-contribution-keyboard-field
+            data-contribution-keyboard-order={isEditing ? "75" : CONTRIBUTION_FIELD_KEYBOARD_ORDER.photo}
+            name="photo"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            disabled={isSubmitting}
+            aria-invalid={Boolean(errors.photo)}
+            aria-required={!isEditing}
+            aria-describedby={errors.photo
+              ? "contribute-photo-error"
+              : isEditing ? "contribute-photo-hint" : undefined}
+            onChange={updatePhoto}
+          />
+          <label className="contribute-photo-picker__button" htmlFor="contribute-photo" lang={locale}>
+            {translate(locale, "Choose File")}
+          </label>
+          <span className="contribute-photo-picker__name" aria-live="polite" lang={locale}>
+            {photo?.name || translate(locale, "No file chosen")}
+          </span>
+        </div>
         {photo && photoPreviewUrl ? (
           <figure className="contribute-selected-photo">
             <FullScreenPhotoPreview
               src={photoPreviewUrl}
-              alt={`Photograph ${photo.name}`}
+              alt={`${translate(locale, "Photograph")} ${photo.name}`}
               className="contribute-selected-photo__open"
               disabled={isSubmitting}
               triggerProps={{
@@ -715,8 +729,8 @@ export default function ContributionForm({
               type="button"
               data-contribution-keyboard-field="true"
               data-contribution-keyboard-order={isEditing ? "77" : "46"}
-              aria-label="Remove selected photograph"
-              title="Remove selected photograph"
+              aria-label={translate(locale, "Remove selected photograph")}
+              title={translate(locale, "Remove selected photograph")}
               disabled={isSubmitting}
               onClick={removeSelectedPhoto}
             >
@@ -728,10 +742,10 @@ export default function ContributionForm({
         ) : null}
         {isEditing ? (
           <span className="contribute-field__hint" id="contribute-photo-hint">
-            Choose a JPEG, PNG, WebP, or AVIF photo up to 10 MB. Leave this empty to keep the current photograph.
+            {translate(locale, "Choose a JPEG, PNG, WebP, or AVIF photo up to 10 MB. Leave this empty to keep the current photograph.")}
           </span>
         ) : null}
-        {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{errors.photo}</small> : null}
+        {errors.photo ? <small className="contribute-field__error" id="contribute-photo-error">{translate(locale, errors.photo)}</small> : null}
       </div>
 
       <div className="contribute-form__row contribute-form__optional-row">
@@ -741,7 +755,7 @@ export default function ContributionForm({
           </label>
           <fieldset
             className="contribute-period-mode"
-            aria-label="Period format"
+            aria-label={translate(locale, "Period format")}
             disabled={isSubmitting}
           >
             {[
@@ -761,7 +775,7 @@ export default function ContributionForm({
                   checked={periodMode === option.value}
                   onChange={() => selectPeriodMode(option.value)}
                 />
-                <span>{option.label}</span>
+                <span>{translate(locale, option.label)}</span>
               </label>
             ))}
           </fieldset>
@@ -775,13 +789,13 @@ export default function ContributionForm({
               inputMode="numeric"
               pattern="[0-9]*"
               maxLength={4}
-              placeholder="e.g. 2003"
+              placeholder={translate(locale, "e.g. 2003")}
             />
           ) : (
             <div
               className="contribute-period-date"
               role="group"
-              aria-label="Exact date: day, month, and year"
+              aria-label={translate(locale, "Exact date: day, month, and year")}
             >
               <input
                 id="contribute-period_label"
@@ -797,7 +811,7 @@ export default function ContributionForm({
                 onChange={(event) => updatePeriodDatePart("day", event)}
                 onBlur={(event) => padPeriodDateInput("day", event)}
                 onPaste={pastePeriodDate}
-                aria-label="Day"
+                aria-label={translate(locale, "Day")}
                 aria-invalid={Boolean(errors.period_label)}
                 aria-describedby={errors.period_label ? "contribute-period_label-error" : undefined}
                 autoComplete="off"
@@ -819,7 +833,7 @@ export default function ContributionForm({
                 onChange={(event) => updatePeriodDatePart("month", event)}
                 onBlur={(event) => padPeriodDateInput("month", event)}
                 onPaste={pastePeriodDate}
-                aria-label="Month"
+                aria-label={translate(locale, "Month")}
                 aria-invalid={Boolean(errors.period_label)}
                 aria-describedby={errors.period_label ? "contribute-period_label-error" : undefined}
                 autoComplete="off"
@@ -840,7 +854,7 @@ export default function ContributionForm({
                 value={periodDateParts.year}
                 onChange={(event) => updatePeriodDatePart("year", event)}
                 onPaste={pastePeriodDate}
-                aria-label="Year"
+                aria-label={translate(locale, "Year")}
                 aria-invalid={Boolean(errors.period_label)}
                 aria-describedby={errors.period_label ? "contribute-period_label-error" : undefined}
                 autoComplete="off"
@@ -849,7 +863,7 @@ export default function ContributionForm({
               />
             </div>
           )}
-          {errors.period_label ? <small className="contribute-field__error" id="contribute-period_label-error">{errors.period_label}</small> : null}
+          {errors.period_label ? <small className="contribute-field__error" id="contribute-period_label-error">{translate(locale, errors.period_label)}</small> : null}
         </div>
 
         <label className="contribute-field contribute-form__location" htmlFor="contribute-location">
@@ -861,7 +875,7 @@ export default function ContributionForm({
             maxLength={CONTRIBUTION_LIMITS.locationMax}
             list="cambodian-provinces"
             autoComplete="address-level1"
-            placeholder="Choose or enter a location"
+            placeholder={translate(locale, "Choose or enter a location")}
             aria-describedby={getFieldDescriptionIds(
               "location",
               locationAtLimit ? "contribute-location-limit" : null,
@@ -869,19 +883,19 @@ export default function ContributionForm({
           />
           {locationAtLimit ? (
             <small className="contribute-field__limit-reached" id="contribute-location-limit" role="status">
-              Maximum of {CONTRIBUTION_LIMITS.locationMax} characters reached.
+              {translate(locale, `Maximum of ${CONTRIBUTION_LIMITS.locationMax} characters reached.`)}
             </small>
           ) : null}
           <datalist id="cambodian-provinces">
             {CAMBODIAN_PROVINCES.map((province) => <option value={province} key={province} />)}
           </datalist>
-          {errors.location ? <small className="contribute-field__error" id="contribute-location-error">{errors.location}</small> : null}
+          {errors.location ? <small className="contribute-field__error" id="contribute-location-error">{translate(locale, errors.location)}</small> : null}
         </label>
 
       </div>
 
       <div className="contribute-form__status" aria-live="polite">
-        {message ? <p role="alert">{message}</p> : null}
+        {message ? <p role="alert">{translate(locale, message)}</p> : null}
       </div>
 
       <button
@@ -892,13 +906,13 @@ export default function ContributionForm({
         disabled={isSubmitting}
       >
         {isSubmitting
-          ? (isEditing ? "Saving changes…" : "Uploading and saving…")
-          : (isEditing ? "Save changes" : "Add to the archive")}
+          ? translate(locale, isEditing ? "Saving changes…" : "Uploading and saving…")
+          : translate(locale, isEditing ? "Save changes" : "Add to the archive")}
       </button>
       </form>
       {isSubmitting ? (
         <InteractionLock
-          message={isEditing ? "Saving changes..." : "Uploading and saving..."}
+          message={translate(locale, isEditing ? "Saving changes..." : "Uploading and saving...")}
         />
       ) : null}
     </>

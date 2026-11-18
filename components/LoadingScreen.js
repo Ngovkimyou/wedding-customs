@@ -9,6 +9,8 @@ import { preloadInitialAssets } from "../lib/initial-asset-loader.js";
 import { isAuthPath } from "../lib/auth-routes.mjs";
 import PetalReveal from "./PetalReveal.js";
 import useSoundEffect from "./useSoundEffect.js";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const REVEAL_FADE_DELAY = 950;
 const PETAL_SEQUENCE_DURATION = 1800;
@@ -27,6 +29,7 @@ function setPageElementsInert(elements, isInert) {
 }
 
 export default function LoadingScreen() {
+  const { locale } = useLocale();
   const pathname = usePathname();
   const isAuthRoute = isAuthPath(pathname);
   const previousPathnameRef = useRef(pathname);
@@ -194,10 +197,10 @@ export default function LoadingScreen() {
         role={isReady ? "button" : isLoading ? "progressbar" : "status"}
         tabIndex={isReady ? 0 : -1}
         aria-label={isReady
-          ? "Start Khmer Wedding Tradition Archive"
+          ? translate(locale, "Start Khmer Wedding Tradition Archive")
           : loadError
-            ? "Opening visuals could not be loaded"
-            : "Loading archive"}
+            ? translate(locale, "Opening visuals could not be loaded")
+            : translate(locale, "Loading archive")}
         aria-valuemin={isLoading ? 0 : undefined}
         aria-valuemax={isLoading ? 100 : undefined}
         aria-valuenow={isLoading ? progress : undefined}
@@ -225,12 +228,12 @@ export default function LoadingScreen() {
             />
           </div>
           <p className="loading-screen__status">{progress}%</p>
-          {isReady ? <p className="loading-screen__prompt">Click to start</p> : null}
+          {isReady ? <p className="loading-screen__prompt">{translate(locale, "Click to start")}</p> : null}
           {loadError ? (
             <div className="loading-screen__error" role="alert">
-              <span>Some opening visuals could not be loaded.</span>
-              <button type="button" onClick={retryLoading}>Try again</button>
-              <button type="button" onClick={continueWithoutVisuals}>Continue anyway</button>
+              <span>{translate(locale, "Some opening visuals could not be loaded.")}</span>
+              <button type="button" onClick={retryLoading}>{translate(locale, "Try again")}</button>
+              <button type="button" onClick={continueWithoutVisuals}>{translate(locale, "Continue anyway")}</button>
             </div>
           ) : null}
         </div>

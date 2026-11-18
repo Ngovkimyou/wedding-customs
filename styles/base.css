@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "KhmerGlobal";
+  src: url("../assets/fonts/Khmer-title.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+1780-17FF, U+19E0-19FF;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -26,7 +35,7 @@ body {
   overflow-x: clip;
   background-color: var(--color-red-dark);
   color: var(--color-text);
-  font-family: var(--font-body);
+  font-family: "KhmerGlobal", var(--font-body);
   font-size: var(--type-body);
   line-height: 1.6;
   -ms-overflow-style: none;
@@ -43,7 +52,8 @@ a {
 }
 
 .khmer-script {
-  font-family: var(--font-khmer-script), var(--font-body);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  line-height: 1.5;
 }
 
 button,
@@ -165,7 +175,7 @@ a {
 .archive-card__meta,
 .archive-metadata dt,
 .section-heading__count {
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: var(--type-meta);
   font-weight: 700;
   letter-spacing: 0.11em;
@@ -214,7 +224,7 @@ a {
 .not-found h1 {
   margin: 0.8rem 0 0;
   color: var(--color-title-gold);
-  font-family: var(--font-display);
+  font-family: "KhmerGlobal", var(--font-display);
   font-size: clamp(2.65rem, 6.5vw, 4rem);
   font-weight: 400;
   letter-spacing: -0.055em;
@@ -263,6 +273,16 @@ a {
   }
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -291,4 +311,106 @@ a {
   .image-lightbox {
     animation: none !important;
   }
+}
+
+html[data-locale="km"] :is(
+  .eyebrow,
+  .section-label,
+  .archive-metadata dt,
+  .contribute-card__eyebrow,
+  .music-panel__eyebrow,
+  .review-entry__field-label
+) {
+  color: var(--color-red-dark);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: max(0.9rem, var(--type-meta));
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+html[data-locale="km"] .music-panel__section h3 {
+  color: var(--color-red-dark);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.45;
+}
+
+html[data-locale="km"] .music-panel h2 {
+  color: var(--color-red-dark);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-display);
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+html[data-locale="km"] .contribute-field__label {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+html[data-locale="km"] .contribute-optional {
+  color: #594539;
+  font-size: 0.78rem;
+}
+
+html[data-locale="km"] .review-entry__submitted-label,
+html[data-locale="km"] .my-entries-list__status,
+html[data-locale="km"] .my-entries-list__edit,
+html[data-locale="km"] .my-entries-contribute,
+html[data-locale="km"] .contribute-submit,
+html[data-locale="km"] .review-decision,
+html[data-locale="km"] .review-notice__link {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.84rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+html[data-locale="km"] :is(.contribute-field__hint, .contribute-field__error, .contribute-field__limit-reached) {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.84rem;
+  letter-spacing: 0;
+}
+
+html[data-locale="km"] .archive-entry__related-action,
+html[data-locale="km"] .archive-search__result-action {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+html[data-locale="km"] .music-choice__label {
+  color: #30201a;
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: clamp(1.02rem, 1.8vw, 1.16rem);
+  line-height: 1.55;
+}
+
+html[data-locale="km"] .music-choice__description,
+html[data-locale="km"] .music-panel__now-playing {
+  color: #594539;
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: max(0.82rem, 0.9em);
+  letter-spacing: 0;
+  line-height: 1.5;
+}
+
+html[data-locale="km"] .music-panel__play {
+  min-width: 5.8rem;
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.9rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+html[data-locale="km"] .archive-card__khmer-title[lang="km"] {
+  color: var(--color-red-dark);
+  font-size: max(1rem, var(--type-card-khmer));
+  font-weight: 600;
 }

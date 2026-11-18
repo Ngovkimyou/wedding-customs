@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 export default function HeaderAccountControls({
   user,
@@ -8,36 +10,37 @@ export default function HeaderAccountControls({
   isSigningOut,
   onSignOut,
 }) {
-  const username = String(user?.user_metadata?.username ?? "").trim() || "Account";
+  const { locale } = useLocale();
+  const username = String(user?.user_metadata?.username ?? "").trim() || translate(locale, "Account");
 
   const controls = user ? (
     <>
       {isReviewer ? (
         <Link className="site-header__auth-link site-header__auth-review" href="/review">
-          <span>Review Queue</span>
+          <span>{translate(locale, "Review Queue")}</span>
         </Link>
       ) : null}
       <Link className="site-header__auth-link site-header__auth-my-entries" href="/my-entries">
-        My Entries
+        {translate(locale, "My Entries")}
       </Link>
       <button
         className="site-header__auth-button"
         type="button"
         onClick={onSignOut}
         disabled={isSigningOut}
-        aria-label={`Log out ${username}`}
+        aria-label={`${translate(locale, "Log out")} ${username}`}
       >
         <span className="site-header__auth-username" title={username}>{username}</span>
         <span className="site-header__auth-action">
-          {isSigningOut ? "Logging out" : "Log out"}
+          {translate(locale, isSigningOut ? "Logging out" : "Log out")}
         </span>
         <span className="site-header__auth-divider" aria-hidden="true" />
       </button>
     </>
   ) : (
     <>
-      <Link className="site-header__auth-link" href="/login">Log in</Link>
-      <Link className="site-header__auth-link" href="/signup">Sign up</Link>
+      <Link className="site-header__auth-link" href="/login">{translate(locale, "Log in")}</Link>
+      <Link className="site-header__auth-link" href="/signup">{translate(locale, "Sign up")}</Link>
     </>
   );
 

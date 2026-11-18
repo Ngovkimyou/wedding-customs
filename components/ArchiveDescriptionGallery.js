@@ -1,9 +1,9 @@
 import ProgressiveImage from "./ProgressiveImage.js";
 import ImageLightbox from "./ImageLightbox.js";
-import KhmerScriptText from "./KhmerScriptText.js";
+import ArchiveContentText from "./ArchiveContentText.js";
 import { getAssetSource, getImageDimensions } from "../lib/media.js";
 
-export function DescriptionGallery({ images, caption, layout }) {
+export function DescriptionGallery({ images, caption, layout, isCommunityEntry = false }) {
   if (!images?.length) {
     return null;
   }
@@ -36,6 +36,7 @@ export function DescriptionGallery({ images, caption, layout }) {
                 alt={image.alt || "Wedding ceremony photograph"}
                 caption={image.caption || caption || ""}
                 sizes="(max-width: 40rem) 100vw, 22rem"
+                localizeContent={!isCommunityEntry}
               >
                 <ProgressiveImage
                   src={image.src}
@@ -44,10 +45,13 @@ export function DescriptionGallery({ images, caption, layout }) {
                   height={dimensions.height}
                   sizes="(max-width: 40rem) 100vw, 22rem"
                   loading="lazy"
+                  localizeAlt={!isCommunityEntry}
                 />
               </ImageLightbox>
               {image.caption ? (
-                <figcaption><KhmerScriptText>{image.caption}</KhmerScriptText></figcaption>
+                <ArchiveContentText as="figcaption" isCommunityEntry={isCommunityEntry}>
+                  {image.caption}
+                </ArchiveContentText>
               ) : null}
             </figure>
           );
@@ -55,14 +59,16 @@ export function DescriptionGallery({ images, caption, layout }) {
       </div>
       {caption ? (
         <p className="archive-entry__subsection-gallery-caption">
-          <KhmerScriptText>{caption}</KhmerScriptText>
+          <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+            {caption}
+          </ArchiveContentText>
         </p>
       ) : null}
     </div>
   );
 }
 
-export function DescriptionGalleryStack({ galleries, sharedCaption }) {
+export function DescriptionGalleryStack({ galleries, sharedCaption, isCommunityEntry = false }) {
   if (!galleries?.length) {
     return null;
   }
@@ -82,6 +88,7 @@ export function DescriptionGalleryStack({ galleries, sharedCaption }) {
           images={leadGallery.images}
           caption={leadGallery.caption}
           layout={leadGallery.layout}
+          isCommunityEntry={isCommunityEntry}
         />
       ) : null}
       <div className={stackClassNames.join(" ")}>
@@ -95,11 +102,14 @@ export function DescriptionGalleryStack({ galleries, sharedCaption }) {
             images={gallery.images}
             caption={gallery.caption}
             layout={gallery.layout}
+            isCommunityEntry={isCommunityEntry}
           />
         ))}
         {sharedCaption ? (
           <p className="archive-entry__subsection-gallery-caption">
-            <KhmerScriptText>{sharedCaption}</KhmerScriptText>
+            <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+              {sharedCaption}
+            </ArchiveContentText>
           </p>
         ) : null}
       </div>

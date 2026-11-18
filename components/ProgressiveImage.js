@@ -3,6 +3,9 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { getAssetSource } from "../lib/media.js";
+import { translate } from "../lib/locale.js";
+import { translateArchiveContent } from "../lib/archive-content-km.js";
+import { useLocale } from "./LocaleProvider.js";
 
 export default function ProgressiveImage({
   src,
@@ -15,7 +18,9 @@ export default function ProgressiveImage({
   fetchPriority,
   className = "",
   fallbackContent = "Image unavailable",
+  localizeAlt = false,
 }) {
+  const { locale } = useLocale();
   const sourceKey = getAssetSource(src);
   const isRemoteSource = /^https?:\/\//iu.test(sourceKey);
   const [imageState, setImageState] = useState({
@@ -27,6 +32,7 @@ export default function ProgressiveImage({
   const isLoading = status === "loading";
   const isLoaded = status === "loaded";
   const hasFailed = status === "failed";
+  const localizedAlt = localizeAlt ? translateArchiveContent(locale, alt) : alt;
 
   const updateStatus = (nextStatus) => {
     setImageState({ source: sourceKey, status: nextStatus });
@@ -54,13 +60,13 @@ export default function ProgressiveImage({
     >
       {isLoading ? <span className="progressive-image__placeholder" aria-hidden="true" /> : null}
       {hasFailed ? (
-        <span className="progressive-image__fallback">{fallbackContent}</span>
+        <span className="progressive-image__fallback">{translate(locale, fallbackContent)}</span>
       ) : (
         <Image
           ref={imageRef}
           className="progressive-image__image"
           src={src}
-          alt={alt}
+          alt={localizedAlt}
           {...(fill ? { fill: true } : { width, height })}
           sizes={sizes}
           loading={loading}

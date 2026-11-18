@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useEffect, useRef, useState } from "react";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 export default function FullScreenPhotoPreview({
   src,
@@ -13,6 +15,7 @@ export default function FullScreenPhotoPreview({
   sizes = "100vw",
   triggerProps = {},
 }) {
+  const { locale } = useLocale();
   const triggerRef = useRef(null);
   const dialogRef = useRef(null);
   const restoreFocusRef = useRef(false);
@@ -67,7 +70,7 @@ export default function FullScreenPhotoPreview({
         className={className}
         type="button"
         disabled={disabled || !src}
-        aria-label={`Open full-size preview of ${alt}`}
+        aria-label={`${translate(locale, "Open full-size preview of")} ${alt}`}
         aria-haspopup="dialog"
         onClick={() => {
           restoreFocusRef.current = true;
@@ -83,7 +86,7 @@ export default function FullScreenPhotoPreview({
             className="contribution-photo-preview"
             role="dialog"
             aria-modal="true"
-            aria-label={`Full-size preview of ${alt}`}
+            aria-label={`${translate(locale, "Full-size preview of")} ${alt}`}
             tabIndex={-1}
             onClick={() => {
               restoreFocusRef.current = false;

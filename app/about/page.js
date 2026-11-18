@@ -7,6 +7,7 @@ import AboutPageShell from "../../components/AboutPageShell.js";
 import KhmerScriptText from "../../components/KhmerScriptText.js";
 import { archiveContact, archiveSources, musicCredits } from "../../data/about.js";
 import { archiveDetails } from "../../data/archive.js";
+import LocaleText from "../../components/LocaleText.js";
 
 export const metadata = { title: "About" };
 
@@ -27,36 +28,37 @@ function ExternalLink({ href, children, className, label }) {
 function Sources({ idPrefix }) {
   return (
     <section className="about-page__section about-page__sources" aria-labelledby={`${idPrefix}-sources-title`}>
-      <h2 id={`${idPrefix}-sources-title`}>Sources &amp; Acknowledgements</h2>
+      <h2 id={`${idPrefix}-sources-title`}><LocaleText>Sources &amp; Acknowledgements</LocaleText></h2>
       <div className="about-page__source-list">
         {archiveSources.map((source) => (
           <article className="about-page__source" key={source.label}>
-            <h3>{source.label}</h3>
-            {source.detail ? <p><KhmerScriptText>{source.detail}</KhmerScriptText></p> : null}
+            <h3><LocaleText fallback={source.label} /></h3>
+            {source.detail ? <p><LocaleText fallback={source.detail} /></p> : null}
             {source.href ? (
-              <ExternalLink href={source.href}>Visit source <span aria-hidden="true">↗</span></ExternalLink>
+              <ExternalLink href={source.href}><LocaleText>Visit source</LocaleText> <span aria-hidden="true">↗</span></ExternalLink>
             ) : (
-              <span className="about-page__source-placeholder">{source.linkText || "Source link to be added"}</span>
+              <span className="about-page__source-placeholder">{source.linkText || <LocaleText>Source link to be added</LocaleText>}</span>
             )}
           </article>
         ))}
       </div>
 
-      <h3 className="about-page__subheading">Music credits</h3>
+      <h3 className="about-page__subheading"><LocaleText>Music credits</LocaleText></h3>
       <ul className="about-page__music-list">
         {musicCredits.map((track) => (
           <li key={track.id}>
             <span className="about-page__music-title">
-              {track.label}{track.variant ? <em> {track.variant}</em> : null}
+              <LocaleText fallback={track.label} />
+              {track.variant ? <em> <LocaleText fallback={track.variant} /></em> : null}
             </span>
             {track.links.length ? (
               <div className="about-page__music-links">
                 {track.links.map((link) => (
-                  <ExternalLink href={link} key={link}>Music source <span aria-hidden="true">↗</span></ExternalLink>
+                  <ExternalLink href={link} key={link}><LocaleText>Music source</LocaleText> <span aria-hidden="true">↗</span></ExternalLink>
                 ))}
               </div>
             ) : (
-              <span className="about-page__source-placeholder">Music source link to be added</span>
+              <span className="about-page__source-placeholder"><LocaleText>Music source link to be added</LocaleText></span>
             )}
           </li>
         ))}
@@ -68,9 +70,9 @@ function Sources({ idPrefix }) {
 function Contact({ idPrefix }) {
   return (
     <section className="about-page__section about-page__contact" aria-labelledby={`${idPrefix}-contact-title`}>
-      <h2 id={`${idPrefix}-contact-title`}>Contact</h2>
+      <h2 id={`${idPrefix}-contact-title`}><LocaleText>Contact</LocaleText></h2>
       <p className="about-page__section-intro">
-        <KhmerScriptText>{archiveContact.note}</KhmerScriptText>
+        <LocaleText fallback={archiveContact.note} />
       </p>
       <div className="about-page__contact-links" aria-label="Contact links">
         {archiveContact.links.map((link) => {
@@ -83,7 +85,7 @@ function Contact({ idPrefix }) {
                   <span>{link.label}</span>
                 </ExternalLink>
               ) : (
-                <span className="about-page__source-placeholder">Link to be added</span>
+                <span className="about-page__source-placeholder"><LocaleText>Link to be added</LocaleText></span>
               )}
             </div>
           );
@@ -102,22 +104,20 @@ function CreditBlock({ idPrefix }) {
       aria-labelledby={headingId}
     >
       <img className="about-page__logo" src={logo.src} alt="" aria-hidden="true" />
-      <p className="eyebrow">About the project</p>
-      <h1 id={headingId}>Khmer Wedding Tradition Archive</h1>
+      <p className="eyebrow"><LocaleText>About the project</LocaleText></p>
+      <h1 id={headingId}><LocaleText>Khmer Wedding Tradition Archive</LocaleText></h1>
       <img className="about-page__divider" src={largeDivider.src} alt="" aria-hidden="true" />
       <p>
-        {archiveDetails.name} preserves stories, photographs, ceremonies, objects, and remembered
-        details from Khmer wedding traditions as they were passed down through family oral history.
+        <LocaleText fallback={`${archiveDetails.name} preserves stories, photographs, ceremonies, objects, and remembered details from Khmer wedding traditions as they were passed down through family oral history.`} />
       </p>
       <p>
-        The archive begins with memories shared by my parents and grows as a personal record of how
-        marriage customs were prepared, witnessed, celebrated, and carried forward across generations.
+        <LocaleText>The archive begins with memories shared by my parents and grows as a personal record of how marriage customs were prepared, witnessed, celebrated, and carried forward across generations.</LocaleText>
       </p>
       <dl className="about-page__notes" aria-label="Archive notes">
-        <div><dt>Curated by</dt><dd><KhmerScriptText>{archiveDetails.curator}</KhmerScriptText></dd></div>
-        <div><dt>Instructor</dt><dd><KhmerScriptText>{archiveDetails.instructor}</KhmerScriptText></dd></div>
-        <div><dt>Lecture</dt><dd><KhmerScriptText>{archiveDetails.lecture}</KhmerScriptText></dd></div>
-        <div><dt>Primary source</dt><dd>Family oral history shared by my parents.</dd></div>
+        <div><dt><LocaleText>Curated by</LocaleText></dt><dd><KhmerScriptText>{archiveDetails.curator}</KhmerScriptText></dd></div>
+        <div><dt><LocaleText>Instructor</LocaleText></dt><dd><KhmerScriptText>{archiveDetails.instructor}</KhmerScriptText></dd></div>
+        <div><dt><LocaleText>Lecture</LocaleText></dt><dd><KhmerScriptText>{archiveDetails.lecture}</KhmerScriptText></dd></div>
+        <div><dt><LocaleText>Primary source</LocaleText></dt><dd><LocaleText>Family oral history shared by my parents.</LocaleText></dd></div>
       </dl>
       <Sources idPrefix={idPrefix} />
       <Contact idPrefix={idPrefix} />

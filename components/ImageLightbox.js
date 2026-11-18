@@ -4,6 +4,9 @@ import Image from "next/image";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import KhmerScriptText from "./KhmerScriptText.js";
+import { translate } from "../lib/locale.js";
+import { translateArchiveContent } from "../lib/archive-content-km.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const CLOSE_DURATION = 180;
 
@@ -14,7 +17,9 @@ export default function ImageLightbox({
   sizes = "100vw",
   className = "",
   children,
+  localizeContent = false,
 }) {
+  const { locale } = useLocale();
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [imageStatus, setImageStatus] = useState("idle");
@@ -100,7 +105,11 @@ export default function ImageLightbox({
   const triggerClassName = ["image-lightbox__trigger", className]
     .filter(Boolean)
     .join(" ");
-  const imageLabel = caption || alt || "Archive photograph";
+  const localizedCaption = localizeContent
+    ? caption.split(" · ").map((part) => translateArchiveContent(locale, part)).join(" · ")
+    : caption;
+  const localizedAlt = localizeContent ? translateArchiveContent(locale, alt) : alt;
+  const imageLabel = localizedCaption || localizedAlt || "Archive photograph";
 
   return (
     <>
@@ -108,7 +117,7 @@ export default function ImageLightbox({
         ref={triggerRef}
         className={triggerClassName}
         type="button"
-        aria-label={`View ${imageLabel} full screen`}
+        aria-label={`${translate(locale, "View")} ${imageLabel} ${translate(locale, "full screen")}`}
         aria-haspopup="dialog"
         onClick={open}
       >
@@ -122,23 +131,23 @@ export default function ImageLightbox({
             className={`image-lightbox${isClosing ? " image-lightbox--closing" : ""}`}
             role="dialog"
             aria-modal="true"
-            aria-label={`${imageLabel} full-screen view`}
+            aria-label={`${imageLabel} — ${translate(locale, "Full-size preview")}`}
             tabIndex={-1}
             onClick={close}
           >
             <div className={`image-lightbox__stage image-lightbox__stage--${imageStatus}`}>
               {imageStatus === "loading" ? (
-                <span className="image-lightbox__status" role="status">Loading image...</span>
+                <span className="image-lightbox__status" role="status">{translate(locale, "Loading image...")}</span>
               ) : null}
               {imageStatus === "error" ? (
                 <span className="image-lightbox__status image-lightbox__status--error" role="alert">
-                  Image unavailable
+                  {translate(locale, "Image unavailable")}
                 </span>
               ) : null}
               <Image
                 className="image-lightbox__image"
                 src={src}
-                alt={alt}
+                alt={localizedAlt}
                 fill
                 sizes={sizes}
                 priority
@@ -149,8 +158,8 @@ export default function ImageLightbox({
               />
             </div>
             <div className="image-lightbox__caption" aria-live="polite">
-              {caption ? <p><KhmerScriptText>{caption}</KhmerScriptText></p> : null}
-              <span>Click anywhere to close {"\u00b7"} Esc</span>
+              {localizedCaption ? <p><KhmerScriptText>{localizedCaption}</KhmerScriptText></p> : null}
+              <span>{translate(locale, "Click anywhere to close · Esc")}</span>
             </div>
           </div>,
           document.body,

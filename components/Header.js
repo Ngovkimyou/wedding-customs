@@ -10,6 +10,9 @@ import SiteBrand from "./SiteBrand.js";
 import HeaderAccountControls from "./HeaderAccountControls.js";
 import HeaderAccountMenu from "./HeaderAccountMenu.js";
 import InteractionLock from "./InteractionLock.js";
+import LanguageSwitcher from "./LanguageSwitcher.js";
+import { useLocale } from "./LocaleProvider.js";
+import { translate } from "../lib/locale.js";
 import headerFrame from "../assets/header-frame.avif";
 import mediumHeaderFrame from "../assets/medium-header-frame.avif";
 import smallHeaderFrame from "../assets/small-header-frame.avif";
@@ -17,6 +20,7 @@ import { createClient } from "../lib/supabase/client.js";
 import { isAuthPath } from "../lib/auth-routes.mjs";
 
 export default function Header() {
+  const { locale } = useLocale();
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -222,12 +226,13 @@ export default function Header() {
                 isSigningOut={isSigningOut}
                 onSignOut={handleSignOut}
               />
+              <LanguageSwitcher />
             </div>
           </div>
         </div>
       </header>
       {isSigningOut ? (
-        <InteractionLock message="Signing out…" />
+        <InteractionLock message={translate(locale, "Signing out…")} />
       ) : null}
     </>
   );

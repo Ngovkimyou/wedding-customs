@@ -1,7 +1,8 @@
 import { getAssetSource, getImageDimensions } from "../lib/media.js";
 import ImageLightbox from "./ImageLightbox.js";
-import KhmerScriptText from "./KhmerScriptText.js";
+import ArchiveContentText from "./ArchiveContentText.js";
 import ProgressiveImage from "./ProgressiveImage.js";
+import LocaleText from "./LocaleText.js";
 
 const ENTRY_IMAGE_SIZES = "(max-width: 48rem) 100vw, 48rem";
 
@@ -11,17 +12,16 @@ function getImageCaption(image) {
     .join(" · ");
 }
 
-export default function ArchiveEntryImages({ images }) {
+export default function ArchiveEntryImages({ images, isCommunityEntry = false }) {
   if (!images.length) {
     return (
       <div
         className="archive-entry__image-placeholder"
         data-archive-dynamic="true"
         role="img"
-        aria-label="Family photograph placeholder"
       >
-        <span>Family photograph</span>
-        <p>[Photograph to be added]</p>
+        <span><LocaleText>Family photograph</LocaleText></span>
+        <p><LocaleText>[Photograph to be added]</LocaleText></p>
       </div>
     );
   }
@@ -46,6 +46,7 @@ export default function ArchiveEntryImages({ images }) {
                   alt={image.alt || "Archive photograph"}
                   caption={caption}
                   sizes={ENTRY_IMAGE_SIZES}
+                  localizeContent={!isCommunityEntry}
                 >
                   <span className="archive-entry__figure-image" data-archive-dynamic="true">
                     <ProgressiveImage
@@ -56,6 +57,7 @@ export default function ArchiveEntryImages({ images }) {
                       sizes={ENTRY_IMAGE_SIZES}
                       loading={index === 0 ? "eager" : "lazy"}
                       fetchPriority={index === 0 ? "high" : "auto"}
+                      localizeAlt={!isCommunityEntry}
                     />
                   </span>
                 </ImageLightbox>
@@ -63,7 +65,9 @@ export default function ArchiveEntryImages({ images }) {
             </div>
             {caption ? (
               <figcaption data-archive-dynamic="true">
-                <KhmerScriptText>{displayCaption}</KhmerScriptText>
+                <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+                  {displayCaption}
+                </ArchiveContentText>
               </figcaption>
             ) : null}
           </figure>

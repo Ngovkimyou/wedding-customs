@@ -1,13 +1,16 @@
 import asideArtwork from "../assets/aside-01.avif";
 import { getImageDimensions } from "../lib/media.js";
+import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
 import ProgressiveImage from "./ProgressiveImage.js";
-import KhmerScriptText from "./KhmerScriptText.js";
+import ArchiveContentText from "./ArchiveContentText.js";
+import LocaleText from "./LocaleText.js";
 
 export default function ArchiveAside({ entry }) {
   if (!entry.showAside) {
     return null;
   }
 
+  const isCommunityEntry = isCommunityArchiveEntry(entry);
   const usesFrameArtwork = entry.showAsideArtwork !== false;
   const accentDimensions = getImageDimensions(entry.asideAccentArtwork, 1200, 800);
 
@@ -40,9 +43,15 @@ export default function ArchiveAside({ entry }) {
             />
           ) : null}
           <h2 id="aside-title" data-archive-dynamic="true">
-            {entry.asideTitle || "Aside"}
+            {entry.asideTitle
+              ? <ArchiveContentText isCommunityEntry={isCommunityEntry}>{entry.asideTitle}</ArchiveContentText>
+              : <LocaleText>Aside</LocaleText>}
           </h2>
-          <p data-archive-dynamic="true"><KhmerScriptText>{entry.aside}</KhmerScriptText></p>
+          <p data-archive-dynamic="true">
+            <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+              {entry.aside}
+            </ArchiveContentText>
+          </p>
         </div>
       </div>
     </section>

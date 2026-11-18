@@ -5,6 +5,8 @@ import { useEffect, useRef } from "react";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
 import profileIcon from "../assets/icons/profile.png";
 import HeaderAccountControls from "./HeaderAccountControls.js";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 export default function HeaderAccountMenu({
   user,
@@ -12,6 +14,7 @@ export default function HeaderAccountMenu({
   isSigningOut,
   onSignOut,
 }) {
+  const { locale } = useLocale();
   const menuRef = useRef(null);
   const pathname = usePathname();
 
@@ -50,7 +53,7 @@ export default function HeaderAccountMenu({
 
   return (
     <details ref={menuRef} className="site-header__account-menu">
-      <summary aria-label="Open account menu">
+      <summary aria-label={translate(locale, "Open account menu")}>
         <img
           className="site-header__account-backdrop"
           src={chanFlowerBackdrop.src}

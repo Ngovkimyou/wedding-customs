@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "../../lib/supabase/server.js";
+import LocaleText from "../../components/LocaleText.js";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function MyEntriesPage() {
 
   const { data, error } = await supabase
     .from("entries")
-    .select("id, slug, title_en, status")
+    .select("id, slug, title_en, title_kh, status")
     .eq("owner", user.id)
     .order("created_at", { ascending: false });
 
@@ -41,47 +42,49 @@ export default async function MyEntriesPage() {
   return (
     <main className="contribute-page my-entries-page" aria-labelledby="my-entries-title">
       <section className="contribute-card my-entries-card">
-        <p className="contribute-card__eyebrow">Contributor space</p>
-        <h1 id="my-entries-title">My Entries</h1>
+        <p className="contribute-card__eyebrow"><LocaleText>Contributor space</LocaleText></p>
+        <h1 id="my-entries-title"><LocaleText>My Entries</LocaleText></h1>
         <p className="contribute-card__intro">
-          Check each story’s review status. New and updated entries wait for review before they appear publicly.
+          <LocaleText>Check each story’s review status. New and updated entries wait for review before they appear publicly.</LocaleText>
         </p>
 
-        {error ? (
-          <p className="my-entries-message" role="alert">
-            Your entries could not be loaded right now. Please try again later.
-          </p>
-        ) : entries.length ? (
-          <ul className="my-entries-list">
-            {entries.map((entry) => {
-              const statusVariant = STATUS_LABELS[entry.status] ? entry.status : "unknown";
-              const status = STATUS_LABELS[statusVariant] ?? "Status unavailable";
+        <div className={error || entries.length ? "my-entries-content" : "my-entries-empty"}>
+          {error ? (
+            <p className="my-entries-message" role="alert">
+              <LocaleText>Your entries could not be loaded right now. Please try again later.</LocaleText>
+            </p>
+          ) : entries.length ? (
+            <ul className="my-entries-list">
+              {entries.map((entry) => {
+                const statusVariant = STATUS_LABELS[entry.status] ? entry.status : "unknown";
+                const status = STATUS_LABELS[statusVariant] ?? "Status unavailable";
 
-              return (
-                <li className={`my-entries-list__item my-entries-list__item--${statusVariant}`} key={entry.id}>
-                  <div className="my-entries-list__story">
-                    <h2>{entry.title_en}</h2>
-                  </div>
-                  <div className={`my-entries-list__status my-entries-list__status--${statusVariant}`}>
-                    <span>{status}</span>
-                  </div>
-                  <Link
-                    className="my-entries-list__edit"
-                    href={`/archive/${encodeURIComponent(entry.slug)}/edit`}
-                  >
-                    Edit entry
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="my-entries-message">You haven’t contributed an entry yet.</p>
-        )}
+                return (
+                  <li className={`my-entries-list__item my-entries-list__item--${statusVariant}`} key={entry.id}>
+                    <div className="my-entries-list__story">
+                      <LocaleText as="h2" en={entry.title_en} km={entry.title_kh} />
+                    </div>
+                    <div className={`my-entries-list__status my-entries-list__status--${statusVariant}`}>
+                      <span><LocaleText>{status}</LocaleText></span>
+                    </div>
+                    <Link
+                      className="my-entries-list__edit"
+                      href={`/archive/${encodeURIComponent(entry.slug)}/edit`}
+                    >
+                      <LocaleText>Edit entry</LocaleText>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="my-entries-message"><LocaleText>You haven’t contributed an entry yet.</LocaleText></p>
+          )}
 
-        <Link className="my-entries-contribute" href="/contribute">
-          Add an entry
-        </Link>
+          <Link className="my-entries-contribute" href="/contribute">
+            <LocaleText>Add an entry</LocaleText>
+          </Link>
+        </div>
       </section>
     </main>
   );

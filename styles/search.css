@@ -58,10 +58,16 @@
 .archive-search h1 {
   margin: 0.4rem 0 0;
   color: var(--color-gold);
-  font-family: var(--font-archive-title);
+  font-family: "KhmerGlobal", var(--font-archive-title);
   font-size: var(--search-title-size);
   font-weight: 400;
   line-height: 1.05;
+}
+
+html[data-locale="km"] .archive-search h1 {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-display);
+  letter-spacing: 0;
+  line-height: 1.25;
 }
 
 .archive-search__input-wrap {
@@ -105,6 +111,24 @@
   color: var(--color-muted);
   opacity: 0.78;
 }
+
+html[data-locale="km"] .archive-search .eyebrow {
+  color: #e4c47e;
+}
+
+html[data-locale="km"] .archive-search__input::placeholder {
+  color: #f3e3c5;
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 1.05rem;
+  opacity: 0.96;
+}
+
+html[data-locale="km"] .archive-search__status {
+  color: #fff1d8;
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
 .archive-search__input::-webkit-search-cancel-button {
   display: none;
 }
@@ -113,7 +137,7 @@
   border: 0;
   background: transparent;
   color: #d66a5e;
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -228,7 +252,7 @@
 }
 .archive-search__result-meta {
   color: var(--color-red);
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -236,19 +260,38 @@
 .archive-search__result h2 {
   margin: 0.4rem 0;
   color: var(--color-gold);
-  font-family: var(--font-archive-title);
+  font-family: "KhmerGlobal", var(--font-archive-title);
   font-size: clamp(1.35rem, 2.8vw, 2rem);
   font-weight: 400;
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
+
+.archive-search__result h2[lang="km"] {
+  color: var(--color-red-dark);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-display);
+  font-size: clamp(1.55rem, 3vw, 2.15rem);
+  line-height: 1.3;
+  letter-spacing: 0;
+}
 .archive-search__result-khmer-title {
   margin-top: 0.35rem;
   color: var(--color-red);
-  font-family: var(--font-khmer-title), var(--font-display);
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-display);
   font-size: clamp(0.92rem, 1.45vw, 1.18rem);
   font-style: italic;
   line-height: 1.35;
+}
+
+.archive-search__result-khmer-title[lang="en"] {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-display);
+  font-weight: 600;
+}
+
+.archive-search__result-khmer-title[lang="km"] {
+  color: #542b2c;
+  font-size: max(1rem, clamp(0.92rem, 1.45vw, 1.18rem));
+  font-weight: 600;
 }
 .archive-search__match {
   border-radius: 0.1em;
@@ -276,7 +319,7 @@
   display: block;
   margin-bottom: 0.18rem;
   color: var(--color-red);
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -293,10 +336,14 @@
   padding-top: 0.75rem;
   border-top: 1px solid rgba(126, 78, 28, 0.25);
   color: var(--color-red);
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+html[data-locale="km"] .archive-search__result-action {
+  color: #f0d28f;
 }
 .archive-search__empty {
   min-width: 0;

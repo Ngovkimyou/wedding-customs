@@ -1,4 +1,6 @@
 import KhmerScriptText from "./KhmerScriptText.js";
+import LocaleText from "./LocaleText.js";
+import ArchiveContentText from "./ArchiveContentText.js";
 
 export default function ArchiveMetadata({ entry }) {
   const isCommunityEntry = entry.id === "COMMUNITY ENTRY" || Boolean(entry.authorUsername);
@@ -20,18 +22,20 @@ export default function ArchiveMetadata({ entry }) {
     <dl className="archive-metadata">
       {metadataFields.map(([label, field]) => (
         <div key={label}>
-          <dt>{label}</dt>
+          <dt><LocaleText>{label}</LocaleText></dt>
           <dd>
             {field === "authorUsername" ? (
               <span className="archive-metadata__author-value">
                 <KhmerScriptText>
-                  {entry.authorUsername || "Name unavailable"}
+                  {entry.authorUsername || <LocaleText>Name unavailable</LocaleText>}
                 </KhmerScriptText>
               </span>
+            ) : entry[field] ? (
+              <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+                {entry[field]}
+              </ArchiveContentText>
             ) : (
-              <KhmerScriptText>
-                {entry[field] || "Not provided"}
-              </KhmerScriptText>
+              <LocaleText>Not provided</LocaleText>
             )}
           </dd>
         </div>

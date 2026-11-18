@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ContributionForm from "./ContributionForm.js";
+import LocaleText from "./LocaleText.js";
 
 export default function ArchiveEntryFormPage({
   isAuthenticated = false,
@@ -22,11 +23,11 @@ export default function ArchiveEntryFormPage({
     <main className="contribute-page" aria-labelledby="contribute-title">
       <section className="contribute-card">
         <h1 id="contribute-title">
-          {isEditing ? "Edit archive entry" : "Contribute an archive entry"}
+          <LocaleText>{isEditing ? "Edit archive entry" : "Contribute an archive entry"}</LocaleText>
         </h1>
         {isEditing ? (
           <p className="contribute-card__intro">
-            Update the story and its details. Leave the photo field empty to keep the current photograph.
+            <LocaleText>Update the story and its details. Leave the photo field empty to keep the current photograph.</LocaleText>
           </p>
         ) : null}
 
@@ -39,8 +40,8 @@ export default function ArchiveEntryFormPage({
           />
         ) : (
           <div className="contribute-login-prompt">
-            <p>Log in to add an entry to the archive.</p>
-            <Link className="contribute-submit" href="/login">Log in to contribute</Link>
+            <p><LocaleText>Log in to add an entry to the archive.</LocaleText></p>
+            <Link className="contribute-submit" href="/login"><LocaleText>Log in to contribute</LocaleText></Link>
           </div>
         )}
       </section>

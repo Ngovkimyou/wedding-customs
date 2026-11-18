@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ReviewQueue from "../../components/ReviewQueue.js";
 import { createClient } from "../../lib/supabase/server.js";
+import LocaleText from "../../components/LocaleText.js";
 
 export const dynamic = "force-dynamic";
 
@@ -9,27 +10,14 @@ export const metadata = {
   description: "Review pending community archive entries.",
 };
 
-function formatSubmittedAt(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Phnom_Penh",
-  }).format(date);
-}
-
 function AccessNotice() {
   return (
     <main className="contribute-page review-page" aria-labelledby="review-title">
       <section className="contribute-card review-card review-card--notice">
-        <p className="contribute-card__eyebrow review-card__eyebrow">Reviewer access</p>
-        <h1 id="review-title">Review Queue</h1>
-        <p className="review-notice" role="status">You don’t have permission to review entries.</p>
-        <Link className="review-notice__link" href="/">Back to the archive</Link>
+        <p className="contribute-card__eyebrow review-card__eyebrow"><LocaleText>Reviewer access</LocaleText></p>
+        <h1 id="review-title"><LocaleText>Review Queue</LocaleText></h1>
+        <p className="review-notice" role="status"><LocaleText>You don’t have permission to review entries.</LocaleText></p>
+        <Link className="review-notice__link" href="/"><LocaleText>Back to the archive</LocaleText></Link>
       </section>
     </main>
   );
@@ -73,10 +61,7 @@ export default async function ReviewPage() {
       console.error("[review] Pending entries could not be loaded.", error);
       loadError = true;
     } else {
-      entries = (data ?? []).map((entry) => ({
-        ...entry,
-        submittedAtLabel: formatSubmittedAt(entry.created_at),
-      }));
+      entries = data ?? [];
     }
   } catch (error) {
     console.error("[review] Pending entries could not be loaded.", error);
@@ -86,15 +71,15 @@ export default async function ReviewPage() {
   return (
     <main className="contribute-page review-page" aria-labelledby="review-title">
       <section className="contribute-card review-card">
-        <p className="contribute-card__eyebrow review-card__eyebrow">Community archive</p>
-        <h1 id="review-title">Review Queue</h1>
+        <p className="contribute-card__eyebrow review-card__eyebrow"><LocaleText>Community archive</LocaleText></p>
+        <h1 id="review-title"><LocaleText>Review Queue</LocaleText></h1>
         <p className="contribute-card__intro review-card__intro">
-          Review community stories in the order they were submitted.
+          <LocaleText>Review community stories in the order they were submitted.</LocaleText>
         </p>
 
         {loadError ? (
           <p className="review-page__error" role="alert">
-            The review queue couldn’t be loaded. Please try again later.
+            <LocaleText>The review queue couldn’t be loaded. Please try again later.</LocaleText>
           </p>
         ) : (
           <ReviewQueue entries={entries ?? []} />

@@ -16,6 +16,8 @@ import {
 } from "../data/music.js";
 import { ARCHIVE_READY_EVENT, OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
 import ScrollIndicator from "./ScrollIndicator.js";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const DEFAULT_VOLUME = 1;
 const MUSIC_FADE_DURATION = 850;
@@ -142,16 +144,17 @@ function fadeAudioVolume(audio, nextVolume, duration, transitionId, transitionId
   });
 }
 
-function TrackLabel({ track }) {
+function TrackLabel({ track, locale }) {
   return (
     <>
-      <span>{track.label}</span>
-      {track.variant ? <em className="music-choice__variant">{track.variant}</em> : null}
+      <span lang={locale}>{translate(locale, track.label)}</span>
+      {track.variant ? <em className="music-choice__variant" lang={locale}>{translate(locale, track.variant)}</em> : null}
     </>
   );
 }
 
 export default function MusicControl() {
+  const { locale } = useLocale();
   const pathname = usePathname();
   const audioRef = useRef(null);
   const musicPanelRef = useRef(null);
@@ -855,10 +858,10 @@ export default function MusicControl() {
               <span className="music-choice__number" aria-hidden="true">
                 {index + 1}.
               </span>
-              <span className="music-choice__label">
-                <TrackLabel track={track} />
+              <span className="music-choice__label" lang={locale}>
+                <TrackLabel track={track} locale={locale} />
                 {isSelected && mode !== DEFAULT_MUSIC_MODE ? (
-                  <span className="music-choice__loop-note">This song will loop automatically.</span>
+                  <span className="music-choice__loop-note">{translate(locale, "This song will loop automatically.")}</span>
                 ) : null}
               </span>
               {isSelected ? (
@@ -892,13 +895,13 @@ export default function MusicControl() {
       >
         <header className="music-panel__header">
           <div>
-            <p className="music-panel__eyebrow">Archive music</p>
-            <h2 id="music-panel-title">Choose a soundtrack</h2>
+            <p className="music-panel__eyebrow">{translate(locale, "Archive music")}</p>
+            <h2 id="music-panel-title" lang={locale}>{translate(locale, "Choose a soundtrack")}</h2>
           </div>
           <button
             className="music-panel__close"
             type="button"
-            aria-label="Close music panel"
+            aria-label={translate(locale, "Close music panel")}
             onMouseDown={suppressPointerFocus}
             onClick={closePanel}
           >
@@ -921,10 +924,10 @@ export default function MusicControl() {
             onKeyDown={(event) => handleMusicChoiceKeyDown(event, defaultMusicChoice)}
             onClick={() => selectPlaylist(DEFAULT_MUSIC_MODE, 0)}
           >
-            <span className="music-choice__label">
-              <span>Default <span className="music-choice__recommend"><em>Recommend</em>⭐</span></span>
-              <small className="music-choice__description">
-                Default option will play all songs at the appropriate pages.
+            <span className="music-choice__label" lang={locale}>
+              <span>{translate(locale, "Default")} <span className="music-choice__recommend"><em>{translate(locale, "Recommend")}</em>⭐</span></span>
+              <small className="music-choice__description" lang={locale}>
+                {translate(locale, "Default option will play all songs at the appropriate pages.")}
               </small>
             </span>
             {mode === DEFAULT_MUSIC_MODE ? (
@@ -933,17 +936,17 @@ export default function MusicControl() {
           </button>
 
           <div className="music-panel__section">
-            <h3>Home page</h3>
+            <h3 lang={locale}>{translate(locale, "Home page")}</h3>
             {renderTrackChoices(MUSIC_PLAYLISTS.home, "home")}
           </div>
 
           <div className="music-panel__section">
-            <h3>About page</h3>
+            <h3 lang={locale}>{translate(locale, "About page")}</h3>
             {renderTrackChoices(MUSIC_PLAYLISTS.about, "about")}
           </div>
 
           <div className="music-panel__section">
-            <h3>Reading Mode</h3>
+            <h3 lang={locale}>{translate(locale, "Reading Mode")}</h3>
             {renderTrackChoices(MUSIC_PLAYLISTS.reading, "reading")}
           </div>
         </div>
@@ -951,16 +954,17 @@ export default function MusicControl() {
         <ScrollIndicator scrollRef={musicPanelBodyRef} className="music-panel__scrollbar" />
 
         <footer className="music-panel__footer">
-          <p className="music-panel__now-playing">
-            {isPlaying ? "Playing" : "Paused"}: <span>{activeTrack.label}</span>
+          <p className="music-panel__now-playing" lang={locale}>
+            {translate(locale, isPlaying ? "Playing" : "Paused")}: <span lang={locale}>{translate(locale, activeTrack.label)}</span>
           </p>
           <button
             className={`music-panel__play${isPlaying ? " music-panel__play--pause" : " music-panel__play--play"}`}
+            lang={locale}
             type="button"
             onMouseDown={suppressPointerFocus}
             onClick={togglePlayback}
           >
-            {isPlaying ? "Pause" : "Play"}
+            {translate(locale, isPlaying ? "Pause" : "Play")}
           </button>
         </footer>
       </section>
@@ -979,7 +983,7 @@ export default function MusicControl() {
         <button
           className="music-control__button"
           type="button"
-          aria-label={isResumePending ? "Resume archive music" : "Open archive music panel"}
+          aria-label={translate(locale, isResumePending ? "Resume archive music" : "Open archive music panel")}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           onClick={openPanel}

@@ -6,21 +6,23 @@ import { useEffect, useRef } from "react";
 import aboutIcon from "../assets/icons/about-icon.avif";
 import chanFlowerBackdrop from "../assets/chan-flower-backdrop.avif";
 import { OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const NAVIGATION_ITEMS = [
   { href: "/about", label: "About" },
 ];
 
-function NavigationLinks() {
+function NavigationLinks({ locale }) {
   return NAVIGATION_ITEMS.map(({ href, label }) => (
     <Link
       className="site-navigation__link"
       href={href}
       key={href}
       prefetch={true}
-      aria-label={label}
+      aria-label={translate(locale, label)}
     >
-      <span className="site-navigation__link-label">{label}</span>
+      <span className="site-navigation__link-label">{translate(locale, label)}</span>
       <span className="site-navigation__link-control" aria-hidden="true">
         <img className="site-navigation__link-backdrop" src={chanFlowerBackdrop.src} alt="" />
         <img className="site-navigation__link-icon" src={aboutIcon.src} alt="" />
@@ -30,6 +32,7 @@ function NavigationLinks() {
 }
 
 export default function Navigation({ accountControls = null }) {
+  const { locale } = useLocale();
   const moreRef = useRef(null);
   const pathname = usePathname();
 
@@ -71,12 +74,12 @@ export default function Navigation({ accountControls = null }) {
   }, []);
 
   return (
-    <nav className="site-navigation" aria-label="Primary navigation">
+    <nav className="site-navigation" aria-label={translate(locale, "Primary navigation")}>
       <div className="site-navigation__links">
-        <NavigationLinks />
+        <NavigationLinks locale={locale} />
       </div>
       <details ref={moreRef} className="site-navigation__more">
-        <summary aria-label="Open navigation menu">
+        <summary aria-label={translate(locale, "Open navigation menu")}>
           <img
             className="music-control__backdrop site-navigation__more-backdrop"
             src={chanFlowerBackdrop.src}
@@ -89,14 +92,14 @@ export default function Navigation({ accountControls = null }) {
         </summary>
         <div className="site-navigation__menu">
           <div className="site-navigation__menu-items">
-            <NavigationLinks />
+            <NavigationLinks locale={locale} />
             <button
               className="site-navigation__music"
               type="button"
               aria-haspopup="dialog"
               onClick={openMusicPanel}
             >
-              <span>Music</span>
+              <span>{translate(locale, "Music")}</span>
             </button>
             {accountControls}
           </div>

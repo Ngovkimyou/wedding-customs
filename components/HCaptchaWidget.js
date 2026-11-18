@@ -1,6 +1,8 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const HCAPTCHA_SCRIPT_ID = "hcaptcha-api-script";
 const HCAPTCHA_ONLOAD_CALLBACK = "__khmerWeddingArchiveHCaptchaReady";
@@ -82,6 +84,7 @@ const HCaptchaWidget = forwardRef(function HCaptchaWidget({
   onError,
   onReady,
 }, ref) {
+  const { locale } = useLocale();
   const containerRef = useRef(null);
   const widgetIdRef = useRef(null);
   const apiRef = useRef(null);
@@ -190,13 +193,13 @@ const HCaptchaWidget = forwardRef(function HCaptchaWidget({
     >
       <div ref={containerRef} />
       {status === "loading" ? (
-        <span className="auth-captcha__status">Loading security check…</span>
+        <span className="auth-captcha__status">{translate(locale, "Loading security check…")}</span>
       ) : null}
       {status === "missing" ? (
-        <span className="auth-captcha__status">Security check is not configured.</span>
+        <span className="auth-captcha__status">{translate(locale, "Security check is not configured.")}</span>
       ) : null}
       {status === "error" ? (
-        <span className="auth-captcha__status">Security check could not load. Try again.</span>
+        <span className="auth-captcha__status">{translate(locale, "Security check could not load. Try again.")}</span>
       ) : null}
     </div>
   );

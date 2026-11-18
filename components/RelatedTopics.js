@@ -1,4 +1,8 @@
 import Link from "next/link";
+import LocaleText from "./LocaleText.js";
+import ArchiveContentText from "./ArchiveContentText.js";
+import RelatedTopicTitles from "./RelatedTopicTitles.js";
+import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
 
 export default function RelatedTopics({ entries = [] }) {
   if (entries.length === 0) {
@@ -7,7 +11,7 @@ export default function RelatedTopics({ entries = [] }) {
 
   return (
     <section className="archive-entry__section archive-entry__related" data-archive-dynamic="true" aria-labelledby="related-topics-title">
-      <h2 className="section-label" id="related-topics-title">Related topics</h2>
+      <h2 className="section-label" id="related-topics-title"><LocaleText>Related topics</LocaleText></h2>
       <div className="archive-entry__related-grid">
         {entries.map((entry) => (
           <Link
@@ -16,10 +20,14 @@ export default function RelatedTopics({ entries = [] }) {
             key={entry.slug}
             prefetch={true}
           >
-            <span className="archive-entry__related-id">{entry.id}</span>
-            <span className="archive-entry__related-title">{entry.title}</span>
+            <span className="archive-entry__related-id">
+              <ArchiveContentText isCommunityEntry={isCommunityArchiveEntry(entry)}>
+                {entry.id}
+              </ArchiveContentText>
+            </span>
+            <RelatedTopicTitles title={entry.title} khmerTitle={entry.khmerTitle} />
             <span className="archive-entry__related-action">
-              Open topic <span aria-hidden="true">&rarr;</span>
+              <LocaleText>Open topic</LocaleText> <span aria-hidden="true">&rarr;</span>
             </span>
           </Link>
         ))}

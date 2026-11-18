@@ -351,14 +351,14 @@ body.loading-screen-open {
 .loading-screen__status,
 .loading-screen__prompt {
   margin: 0;
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   letter-spacing: 0.13em;
   text-transform: uppercase;
 }
 
 .loading-screen__status {
   color: var(--color-gold-light);
-  font-family: var(--font-archive-title);
+  font-family: "KhmerGlobal", var(--font-archive-title);
   font-size: clamp(1rem, 3.2vw, 1.55rem);
   letter-spacing: 0.04em;
   line-height: 1;
@@ -385,7 +385,7 @@ body.loading-screen-open {
   gap: 0.7rem;
   width: min(82vw, 22rem);
   color: rgba(245, 233, 213, 0.78);
-  font-family: var(--font-meta);
+  font-family: "KhmerGlobal", var(--font-meta);
   font-size: clamp(0.68rem, 1.6vw, 0.82rem);
   line-height: 1.35;
   text-align: center;

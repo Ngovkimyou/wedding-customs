@@ -21,6 +21,9 @@ import {
 } from "../lib/security.mjs";
 import HCaptchaWidget from "./HCaptchaWidget.js";
 import InteractionLock from "./InteractionLock.js";
+import LanguageSwitcher from "./LanguageSwitcher.js";
+import { translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 const CAPTCHA_REQUIRED_ERROR = "Please complete the security check";
 const CAPTCHA_UNAVAILABLE_ERROR = "Security verification is unavailable. Please try again later.";
@@ -53,7 +56,7 @@ const styles = {
   eyebrow: {
     margin: 0,
     color: "var(--color-red)",
-    fontFamily: "var(--font-meta)",
+    fontFamily: '"KhmerGlobal", var(--font-meta)',
     fontSize: "var(--type-meta)",
     fontWeight: 700,
     letterSpacing: "0.11em",
@@ -62,7 +65,7 @@ const styles = {
   title: {
     margin: "0.65rem 0 0",
     color: "var(--color-title-gold)",
-    fontFamily: "var(--font-display)",
+    fontFamily: '"KhmerGlobal", var(--font-display)',
     fontSize: "clamp(2rem, 6vw, 3rem)",
     fontWeight: 400,
     letterSpacing: "-0.04em",
@@ -84,7 +87,7 @@ const styles = {
   },
   label: {
     color: "var(--color-brown)",
-    fontFamily: "var(--font-meta)",
+    fontFamily: '"KhmerGlobal", var(--font-meta)',
     fontSize: "0.7rem",
     fontWeight: 700,
     letterSpacing: "0.08em",
@@ -125,7 +128,7 @@ const styles = {
     backgroundColor: "var(--color-red)",
     color: "var(--color-on-dark)",
     cursor: "pointer",
-    fontFamily: "var(--font-meta)",
+    fontFamily: '"KhmerGlobal", var(--font-meta)',
     fontSize: "0.72rem",
     fontWeight: 700,
     letterSpacing: "0.1em",
@@ -161,7 +164,7 @@ const styles = {
   captchaLabel: {
     alignSelf: "stretch",
     color: "var(--color-brown)",
-    fontFamily: "var(--font-meta)",
+    fontFamily: '"KhmerGlobal", var(--font-meta)',
     fontSize: "0.7rem",
     fontWeight: 700,
     letterSpacing: "0.08em",
@@ -188,6 +191,7 @@ const styles = {
 };
 
 export default function AuthForm({ mode = "login" }) {
+  const { locale } = useLocale();
   const isLogin = mode === "login";
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -334,6 +338,7 @@ export default function AuthForm({ mode = "login" }) {
       aria-labelledby="auth-title"
       aria-busy={isSubmitting}
     >
+      <LanguageSwitcher floating />
       <div
         style={{
           ...styles.card,
@@ -342,18 +347,18 @@ export default function AuthForm({ mode = "login" }) {
         }}
         inert={isSubmitting}
       >
-        <p style={styles.eyebrow}>{isLogin ? "Welcome back" : "Join the archive"}</p>
-        <h1 id="auth-title" style={styles.title}>{isLogin ? "Log in" : "Sign up"}</h1>
+        <p style={styles.eyebrow}>{translate(locale, isLogin ? "Welcome back" : "Join the archive")}</p>
+        <h1 id="auth-title" style={styles.title}>{translate(locale, isLogin ? "Log in" : "Sign up")}</h1>
         <p style={styles.intro}>
           {isLogin
-            ? "Continue your archive journey."
-            : "Create an account to continue."}
+            ? translate(locale, "Continue your archive journey.")
+            : translate(locale, "Create an account to continue.")}
         </p>
 
         <form style={styles.form} onSubmit={handleSubmit} noValidate>
           {!isLogin ? (
             <label style={styles.field}>
-              <span style={styles.label}>Username</span>
+              <span style={styles.label}>{translate(locale, "Username")}</span>
               <input
                 className="auth-form__input"
                 style={{ ...styles.input, ...(focusedField === "username" ? styles.inputFocused : {}) }}
@@ -372,7 +377,7 @@ export default function AuthForm({ mode = "login" }) {
           ) : null}
 
           <label style={styles.field}>
-            <span style={styles.label}>Email</span>
+            <span style={styles.label}>{translate(locale, "Email")}</span>
             <input
               className="auth-form__input"
               style={{ ...styles.input, ...(focusedField === "email" ? styles.inputFocused : {}) }}
@@ -390,7 +395,7 @@ export default function AuthForm({ mode = "login" }) {
           </label>
 
           <label style={styles.field}>
-            <span style={styles.label}>Password</span>
+            <span style={styles.label}>{translate(locale, "Password")}</span>
             <input
               className="auth-form__input"
               style={{ ...styles.input, ...(focusedField === "password" ? styles.inputFocused : {}) }}
@@ -410,7 +415,7 @@ export default function AuthForm({ mode = "login" }) {
 
           {!isLogin ? (
             <label style={styles.field}>
-              <span style={styles.label}>Confirm password</span>
+              <span style={styles.label}>{translate(locale, "Confirm password")}</span>
               <input
                 className="auth-form__input"
                 style={{ ...styles.input, ...(focusedField === "confirm-password" ? styles.inputFocused : {}) }}
@@ -430,7 +435,7 @@ export default function AuthForm({ mode = "login" }) {
           ) : null}
 
           <div style={styles.captchaField}>
-            <span style={styles.captchaLabel}>Security check</span>
+            <span style={styles.captchaLabel}>{translate(locale, "Security check")}</span>
             <HCaptchaWidget
               ref={captchaRef}
               sitekey={captchaSitekey}
@@ -442,9 +447,9 @@ export default function AuthForm({ mode = "login" }) {
           </div>
 
           <div style={styles.status} aria-live="polite">
-            {error ? <p style={styles.message} role="alert">{error}</p> : null}
-            {!error && captchaError ? <p style={styles.message} role="alert">{captchaError}</p> : null}
-            {!error && message ? <p style={styles.message} role="status">{message}</p> : null}
+            {error ? <p style={styles.message} role="alert">{translate(locale, error)}</p> : null}
+            {!error && captchaError ? <p style={styles.message} role="alert">{translate(locale, captchaError)}</p> : null}
+            {!error && message ? <p style={styles.message} role="status">{translate(locale, message)}</p> : null}
           </div>
 
           <button
@@ -458,24 +463,24 @@ export default function AuthForm({ mode = "login" }) {
             onPointerEnter={() => setIsButtonHovered(true)}
             onPointerLeave={() => setIsButtonHovered(false)}
           >
-            {isSubmitting ? "Please wait" : isLogin ? "Log in" : "Create account"}
+            {translate(locale, isSubmitting ? "Please wait" : isLogin ? "Log in" : "Create account")}
           </button>
         </form>
 
         <p style={styles.footer}>
-          {isLogin ? "Need an account? " : "Already have an account? "}
+          {translate(locale, isLogin ? "Need an account? " : "Already have an account? ")}
           <Link
             style={{ ...styles.link, ...(isLinkHovered ? styles.linkHovered : {}) }}
             href={isLogin ? "/signup" : "/login"}
             onPointerEnter={() => setIsLinkHovered(true)}
             onPointerLeave={() => setIsLinkHovered(false)}
           >
-            {isLogin ? "Sign up" : "Log in"}
+            {translate(locale, isLogin ? "Sign up" : "Log in")}
           </Link>
         </p>
       </div>
       {isSubmitting ? (
-        <InteractionLock message={isLogin ? "Signing in…" : "Creating account…"} />
+        <InteractionLock message={translate(locale, isLogin ? "Signing in…" : "Creating account…")} />
       ) : null}
     </section>
   );

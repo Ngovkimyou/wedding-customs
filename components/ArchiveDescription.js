@@ -2,19 +2,21 @@ import Link from "next/link";
 import ProgressiveImage from "./ProgressiveImage.js";
 import ImageLightbox from "./ImageLightbox.js";
 import { DescriptionGallery, DescriptionGalleryStack } from "./ArchiveDescriptionGallery.js";
-import KhmerScriptText from "./KhmerScriptText.js";
 import { getImageDimensions } from "../lib/media.js";
+import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
+import ArchiveContentText from "./ArchiveContentText.js";
+import LocaleText from "./LocaleText.js";
 
-function DescriptionPart({ part, keyPrefix }) {
+function DescriptionPart({ part, isCommunityEntry }) {
   if (typeof part === "string") {
-    return <KhmerScriptText keyPrefix={keyPrefix}>{part}</KhmerScriptText>;
+    return <ArchiveContentText isCommunityEntry={isCommunityEntry}>{part}</ArchiveContentText>;
   }
 
   if (!part?.text) {
     return null;
   }
 
-  let content = <KhmerScriptText keyPrefix={keyPrefix}>{part.text}</KhmerScriptText>;
+  let content = <ArchiveContentText isCommunityEntry={isCommunityEntry}>{part.text}</ArchiveContentText>;
 
   if (part.archiveSlug) {
     content = (
@@ -41,7 +43,7 @@ function DescriptionPart({ part, keyPrefix }) {
   return content;
 }
 
-function DescriptionParagraph({ paragraph }) {
+function DescriptionParagraph({ paragraph, isCommunityEntry }) {
   const parts = Array.isArray(paragraph) ? paragraph : [paragraph];
 
   return (
@@ -49,7 +51,7 @@ function DescriptionParagraph({ paragraph }) {
       {parts.map((part, index) => (
         <DescriptionPart
           part={part}
-          keyPrefix={`description-part-${index}`}
+          isCommunityEntry={isCommunityEntry}
           key={index}
         />
       ))}
@@ -69,8 +71,10 @@ function normalizeGalleryConfig(gallery) {
   return gallery;
 }
 
-function DescriptionParagraphWithGallery({ paragraph, gallery }) {
-  const paragraphContent = <DescriptionParagraph paragraph={paragraph} />;
+function DescriptionParagraphWithGallery({ paragraph, gallery, isCommunityEntry }) {
+  const paragraphContent = (
+    <DescriptionParagraph paragraph={paragraph} isCommunityEntry={isCommunityEntry} />
+  );
   let galleryContent = null;
 
   if (gallery?.galleries?.length) {
@@ -78,6 +82,7 @@ function DescriptionParagraphWithGallery({ paragraph, gallery }) {
       <DescriptionGalleryStack
         galleries={gallery.galleries}
         sharedCaption={gallery.sharedCaption}
+        isCommunityEntry={isCommunityEntry}
       />
     );
   } else if (gallery?.images?.length) {
@@ -86,6 +91,7 @@ function DescriptionParagraphWithGallery({ paragraph, gallery }) {
         images={gallery.images}
         caption={gallery.caption}
         layout={gallery.layout}
+        isCommunityEntry={isCommunityEntry}
       />
     );
   }
@@ -120,12 +126,14 @@ function DescriptionParagraphWithGallery({ paragraph, gallery }) {
   );
 }
 
-function DescriptionSubsection({ sectionTitle, subsection }) {
+function DescriptionSubsection({ sectionTitle, subsection, isCommunityEntry }) {
   const paragraphs = subsection.paragraphs || [];
 
   return (
     <section className="archive-entry__description-subsection">
-      <h4>{subsection.title}</h4>
+      <ArchiveContentText as="h4" isCommunityEntry={isCommunityEntry}>
+        {subsection.title}
+      </ArchiveContentText>
       {paragraphs.map((paragraph, index) => {
         const initialGallery = index === 0 && subsection.images?.length
           ? { images: subsection.images, caption: subsection.galleryCaption }
@@ -136,6 +144,7 @@ function DescriptionSubsection({ sectionTitle, subsection }) {
             key={`${sectionTitle}-${subsection.title}-${index}`}
             paragraph={paragraph}
             gallery={normalizeGalleryConfig(initialGallery)}
+            isCommunityEntry={isCommunityEntry}
           />
         );
       })}
@@ -143,21 +152,25 @@ function DescriptionSubsection({ sectionTitle, subsection }) {
         <DescriptionGallery
           images={subsection.images}
           caption={subsection.galleryCaption}
+          isCommunityEntry={isCommunityEntry}
         />
       ) : null}
     </section>
   );
 }
 
-function DescriptionSectionContent({ section }) {
+function DescriptionSectionContent({ section, isCommunityEntry }) {
   return (
     <>
-      <h3>{section.title}</h3>
+      <ArchiveContentText as="h3" isCommunityEntry={isCommunityEntry}>
+        {section.title}
+      </ArchiveContentText>
       {(section.paragraphs || []).map((paragraph, index) => (
         <DescriptionParagraphWithGallery
           key={`${section.title}-${index}`}
           paragraph={paragraph}
           gallery={normalizeGalleryConfig(section.imagesAfterParagraph?.[index])}
+          isCommunityEntry={isCommunityEntry}
         />
       ))}
       {(section.subsections || []).map((subsection) => (
@@ -165,13 +178,14 @@ function DescriptionSectionContent({ section }) {
           key={subsection.title}
           sectionTitle={section.title}
           subsection={subsection}
+          isCommunityEntry={isCommunityEntry}
         />
       ))}
     </>
   );
 }
 
-function DescriptionSection({ section }) {
+function DescriptionSection({ section, isCommunityEntry }) {
   const hasArtwork = Boolean(section.artwork);
   const hasBottomRightArtwork = hasArtwork && section.artworkPlacement === "bottom-right";
   const sectionClassName = ["archive-entry__description-section"];
@@ -188,7 +202,9 @@ function DescriptionSection({ section }) {
     sectionClassName.push("archive-entry__description-section--art-bottom-right");
   }
 
-  const content = <DescriptionSectionContent section={section} />;
+  const content = (
+    <DescriptionSectionContent section={section} isCommunityEntry={isCommunityEntry} />
+  );
   const artworkDimensions = getImageDimensions(
     section.artwork,
     hasBottomRightArtwork ? 1254 : 1536,
@@ -205,6 +221,7 @@ function DescriptionSection({ section }) {
               src={section.artwork}
               alt={section.artworkAlt || "Archive illustration"}
               sizes="(max-width: 40rem) 40vw, 16rem"
+              localizeContent={!isCommunityEntry}
             >
               <ProgressiveImage
                 className="archive-entry__description-image"
@@ -214,6 +231,7 @@ function DescriptionSection({ section }) {
                 height={artworkDimensions.height}
                 sizes="(max-width: 40rem) 40vw, 16rem"
                 loading="lazy"
+                localizeAlt={!isCommunityEntry}
               />
             </ImageLightbox>
           </div>
@@ -231,6 +249,7 @@ function DescriptionSection({ section }) {
           height={artworkDimensions.height}
           sizes="(max-width: 40rem) 30vw, 10rem"
           loading="lazy"
+          localizeAlt={!isCommunityEntry}
         />
       ) : null}
     </section>
@@ -238,6 +257,7 @@ function DescriptionSection({ section }) {
 }
 
 export default function ArchiveDescription({ entry }) {
+  const isCommunityEntry = isCommunityArchiveEntry(entry);
   const topArtworkDimensions = getImageDimensions(
     entry.descriptionArtworkTopLeft,
     1254,
@@ -260,19 +280,22 @@ export default function ArchiveDescription({ entry }) {
           loading="lazy"
         />
       ) : null}
-      <h2 className="section-label" id="description-title">Archive description</h2>
+      <h2 className="section-label" id="description-title"><LocaleText>Archive description</LocaleText></h2>
       {entry.descriptionSections?.length ? (
         <div className="archive-entry__description-sections" data-archive-dynamic="true">
           {entry.descriptionSections.map((section) => (
             <DescriptionSection
               key={section.id || section.title}
               section={section}
+              isCommunityEntry={isCommunityEntry}
             />
           ))}
         </div>
       ) : (
         <p data-archive-dynamic="true">
-          <KhmerScriptText keyPrefix="description-content">{entry.content}</KhmerScriptText>
+          <ArchiveContentText isCommunityEntry={isCommunityEntry}>
+            {entry.content}
+          </ArchiveContentText>
         </p>
       )}
     </section>

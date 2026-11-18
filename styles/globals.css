@@ -11,3 +11,79 @@
 @import "./search.css";
 @import "./contribute.css";
 @import "./review.css";
+
+/* Khmer vowel marks and subscripts need generous line boxes throughout the UI. */
+.khmer-script,
+[lang="km"] {
+  font-family: "KhmerGlobal", var(--font-khmer-title), var(--font-body);
+  line-height: 1.75 !important;
+}
+
+/* Cover translated labels that render directly instead of through LocaleText. */
+html[data-locale="km"] :is(
+  a,
+  button,
+  dd,
+  dt,
+  em,
+  figcaption,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  label,
+  legend,
+  li,
+  output,
+  p,
+  small,
+  span,
+  strong,
+  summary,
+  time
+) {
+  line-height: 1.75 !important;
+}
+
+html[data-locale="km"] :is(input, select, textarea)[lang="km"] {
+  line-height: 1.75 !important;
+}
+
+/* These controls clip Khmer superscript marks at their compact component edges. */
+html[data-locale="km"] .contribute-photo-picker {
+  min-height: 4.1rem;
+}
+
+html[data-locale="km"] .site-brand__title,
+html[data-locale="km"] .contribute-photo-picker__button,
+html[data-locale="km"] .contribute-photo-picker__name,
+html[data-locale="km"] .music-panel__now-playing,
+html[data-locale="km"] .music-panel__now-playing span,
+html[data-locale="km"] .music-panel__play,
+html[data-locale="km"] .review-entry__field-label,
+html[data-locale="km"] .review-entry__field-label span {
+  line-height: 2 !important;
+}
+
+html[data-locale="km"] .site-brand__title,
+html[data-locale="km"] .contribute-photo-picker__name,
+html[data-locale="km"] .music-panel__now-playing,
+html[data-locale="km"] .music-panel__now-playing span,
+html[data-locale="km"] .review-entry__field-label,
+html[data-locale="km"] .review-entry__field-label span {
+  padding-block: 0.12em;
+}
+
+html[data-locale="km"] .contribute-photo-picker__button {
+  padding-block: 0.5rem;
+}
+
+html[data-locale="km"] .music-panel__play {
+  padding-block: 0.65rem;
+}
+
+html[data-locale="km"] .review-entry__description {
+  padding-block: 0.14rem;
+}

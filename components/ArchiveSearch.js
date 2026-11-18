@@ -12,8 +12,11 @@ import { limitCodePoints, SEARCH_QUERY_MAX_LENGTH } from "../lib/security.mjs";
 import HighlightedTitle from "./HighlightedTitle.js";
 import KhmerScriptText from "./KhmerScriptText.js";
 import ScrollIndicator from "./ScrollIndicator.js";
+import { getLocalizedTitles, translate } from "../lib/locale.js";
+import { useLocale } from "./LocaleProvider.js";
 
 export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
+  const { locale } = useLocale();
   const [query, setQuery] = useState("");
   const searchRef = useRef(null);
   const inputRef = useRef(null);
@@ -91,51 +94,52 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   };
 
   return (
-    <section className="archive-search" ref={searchRef} aria-labelledby="archive-search-title">
+      <section className="archive-search" ref={searchRef} aria-labelledby="archive-search-title">
       <ScrollIndicator scrollRef={searchRef} className="archive-search__scrollbar" />
       <div className="archive-search__inner">
-        <p className="eyebrow">Explore the collection</p>
-        <h1 id="archive-search-title">Search the archive</h1>
+        <p className="eyebrow">{translate(locale, "Explore the collection")}</p>
+        <h1 id="archive-search-title" lang={locale}>{translate(locale, "Search the archive")}</h1>
         <div className="archive-search__input-wrap">
           <span className="archive-search__input-icon" aria-hidden="true" />
           <input
             ref={inputRef}
             id="archive-search-input"
             className="archive-search__input"
+            lang={locale}
             type="search"
-            aria-label="Search archive titles and descriptions"
+            aria-label={translate(locale, "Search archive titles and descriptions")}
             aria-controls="archive-search-results"
             value={query}
             onChange={handleQueryChange}
             onKeyDown={handleSearchKeyDown}
-            placeholder="Type a title or phrase…"
+            placeholder={translate(locale, "Type a title or phrase…")}
             autoComplete="off"
             maxLength={SEARCH_QUERY_MAX_LENGTH}
             autoFocus
           />
           {query ? (
             <button className="archive-search__clear" type="button" onClick={clearSearch}>
-              Clear
+              {translate(locale, "Clear")}
             </button>
           ) : null}
         </div>
         <p className="archive-search__status" role="status">
           {dataStatus === "loading"
-            ? "Loading archive records…"
+            ? translate(locale, "Loading archive records…")
             : dataStatus === "error"
-              ? "Search is temporarily unavailable. Please try again shortly."
+              ? translate(locale, "Search is temporarily unavailable. Please try again shortly.")
               : dataStatus === "empty"
-                ? "No archive records are available yet."
+                ? translate(locale, "No archive records are available yet.")
                 : normalizedQuery
-                  ? `${matches.length} ${matches.length === 1 ? "record" : "records"} found`
-                  : "Start typing to search the archive."}
+                  ? `${matches.length} ${translate(locale, matches.length === 1 ? "record" : "records")} ${translate(locale, "found")}`
+                  : translate(locale, "Start typing to search the archive.")}
         </p>
         {dataStatus === "error" ? (
           <p className="archive-search__empty" role="alert">
-            The archive could not be loaded right now.
+            {translate(locale, "The archive could not be loaded right now.")}
           </p>
         ) : normalizedQuery && matches.length === 0 ? (
-          <p className="archive-search__empty">No match found for “{displayQuery}”.</p>
+          <p className="archive-search__empty">{translate(locale, "No match found for")} “{displayQuery}”.</p>
         ) : null}
         {matches.length === 0 ? (
           <div className="archive-search__empty-art" aria-hidden="true">
@@ -149,47 +153,58 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
           </div>
         ) : null}
         <div className="archive-search__results" id="archive-search-results">
-          {matches.map((entry, index) => (
-            <Link
-              className="archive-search__result ornate-frame"
-              href={`/archive/${entry.slug}?from=search`}
-              prefetch={true}
-              key={entry.dbId ?? entry.id}
-              ref={(element) => { resultRefs.current[index] = element; }}
-              onKeyDown={(event) => handleResultKeyDown(event, index)}
-            >
-              <span className="archive-search__result-meta">{entry.id}</span>
-              <h2><HighlightedTitle title={entry.title} query={normalizedQuery} /></h2>
-              {entry.khmerTitle ? (
-                <p className="archive-search__result-khmer-title">
-                  <HighlightedTitle title={entry.khmerTitle} query={normalizedQuery} />
-                </p>
-              ) : null}
-              {entry.descriptionSnippets?.length ? (
-                <div className="archive-search__description-matches">
-                  {entry.descriptionSnippets.map((snippet, snippetIndex) => (
-                    <div className="archive-search__description-match" key={`${snippet.sectionTitle}-${snippetIndex}`}>
-                      {snippet.sectionTitle ? (
-                        <span className="archive-search__description-context">
-                          {snippet.sectionTitle}
-                        </span>
-                      ) : null}
-                      <p>
-                        <HighlightedTitle
-                          title={snippet.text}
-                          query={normalizedQuery}
-                          useKhmerScript
-                        />
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : entry.summary ? (
-                <p><KhmerScriptText>{entry.summary}</KhmerScriptText></p>
-              ) : null}
-              <span className="archive-search__result-action">Open record <span aria-hidden="true">→</span></span>
-            </Link>
-          ))}
+          {matches.map((entry, index) => {
+            const {
+              primaryTitle,
+              alternateTitle,
+              primaryLocale,
+              alternateLocale,
+            } = getLocalizedTitles(locale, entry.title, entry.khmerTitle);
+
+            return (
+              <Link
+                className="archive-search__result ornate-frame"
+                href={`/archive/${entry.slug}?from=search`}
+                prefetch={true}
+                key={entry.dbId ?? entry.id}
+                ref={(element) => { resultRefs.current[index] = element; }}
+                onKeyDown={(event) => handleResultKeyDown(event, index)}
+              >
+                <span className="archive-search__result-meta">{entry.id}</span>
+                <h2 lang={primaryLocale}>
+                  <HighlightedTitle title={primaryTitle} query={normalizedQuery} />
+                </h2>
+                {alternateTitle ? (
+                  <p className="archive-search__result-khmer-title" lang={alternateLocale}>
+                    <HighlightedTitle title={alternateTitle} query={normalizedQuery} />
+                  </p>
+                ) : null}
+                {entry.descriptionSnippets?.length ? (
+                  <div className="archive-search__description-matches">
+                    {entry.descriptionSnippets.map((snippet, snippetIndex) => (
+                      <div className="archive-search__description-match" key={`${snippet.sectionTitle}-${snippetIndex}`}>
+                        {snippet.sectionTitle ? (
+                          <span className="archive-search__description-context">
+                            {snippet.sectionTitle}
+                          </span>
+                        ) : null}
+                        <p>
+                          <HighlightedTitle
+                            title={snippet.text}
+                            query={normalizedQuery}
+                            useKhmerScript
+                          />
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : entry.summary ? (
+                  <p><KhmerScriptText>{entry.summary}</KhmerScriptText></p>
+                ) : null}
+                <span className="archive-search__result-action">{translate(locale, "Open record")} <span aria-hidden="true">→</span></span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
