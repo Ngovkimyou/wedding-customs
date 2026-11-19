@@ -14,7 +14,7 @@ import {
   getMusicChoiceId,
   getPageMusicMode,
 } from "../data/music.js";
-import { ARCHIVE_READY_EVENT, OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
+import { OPEN_MUSIC_PANEL_EVENT } from "../lib/client-navigation.js";
 import ScrollIndicator from "./ScrollIndicator.js";
 import { translate } from "../lib/locale.js";
 import { useLocale } from "./LocaleProvider.js";
@@ -88,7 +88,6 @@ function readPersistedMusicState() {
       },
       playlistIndexes,
       playbackPositions,
-      wasPlaying: savedState.wasPlaying === true,
     };
   } catch {
     return null;
@@ -163,8 +162,7 @@ export default function MusicControl() {
   const previouslyFocusedRef = useRef(null);
   const panelCloseTimerRef = useRef(null);
   const prefetchedTracksRef = useRef(new Map());
-  const shouldResumeRef = useRef(false);
-  const resumePendingRef = useRef(false);
+  const shouldContinuePlaybackRef = useRef(false);
   const hasRestoredMusicStateRef = useRef(false);
   const currentSourceRef = useRef(null);
   const activeModeRef = useRef(null);
@@ -175,7 +173,6 @@ export default function MusicControl() {
   const [isPanelClosing, setIsPanelClosing] = useState(false);
   const [panelAnimationKey, setPanelAnimationKey] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isResumePending, setIsResumePending] = useState(false);
   const [hasUserStarted, setHasUserStarted] = useState(false);
   const [mode, setMode] = useState(DEFAULT_MUSIC_MODE);
   const [manualSelection, setManualSelection] = useState(INITIAL_MANUAL_SELECTION);
@@ -218,7 +215,6 @@ export default function MusicControl() {
     }
 
     saveCurrentPosition();
-    const audio = audioRef.current;
     const state = {
       ...musicStateRef.current,
       ...overrides,
@@ -231,41 +227,11 @@ export default function MusicControl() {
         manualSelection: state.manualSelection,
         playlistIndexes: state.playlistIndexes,
         playbackPositions: playbackPositionsRef.current,
-        wasPlaying: Boolean(
-          resumePendingRef.current || (audio && !audio.paused && !audio.ended),
-        ),
       }));
     } catch {
       // Storage can be unavailable in privacy-restricted browsing contexts.
     }
   }, [saveCurrentPosition]);
-
-  const tryResumeMusic = useCallback(() => {
-    const audio = audioRef.current;
-
-    if (!audio || !resumePendingRef.current || document.body.classList.contains("loading-screen-open")) {
-      return;
-    }
-
-    audio.volume = DEFAULT_VOLUME;
-    let playPromise;
-
-    try {
-      playPromise = audio.play();
-    } catch {
-      return;
-    }
-
-    playPromise?.then(() => {
-      resumePendingRef.current = false;
-      setIsResumePending(false);
-      setHasUserStarted(true);
-      setIsPlaying(true);
-      persistMusicState();
-    }).catch(() => {
-      // Keep the pending state so the next user gesture can try again.
-    });
-  }, [persistMusicState]);
 
   const defaultMusicChoice = MUSIC_CHOICES[0];
 
@@ -317,36 +283,13 @@ export default function MusicControl() {
       return;
     }
 
+    // Restore the listener's choices and position, but require an explicit
+    // Play action in the music panel for every new page session.
     playbackPositionsRef.current = savedState.playbackPositions;
     setMode(savedState.mode);
     setManualSelection(savedState.manualSelection);
     setPlaylistIndexes(savedState.playlistIndexes);
-
-    if (savedState.wasPlaying) {
-      resumePendingRef.current = true;
-      shouldResumeRef.current = true;
-      setHasUserStarted(true);
-      setIsResumePending(true);
-    }
   }, []);
-
-  useEffect(() => {
-    if (!isResumePending) {
-      return undefined;
-    }
-
-    const handleUserGesture = () => {
-      tryResumeMusic();
-    };
-
-    document.addEventListener("pointerdown", handleUserGesture, true);
-    document.addEventListener("keydown", handleUserGesture, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", handleUserGesture, true);
-      document.removeEventListener("keydown", handleUserGesture, true);
-    };
-  }, [isResumePending, tryResumeMusic]);
 
   useEffect(() => () => {
     if (panelCloseTimerRef.current) {
@@ -435,9 +378,6 @@ export default function MusicControl() {
         playbackPositionsRef.current[currentSourceRef.current] = 0;
       }
 
-      resumePendingRef.current = false;
-      setIsResumePending(false);
-
       if (mode !== DEFAULT_MUSIC_MODE) {
         audio.currentTime = 0;
         audio.play().catch(() => setIsPlaying(false));
@@ -452,7 +392,7 @@ export default function MusicControl() {
         [activeMode]: nextIndex,
       }));
 
-      shouldResumeRef.current = false;
+      shouldContinuePlaybackRef.current = false;
       setAudioSource(audio, nextTrack.source);
       audio.loop = activePlaylist.length === 1;
       currentSourceRef.current = nextTrack.source;
@@ -488,12 +428,11 @@ export default function MusicControl() {
         && previousActiveMode !== null
         && previousActiveMode !== activeMode;
       const fadeDuration = isDefaultPageChange ? PAGE_MUSIC_FADE_DURATION : MUSIC_FADE_DURATION;
-      const wasPlaying = shouldResumeRef.current || hasUserStarted || !audio.paused;
-      const wasResumeAttempt = resumePendingRef.current;
+      const shouldContinuePlayback = shouldContinuePlaybackRef.current || hasUserStarted || !audio.paused;
 
       transitionIdRef.current = transitionId;
       activeModeRef.current = activeMode;
-      shouldResumeRef.current = false;
+      shouldContinuePlaybackRef.current = false;
       saveCurrentPosition();
 
       if (previousSource === nextSource) {
@@ -501,18 +440,13 @@ export default function MusicControl() {
         // A canceled fade may leave the same track below its normal level.
         audio.volume = DEFAULT_VOLUME;
 
-        if (wasPlaying && audio.paused) {
+        if (shouldContinuePlayback && audio.paused) {
           audio.play()
             .then(() => {
-              resumePendingRef.current = false;
-              setIsResumePending(false);
               setIsPlaying(true);
             })
             .catch(() => {
               setIsPlaying(false);
-              if (wasResumeAttempt) {
-                setIsResumePending(true);
-              }
             });
         } else {
           setIsPlaying(!audio.paused);
@@ -562,7 +496,7 @@ export default function MusicControl() {
         }
       }
 
-      if (!wasPlaying) {
+      if (!shouldContinuePlayback) {
         audio.volume = DEFAULT_VOLUME;
         setIsPlaying(false);
         return;
@@ -572,62 +506,16 @@ export default function MusicControl() {
 
       try {
         await audio.play();
-        resumePendingRef.current = false;
-        setIsResumePending(false);
         setIsPlaying(true);
         await fadeAudioVolume(audio, DEFAULT_VOLUME, fadeDuration, transitionId, transitionIdRef);
       } catch {
         audio.volume = DEFAULT_VOLUME;
         setIsPlaying(false);
-        if (wasResumeAttempt) {
-          setIsResumePending(true);
-        }
       }
     };
 
     transitionToTrack();
   }, [activeMode, activePlaylist.length, activeTrack.source, hasUserStarted, mode, saveCurrentPosition]);
-
-  useEffect(() => {
-    const handleArchiveStart = () => {
-      const audio = audioRef.current;
-      const startingTrack = MUSIC_PLAYLISTS[pageMode][0];
-      const nextPlaylistIndexes = {
-        ...musicStateRef.current.playlistIndexes,
-        [pageMode]: 0,
-      };
-
-      setMode(DEFAULT_MUSIC_MODE);
-      setPlaylistIndexes(nextPlaylistIndexes);
-      shouldResumeRef.current = true;
-      resumePendingRef.current = false;
-      setIsResumePending(false);
-      setHasUserStarted(true);
-
-      if (!audio) {
-        return;
-      }
-
-      if (currentSourceRef.current !== startingTrack.source) {
-        setAudioSource(audio, startingTrack.source);
-        currentSourceRef.current = startingTrack.source;
-      }
-
-      audio.loop = MUSIC_PLAYLISTS[pageMode].length === 1;
-      audio.volume = DEFAULT_VOLUME;
-      audio.currentTime = 0;
-      audio.play()
-        .then(() => {
-          setIsPlaying(true);
-          persistMusicState({ mode: DEFAULT_MUSIC_MODE, playlistIndexes: nextPlaylistIndexes });
-        })
-        .catch(() => setIsPlaying(false));
-    };
-
-    window.addEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
-
-    return () => window.removeEventListener(ARCHIVE_READY_EVENT, handleArchiveStart);
-  }, [pageMode, persistMusicState]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -728,8 +616,6 @@ export default function MusicControl() {
 
     if (audio.paused) {
       try {
-        resumePendingRef.current = false;
-        setIsResumePending(false);
         setHasUserStarted(true);
         await audio.play();
         setIsPlaying(true);
@@ -741,8 +627,6 @@ export default function MusicControl() {
     }
 
     audio.pause();
-    resumePendingRef.current = false;
-    setIsResumePending(false);
     setHasUserStarted(false);
     persistMusicState();
   };
@@ -768,18 +652,17 @@ export default function MusicControl() {
     const nextManualSelection = nextMode === DEFAULT_MUSIC_MODE
       ? musicStateRef.current.manualSelection
       : { mode: nextMode, trackIndex: normalizedTrackIndex };
+    const shouldContinuePlayback = hasUserStarted || Boolean(audio && !audio.paused);
 
     saveCurrentPosition();
-    resumePendingRef.current = false;
-    setIsResumePending(false);
     setMode(nextMode);
     if (nextMode === DEFAULT_MUSIC_MODE) {
       setPlaylistIndexes(nextPlaylistIndexes);
     } else {
       setManualSelection(nextManualSelection);
     }
-    shouldResumeRef.current = true;
-    setHasUserStarted(true);
+    shouldContinuePlaybackRef.current = shouldContinuePlayback;
+    setHasUserStarted(shouldContinuePlayback);
     persistMusicState({
       mode: nextMode,
       manualSelection: nextManualSelection,
@@ -787,11 +670,15 @@ export default function MusicControl() {
     });
 
     if (audio && currentSourceRef.current === nextTrack.source) {
-      shouldResumeRef.current = false;
+      shouldContinuePlaybackRef.current = false;
       audio.loop = nextMode !== DEFAULT_MUSIC_MODE || nextPlaylist.length === 1;
-      audio.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => setIsPlaying(false));
+      if (shouldContinuePlayback) {
+        audio.play()
+          .then(() => setIsPlaying(true))
+          .catch(() => setIsPlaying(false));
+      } else {
+        setIsPlaying(!audio.paused);
+      }
       return;
     }
   };
@@ -973,7 +860,7 @@ export default function MusicControl() {
 
   return (
     <>
-      <div className={`music-control${isPlaying ? " music-control--playing" : ""}${isResumePending ? " music-control--resume-pending" : ""}`}>
+      <div className={`music-control${isPlaying ? " music-control--playing" : ""}`}>
         <img
           className="music-control__backdrop"
           src={chanFlowerBackdrop.src}
@@ -983,7 +870,7 @@ export default function MusicControl() {
         <button
           className="music-control__button"
           type="button"
-          aria-label={translate(locale, isResumePending ? "Resume archive music" : "Open archive music panel")}
+          aria-label={translate(locale, "Open archive music panel")}
           aria-haspopup="dialog"
           aria-expanded={isOpen}
           onClick={openPanel}
