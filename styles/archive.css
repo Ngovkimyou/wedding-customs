@@ -592,13 +592,23 @@
 }
 
 .archive-grid--community .archive-card h3.archive-card__title--khmer {
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  display: block;
+  padding-block: 0.12em 0.28em;
+  overflow: hidden;
+  -webkit-box-orient: initial;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  line-height: 1.85;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .archive-grid--community .archive-card__khmer-title {
+  display: block;
+  padding-block: 0.12em 0.28em;
   overflow: hidden;
   overflow-wrap: anywhere;
+  line-height: 1.85;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
