@@ -25,6 +25,7 @@ import {
   sanitizePeriodDatePart,
   sanitizePeriodYear,
   sanitizeDescriptionInput,
+  sanitizeDescriptionLanguageInput,
   serializePeriodDateParts,
   validateContributionFields,
 } from "../lib/contribution-validation.mjs";
@@ -181,6 +182,7 @@ export default function ContributionForm({
   const periodYearRef = useRef(null);
   const submittingRef = useRef(false);
   const pendingListEnterRef = useRef(null);
+  const descriptionCompositionRef = useRef(false);
   const [fields, setFields] = useState(() => ({
     ...INITIAL_FIELDS,
     ...localizedInitialValues,
@@ -265,15 +267,48 @@ export default function ContributionForm({
     return () => URL.revokeObjectURL(previewUrl);
   }, [photo]);
 
-  const updateField = (event) => {
-    const { name, value } = event.currentTarget;
-    const safeValue = name.startsWith("description_") ? sanitizeDescriptionInput(value) : value;
+  const updateDescriptionField = (target, isComposing = false) => {
+    const { name, value } = target;
+    const language = name === "description_kh" ? "km" : "en";
+    const sanitize = isComposing ? sanitizeDescriptionInput : (input) => (
+      sanitizeDescriptionLanguageInput(input, language)
+    );
+    const safeValue = sanitize(value);
+    const selectionStart = target.selectionStart;
+    const selectionEnd = target.selectionEnd;
+
+    if (safeValue !== value && Number.isInteger(selectionStart) && Number.isInteger(selectionEnd)) {
+      const nextSelectionStart = sanitize(value.slice(0, selectionStart)).length;
+      const nextSelectionEnd = sanitize(value.slice(0, selectionEnd)).length;
+      window.requestAnimationFrame(() => {
+        if (target.isConnected) {
+          target.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+        }
+      });
+    }
+
     setFields((current) => ({ ...current, [name]: safeValue }));
     setErrors((current) => ({
       ...current,
       [name]: "",
-      ...(name.startsWith("description_") ? { description: "" } : {}),
+      description: "",
     }));
+    setMessage("");
+  };
+
+  const updateField = (event) => {
+    const { name } = event.currentTarget;
+    if (name.startsWith("description_")) {
+      updateDescriptionField(
+        event.currentTarget,
+        descriptionCompositionRef.current || Boolean(event.nativeEvent?.isComposing),
+      );
+      return;
+    }
+
+    const { value } = event.currentTarget;
+    setFields((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
     setMessage("");
   };
 
@@ -485,8 +520,8 @@ export default function ContributionForm({
     setMessage("");
     const normalizedFields = normalizeContributionFields({
       ...fields,
-      description_en: sanitizeDescriptionInput(fields.description_en),
-      description_kh: sanitizeDescriptionInput(fields.description_kh),
+      description_en: sanitizeDescriptionLanguageInput(fields.description_en, "en"),
+      description_kh: sanitizeDescriptionLanguageInput(fields.description_kh, "km"),
     });
     setFields(normalizedFields);
     const validation = validateContributionFields(normalizedFields);
@@ -781,6 +816,11 @@ export default function ContributionForm({
             maxLength={CONTRIBUTION_LIMITS.descriptionMax}
             minLength={CONTRIBUTION_LIMITS.descriptionMin}
             placeholder={translate(locale, "Write the story or tradition you want to preserve.")}
+            onCompositionStart={() => { descriptionCompositionRef.current = true; }}
+            onCompositionEnd={(event) => {
+              descriptionCompositionRef.current = false;
+              updateDescriptionField(event.currentTarget);
+            }}
             aria-invalid={Boolean(descriptionFieldError)}
             aria-required={!fields.description_en && !fields.description_kh}
             aria-describedby={descriptionFieldError ? `contribute-${descriptionField}-error` : undefined}

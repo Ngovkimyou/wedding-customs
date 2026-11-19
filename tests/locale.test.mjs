@@ -284,6 +284,8 @@ test("bilingual description controls and guidance have Khmer translations", () =
     "Khmer version",
     "Add a description in either language or both. Each version must contain 20 to 2,000 characters.",
     "Add a description in Khmer or English, or both.",
+    "Use Latin letters in the English description.",
+    "Use Khmer letters in the Khmer description.",
   ]) {
     assert.match(translate("km", label), /[\u1780-\u17ff]/u, `${label} should render Khmer`);
   }

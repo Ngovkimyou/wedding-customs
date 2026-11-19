@@ -12,6 +12,7 @@ import {
   sanitizePeriodDatePart,
   sanitizePeriodYear,
   sanitizeDescriptionInput,
+  sanitizeDescriptionLanguageInput,
   serializePeriodDateParts,
   validateContributionFields,
 } from "../lib/contribution-validation.mjs";
@@ -228,6 +229,33 @@ test("description input removes invisible controls but preserves normal line bre
     description: `${VALID_FIELDS.description.slice(0, 10)}\u000b${VALID_FIELDS.description.slice(10)}`,
   });
   assert.equal(errors.description_en, "Remove unsupported control characters from the description.");
+});
+
+test("description language input keeps its selected script and allows digits and punctuation", () => {
+  assert.equal(
+    sanitizeDescriptionLanguageInput("Hello ក, café cafe\u0301! 123🙂", "en"),
+    "Hello , café cafe\u0301! 123🙂",
+  );
+  assert.equal(
+    sanitizeDescriptionLanguageInput("សួស្តីhello! ២០២៦", "km"),
+    "សួស្តី! ២០២៦",
+  );
+
+  const englishError = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "A wedding story includes enough detail ក.",
+    description_kh: "",
+  });
+  assert.equal(englishError.errors.description_en, "Use Latin letters in the English description.");
+
+  const khmerError = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "",
+    description_kh: "នេះជារឿងអំពីពិធីមង្គលការ family",
+  });
+  assert.equal(khmerError.errors.description_kh, "Use Khmer letters in the Khmer description.");
 });
 
 test("curator interview dates are formatted for archive notes", () => {
