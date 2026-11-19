@@ -27,6 +27,7 @@ const DESKTOP_BACKGROUNDS = {
   "wedding-preparation": archive03Background,
   "traditional-khmer-wedding-ceremonies": archive05Background,
   "wedding-ceremonies-afternoon": archive05Background,
+  "during-the-night": archive07Background,
   "ceremonial-objects": archive07Background,
 };
 

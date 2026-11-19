@@ -142,6 +142,15 @@ alter table public.entries
   alter column thumbnail_path type text using thumbnail_path::text,
   alter column author_username type text using author_username::text;
 
+-- Replace the two former missing-thumbnail placeholders with their curated
+-- image filenames before enforcing the same thumbnail rule as every entry.
+update public.entries
+set thumbnail_path = case slug
+  when 'during-the-night' then 'archive-007.avif'
+  when 'ceremonial-objects' then 'archive-008.avif'
+end
+where slug in ('during-the-night', 'ceremonial-objects');
+
 -- Preserve existing dates saved with the previous DD/MM/YY format by
 -- expanding their years to the same 2000-2099 range used by that rule.
 update public.entries
@@ -216,14 +225,8 @@ alter table public.entries
     end
   ),
   add constraint entries_thumbnail_path_rule_check check (
-    (
-      id in (
-        'ac4c325e-a809-4d2d-b632-921a3b444aa9'::uuid,
-        'ba04145c-7237-43ee-84a6-38f101433b2d'::uuid
-      )
-      and thumbnail_path is null
-    )
-    or (thumbnail_path is not null and char_length(btrim(thumbnail_path)) > 0)
+    thumbnail_path is not null
+    and char_length(btrim(thumbnail_path)) > 0
   ),
   add constraint entries_author_username_rule_check check (
     author_username is null

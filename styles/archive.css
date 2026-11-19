@@ -746,6 +746,7 @@
   }
 
   .archive-record-page:is(
+    [data-archive-slug="during-the-night"],
     [data-archive-slug="ceremonial-objects"]
   ) {
     --archive-record-bg: url("../assets/archive-07-bg.avif");

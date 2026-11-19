@@ -3,6 +3,18 @@ import archive002Image from "../assets/images/archive-002.avif";
 import archive003Image from "../assets/images/archive-003.avif";
 import archive004Image from "../assets/images/archive-004.avif";
 import archive005Image from "../assets/images/archive-005.avif";
+import archive007Image from "../assets/images/archive-007.avif";
+import archive008Image from "../assets/images/archive-008.avif";
+import weddingHallImage from "../assets/images/wedding-hall.avif";
+import welcomingGuestsImage from "../assets/images/welcoming-guests.avif";
+import dinnerImage from "../assets/images/dinner.avif";
+import weddingWalkImage from "../assets/images/wedding-walk.avif";
+import weddingCakeImage from "../assets/images/wedding-cake.avif";
+import walkAroundWeddingCakeImage from "../assets/images/walk-around-wedding-cake.avif";
+import weddingCakeCelebrationImage from "../assets/images/wedding-cake-cerebration.avif";
+import pouringWineImage from "../assets/images/pouring-wine.avif";
+import serveFoodImage from "../assets/images/serve-food.avif";
+import finalNightDanceImage from "../assets/images/final-night-dance.avif";
 import wp05Image from "../assets/images/wp-05.avif";
 import wp01Image from "../assets/images/wp-01.avif";
 import wp02Image from "../assets/images/wp-02.avif";
@@ -464,16 +476,145 @@ const archiveCatalog = [
   {
     id: "ARCHIVE 007",
     slug: "during-the-night",
-    title: "During the Night",
-    khmerTitle: "អំឡុងពេលយប់",
-    summary: "",
+    title: "During the Evening",
+    khmerTitle: "អំឡុងពេលល្ងាច",
+    summary: "Evening reception and family reunion",
+    content: "",
+    descriptionSections: [
+      {
+        title: "During the Evening",
+        imagesAfterParagraph: {
+          0: {
+            placement: "right",
+            images: [
+              {
+                src: weddingHallImage,
+                alt: "Wedding hall prepared for the evening reception",
+                caption: "Wedding Hall",
+              },
+            ],
+          },
+          1: {
+            placement: "left",
+            images: [
+              {
+                src: welcomingGuestsImage,
+                alt: "Guests welcomed by the couple’s families",
+                caption: "Welcoming Guests At the Wedding Hall's Entrance",
+              },
+            ],
+          },
+          2: {
+            placement: "right",
+            images: [
+              {
+                src: archive007Image,
+                alt: "Wedding celebration at the evening reception",
+                caption: "Offering Souvenirs",
+              },
+            ],
+          },
+        },
+        paragraphs: [
+          "The final stage of the wedding celebration takes place at the wedding hall, where both families arrive early to welcome guests as they gather for dinner. The evening reception becomes a moment of reunion, bringing together relatives, old friends, and guests who may not have been able to attend the morning ceremonies.",
+          "For many families, this part of the wedding is especially meaningful because it creates an opportunity for people who have not seen one another for a long time to meet again under one roof. Relatives may travel from distant provinces and abroad, while friends and acquaintances join the celebration later in the day.",
+          "As guests arrive at the entrance, they are warmly welcomed by members of both families. Some receive a small token or souvenir, and many stop to take photographs with the bride, groom, or family members as a way of preserving memories of the occasion.",
+        ],
+      },
+    ],
+    aside: "",
+    showAside: false,
+    showAsideArtwork: false,
+    images: [
+      {
+        src: archive007Image,
+        alt: "Wedding celebration at the hall in the evening",
+      },
+    ],
   },
   {
     id: "ARCHIVE 008",
     slug: "ceremonial-objects",
-    title: "Ceremonial Objects",
-    khmerTitle: "វត្ថុប្រើប្រាស់ក្នុងពិធី",
-    summary: "",
+    title: "During the Night",
+    khmerTitle: "អំឡុងពេលយប់",
+    summary: "Dinner, cake cutting, and dancing",
+    content: "",
+    descriptionSections: [
+      {
+        title: "During the Night",
+        imagesAfterParagraph: {
+          0: {
+            placement: "left",
+            images: [
+              {
+                src: dinnerImage,
+                alt: "Dinner served during the evening wedding reception",
+              },
+            ],
+          },
+          1: {
+            caption: "The Final Night Celebration",
+            images: [
+              {
+                src: weddingWalkImage,
+                alt: "Bride and groom walking during the wedding celebration",
+              },
+              {
+                src: weddingCakeImage,
+                alt: "Wedding cake at the evening reception",
+              },
+              {
+                src: walkAroundWeddingCakeImage,
+                alt: "Bride and groom walking around the wedding cake",
+              },
+              {
+                src: weddingCakeCelebrationImage,
+                alt: "The couple celebrating around their wedding cake",
+              },
+            ],
+          },
+          2: {
+            images: [
+              {
+                src: pouringWineImage,
+                alt: "The couple pouring wine during the wedding celebration",
+                caption: "Pouring Wine",
+              },
+              {
+                src: serveFoodImage,
+                alt: "The couple serving food to their relatives",
+                caption: "Serving Food",
+              },
+            ],
+          },
+          3: {
+            placement: "right",
+            images: [
+              {
+                src: finalNightDanceImage,
+                alt: "Guests joining a final dance at the wedding celebration",
+                caption: "A Final Night Dance",
+              },
+            ],
+          },
+        },
+        paragraphs: [
+          "Dinner is served gradually throughout the evening, often in several courses. Depending on the family, the menu may include a combination of traditional Khmer dishes and Chinese-style food, reflecting the cultural background of the wedding.",
+          "Around 8:00 to 9:00 PM, attention turns toward the bride and groom for the cake-cutting ceremony. The couple gathers around the wedding cake, poses for photographs, and cuts the cake together as part of the evening celebration.",
+          "Another common moment is the ceremonial pouring of alcohol or wine. The couple pours the drink over a pyramid-shaped arrangement of glasses, creating a symbolic display before the celebration continues. They may also personally serve food or drinks to close relatives as a gesture of respect and appreciation.",
+          "Finally, the dancing begins. Guests of all ages are invited to join, turning the final part of the wedding into a lively shared celebration. The night ends not only as the conclusion of the wedding day, but also as a moment of reunion, joy, and connection between the two families and their wider community.",
+        ],
+      },
+    ],
+    aside: "",
+    showAside: false,
+    showAsideArtwork: false,
+    images: [
+      {
+        src: archive008Image,
+        alt: "Wedding celebration during the night",
+      },
+    ],
   },
 ];
 
