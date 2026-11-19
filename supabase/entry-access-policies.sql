@@ -31,6 +31,19 @@ create table if not exists public.reviewers (
 alter table public.reviewers enable row level security;
 revoke all on table public.reviewers from public, anon, authenticated;
 
+-- Return feedback is private to the entry owner and reviewers. It is written
+-- only by the guarded review RPC, never directly through the Data API.
+create table if not exists public.entry_review_feedback (
+  entry_id uuid primary key references public.entries(id) on delete cascade,
+  reviewer_id uuid not null references auth.users(id) on delete cascade,
+  note text not null check (char_length(btrim(note)) between 1 and 1000),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.entry_review_feedback enable row level security;
+revoke all on table public.entry_review_feedback from public, anon, authenticated;
+grant select on table public.entry_review_feedback to authenticated;
+
 -- A narrow boolean lookup is safe for the policies and the server-side page
 -- gate; the reviewer list itself remains inaccessible through the Data API.
 create or replace function public.is_reviewer()
@@ -50,16 +63,46 @@ $$;
 revoke all on function public.is_reviewer() from public, anon, authenticated;
 grant execute on function public.is_reviewer() to anon, authenticated;
 
+drop policy if exists "entry review feedback: owner and reviewer read" on public.entry_review_feedback;
+create policy "entry review feedback: owner and reviewer read"
+  on public.entry_review_feedback
+  for select to authenticated
+  using (
+    exists (
+      select 1
+        from public.entries as entry
+       where entry.id = entry_review_feedback.entry_id
+         and entry.owner = (select auth.uid())
+    )
+    or (select public.is_reviewer())
+  );
+
+-- Replace the old two-argument overload so a return cannot bypass its required
+-- feedback note. Only this RPC may write the private feedback table.
+drop function if exists public.review_entry(uuid, text);
+
 -- This is the only reviewer write path: it changes only a still-pending row's
--- status, and reports success only when exactly that transition happened.
-create or replace function public.review_entry(entry_id uuid, decision text)
+-- status, requires a note for returns, and reports success only when exactly
+-- that transition happened.
+create or replace function public.review_entry(
+  entry_id uuid,
+  decision text,
+  return_note text
+)
 returns boolean
 language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  clean_return_note text := nullif(btrim(return_note), '');
 begin
   if decision is null or decision not in ('published', 'returned') then
+    return false;
+  end if;
+
+  if decision = 'returned'
+     and (clean_return_note is null or char_length(clean_return_note) > 1000) then
     return false;
   end if;
 
@@ -69,11 +112,41 @@ begin
 
   update public.entries as entry
      set status = decision
-   where entry.id = entry_id
+   where entry.id = $1
      and entry.status = 'pending';
 
-  return found;
+  if not found then
+    return false;
+  end if;
+
+  if decision = 'returned' then
+    insert into public.entry_review_feedback (entry_id, reviewer_id, note, updated_at)
+    values ($1, (select auth.uid()), clean_return_note, now())
+    on conflict on constraint entry_review_feedback_pkey do update
+      set reviewer_id = excluded.reviewer_id,
+          note = excluded.note,
+          updated_at = excluded.updated_at;
+  else
+    delete from public.entry_review_feedback as feedback
+     where feedback.entry_id = $1;
+  end if;
+
+  return true;
 end;
+$$;
+
+revoke all on function public.review_entry(uuid, text, text) from public, anon, authenticated;
+grant execute on function public.review_entry(uuid, text, text) to authenticated;
+
+-- Keep older clients able to publish during rollout, but their note-less
+-- return calls are rejected by the three-argument function above.
+create or replace function public.review_entry(entry_id uuid, decision text)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  select public.review_entry($1, $2, null);
 $$;
 
 revoke all on function public.review_entry(uuid, text) from public, anon, authenticated;

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   detectSupportedPhoto,
   formatInterviewDateForInput,
+  countDescriptionCharacters,
   isValidPeriodForMode,
   normalizePeriodLabel,
   normalizeContributionFields,
@@ -10,6 +11,7 @@ import {
   parsePeriodDateParts,
   sanitizePeriodDatePart,
   sanitizePeriodYear,
+  sanitizeDescriptionInput,
   serializePeriodDateParts,
   validateContributionFields,
 } from "../lib/contribution-validation.mjs";
@@ -32,6 +34,8 @@ test("contribution fields are trimmed and limited to the allowed columns", () =>
   }), {
     ...VALID_FIELDS,
     title_en: "Wedding story",
+    description_en: VALID_FIELDS.description,
+    description_kh: "",
   });
 });
 
@@ -112,13 +116,86 @@ test("maximum field lengths are accepted and values above them are rejected", ()
     location: "L".repeat(31),
   });
   assert.deepEqual(Object.keys(aboveLimits.errors).sort(), [
-    "description",
+    "description_en",
     "location",
     "period_label",
     "summary",
     "title_en",
     "title_kh",
   ]);
+});
+
+test("a 1,995-code-point Khmer description passes and length errors report the measured count", () => {
+  const validDescription = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "ក".repeat(1995),
+  });
+  assert.equal(validDescription.errors.description, undefined);
+
+  const tooShort = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "ក".repeat(19),
+  });
+  assert.equal(tooShort.errors.description_en, "Description has 19 characters. Enter at least 20.");
+
+  const tooLong = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "ក".repeat(2001),
+  });
+  assert.equal(tooLong.errors.description_en, "Description has 2001 characters. The maximum is 2000.");
+});
+
+test("description counters and validation use the same trimmed code-point length", () => {
+  const description = `  ${"ក".repeat(1995)}  `;
+  assert.equal(countDescriptionCharacters(description), 1995);
+  assert.equal(countDescriptionCharacters(undefined), 0);
+
+  const { errors } = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "An English family story with enough detail.",
+    description_kh: "ក".repeat(2016),
+  });
+  assert.equal(errors.description_kh, "Description has 2016 characters. The maximum is 2000.");
+});
+
+test("localized descriptions can be provided in either or both languages", () => {
+  assert.deepEqual(validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "An English family story with enough detail.",
+    description_kh: "",
+  }).errors, {});
+
+  assert.deepEqual(validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "",
+    description_kh: "រឿងរ៉ាវអំពីប្រពៃណីមង្គលការរបស់គ្រួសារ។",
+  }).errors, {});
+
+  assert.deepEqual(validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "An English family story with enough detail.",
+    description_kh: "រឿងរ៉ាវអំពីប្រពៃណីមង្គលការរបស់គ្រួសារ។",
+  }).errors, {});
+
+  const missing = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "",
+    description_kh: "",
+  });
+  assert.equal(missing.errors.description, "Add a description in Khmer or English, or both.");
+
+  const shortKhmer = validateContributionFields({
+    ...VALID_FIELDS,
+    description: "",
+    description_en: "An English family story with enough detail.",
+    description_kh: "ខ្លី",
+  });
+  assert.equal(shortKhmer.errors.description_kh, "Description has 4 characters. Enter at least 20.");
 });
 
 test("invalid lengths, controls, and impossible dates are rejected per field", () => {
@@ -132,12 +209,25 @@ test("invalid lengths, controls, and impossible dates are rejected per field", (
   });
 
   assert.deepEqual(Object.keys(errors).sort(), [
-    "description",
+    "description_en",
     "location",
     "period_label",
     "title_en",
     "title_kh",
   ]);
+});
+
+test("description input removes invisible controls but preserves normal line breaks", () => {
+  assert.equal(
+    sanitizeDescriptionInput("First\u0000 line\u000b\nSecond\u001f line\t\r\nThird"),
+    "First line\nSecond line\t\r\nThird",
+  );
+
+  const { errors } = validateContributionFields({
+    ...VALID_FIELDS,
+    description: `${VALID_FIELDS.description.slice(0, 10)}\u000b${VALID_FIELDS.description.slice(10)}`,
+  });
+  assert.equal(errors.description_en, "Remove unsupported control characters from the description.");
 });
 
 test("curator interview dates are formatted for archive notes", () => {

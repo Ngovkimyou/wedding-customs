@@ -14,6 +14,10 @@ const usernameMigrationSql = await readFile(
   new URL("../supabase/username-migration.sql", import.meta.url),
   "utf8",
 );
+const reviewerFeedbackMigrationSql = await readFile(
+  new URL("../supabase/reviewer-feedback.sql", import.meta.url),
+  "utf8",
+);
 const reviewPageSource = await readFile(
   new URL("../app/review/page.js", import.meta.url),
   "utf8",
@@ -24,6 +28,10 @@ const reviewQueueSource = await readFile(
 );
 const reviewActionSource = await readFile(
   new URL("../app/review/actions.js", import.meta.url),
+  "utf8",
+);
+const myEntriesSource = await readFile(
+  new URL("../app/my-entries/page.js", import.meta.url),
   "utf8",
 );
 const contributionActionsSource = await readFile(
@@ -70,18 +78,43 @@ test("reviewer roster is private and review RPC is the guarded status transition
   assert.match(policySql, /create or replace function public\.is_reviewer\(\)[\s\S]*?security definer[\s\S]*?set search_path = ''/iu);
   assert.match(policySql, /revoke all on function public\.is_reviewer\(\) from public, anon, authenticated/iu);
   assert.match(policySql, /grant execute on function public\.is_reviewer\(\) to anon, authenticated/iu);
-  assert.match(policySql, /create or replace function public\.review_entry\(entry_id uuid, decision text\)[\s\S]*?security definer[\s\S]*?set search_path = ''/iu);
+  assert.match(policySql, /drop function if exists public\.review_entry\(uuid, text\)/iu);
+  assert.match(policySql, /create or replace function public\.review_entry\(\s*entry_id uuid,\s*decision text,\s*return_note text\s*\)[\s\S]*?security definer[\s\S]*?set search_path = ''/iu);
   assert.match(policySql, /decision not in \('published', 'returned'\)/iu);
-  assert.match(policySql, /entry\.status = 'pending'[\s\S]*?return found/iu);
-  assert.match(policySql, /revoke all on function public\.review_entry\(uuid, text\) from public, anon, authenticated/iu);
-  assert.match(policySql, /grant execute on function public\.review_entry\(uuid, text\) to authenticated/iu);
+  assert.match(policySql, /decision = 'returned'[\s\S]*?clean_return_note is null or char_length\(clean_return_note\) > 1000/iu);
+  assert.match(policySql, /entry\.status = 'pending'[\s\S]*?if not found then[\s\S]*?insert into public\.entry_review_feedback/iu);
+  assert.match(policySql, /on conflict on constraint entry_review_feedback_pkey do update/iu);
+  assert.match(policySql, /revoke all on function public\.review_entry\(uuid, text, text\) from public, anon, authenticated/iu);
+  assert.match(policySql, /grant execute on function public\.review_entry\(uuid, text, text\) to authenticated/iu);
+  assert.match(policySql, /create or replace function public\.review_entry\(entry_id uuid, decision text\)[\s\S]*?select public\.review_entry\(\$1, \$2, null\)/iu);
+  assert.match(policySql, /create policy "entry review feedback: owner and reviewer read"[\s\S]*?entry\.owner = \(select auth\.uid\(\)\)[\s\S]*?public\.is_reviewer\(\)/iu);
+});
+
+test("review feedback is private and only read by the author or a reviewer", () => {
+  assert.match(reviewerFeedbackMigrationSql, /create table if not exists public\.entry_review_feedback/iu);
+  assert.match(reviewerFeedbackMigrationSql, /alter table public\.entry_review_feedback enable row level security/iu);
+  assert.match(reviewerFeedbackMigrationSql, /revoke all on table public\.entry_review_feedback from public, anon, authenticated/iu);
+  assert.match(reviewerFeedbackMigrationSql, /grant select on table public\.entry_review_feedback to authenticated/iu);
+  assert.match(reviewerFeedbackMigrationSql, /entry\.owner = \(select auth\.uid\(\)\)[\s\S]*?public\.is_reviewer\(\)/iu);
+  assert.doesNotMatch(reviewerFeedbackMigrationSql, /create policy[\s\S]*?for (?:insert|update|delete)/iu);
+  assert.match(reviewerFeedbackMigrationSql, /drop function if exists public\.review_entry\(uuid, text\)/iu);
+  assert.match(reviewerFeedbackMigrationSql, /on conflict on constraint entry_review_feedback_pkey do update/iu);
+  assert.match(reviewerFeedbackMigrationSql, /create or replace function public\.review_entry\(entry_id uuid, decision text\)[\s\S]*?select public\.review_entry\(\$1, \$2, null\)/iu);
 });
 
 test("review page gates before loading and only removes successful decisions; returned edits requeue", () => {
   assert.ok(reviewPageSource.indexOf('rpc("is_reviewer")') < reviewPageSource.indexOf('.from("entries")'));
   assert.match(reviewActionSource, /supabase\.rpc\("review_entry"/u);
+  assert.match(reviewActionSource, /return_note: decision === "returned" \? cleanReturnNote : null/u);
   assert.match(reviewActionSource, /if \(data !== true\)/u);
+  assert.doesNotMatch(reviewQueueSource, /What should the contributor change\?/u);
+  assert.match(reviewQueueSource, /Explain what needs to change before this entry can be resubmitted\./u);
+  assert.match(reviewQueueSource, /Send Feedback/u);
+  assert.match(reviewQueueSource, /review-decision--publish review-feedback-form__submit/u);
   assert.match(reviewQueueSource, /result\?\.ok === true/u);
+  assert.match(myEntriesSource, /\.from\("entry_review_feedback"\)/u);
+  assert.match(myEntriesSource, /feedbackByEntryId\.get\(entry\.id\)/u);
+  assert.match(myEntriesSource, /This requested change has no feedback\./u);
   assert.match(contributionActionsSource, /status: "pending"/u);
   assert.match(contributionActionsSource, /\.eq\("owner", user\.id\)/u);
   assert.equal(publicEntriesSource.match(/\.eq\("status", "published"\)/gu)?.length, 2);

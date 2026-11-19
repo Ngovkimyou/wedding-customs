@@ -59,6 +59,20 @@ test("community records map their public username for the author note", () => {
   }]);
 });
 
+test("community records retain English and Khmer description versions separately", () => {
+  const entry = mapSupabaseEntry({
+    slug: "community-family-story",
+    title_en: "A family story",
+    description: "Legacy English story.",
+    description_en: "The English version of the story.",
+    description_kh: "រឿងរ៉ាវជាភាសាខ្មែរ។",
+  });
+
+  assert.equal(entry.descriptionEn, "The English version of the story.");
+  assert.equal(entry.descriptionKh, "រឿងរ៉ាវជាភាសាខ្មែរ។");
+  assert.equal(entry.content, "Legacy English story.");
+});
+
 test("legacy two-digit period dates map to four-digit years", () => {
   const entry = mapSupabaseEntry({
     slug: "community-wedding-story",

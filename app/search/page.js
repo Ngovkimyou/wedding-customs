@@ -21,6 +21,8 @@ export default async function SearchPage() {
     title: entry.title,
     khmerTitle: entry.khmerTitle,
     summary: entry.summary,
+    descriptionEn: entry.descriptionEn,
+    descriptionKh: entry.descriptionKh,
     descriptionBlocks: entry.descriptionBlocks,
   }));
   return <ArchiveSearch entries={entries} dataStatus={status} />;

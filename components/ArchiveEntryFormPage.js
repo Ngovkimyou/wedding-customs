@@ -14,6 +14,8 @@ export default function ArchiveEntryFormPage({
       title_kh: entry.khmerTitle,
       summary: entry.summary,
       description: entry.content,
+      description_en: entry.descriptionEn || (!entry.descriptionKh ? entry.content : ""),
+      description_kh: entry.descriptionKh,
       period_label: entry.period,
       location: entry.location,
     }

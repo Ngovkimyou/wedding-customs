@@ -255,6 +255,51 @@ test("review access failures and denials have distinct Khmer messages", () => {
   }
 });
 
+test("return feedback form and contributor notes have Khmer translations", () => {
+  for (const label of [
+    "Explain what needs to change before this entry can be resubmitted.",
+    "Write clear, specific feedback for the contributor.",
+    "Please add a note for the contributor.",
+    "Send Feedback",
+    "Reviewer feedback",
+    "Reviewer feedback could not be loaded. Please refresh the page.",
+    "This requested change has no feedback.",
+  ]) {
+    assert.match(translate("km", label), /[\u1780-\u17ff]/u, `${label} should render Khmer`);
+  }
+});
+
+test("description control-character validation has Khmer translation", () => {
+  const message = "Remove unsupported control characters from the description.";
+  assert.match(translate("km", message), /[\u1780-\u17ff]/u);
+});
+
+test("bilingual description controls and guidance have Khmer translations", () => {
+  for (const label of [
+    "Description language",
+    "Description character counts",
+    "English",
+    "Khmer",
+    "English version",
+    "Khmer version",
+    "Add a description in either language or both. Each version must contain 20 to 2,000 characters.",
+    "Add a description in Khmer or English, or both.",
+  ]) {
+    assert.match(translate("km", label), /[\u1780-\u17ff]/u, `${label} should render Khmer`);
+  }
+});
+
+test("description length errors include the measured count in Khmer", () => {
+  assert.match(
+    translate("km", "Description has 19 characters. Enter at least 20."),
+    /[\u1780-\u17ff]/u,
+  );
+  assert.match(
+    translate("km", "Description has 2001 characters. The maximum is 2000."),
+    /[\u1780-\u17ff]/u,
+  );
+});
+
 test("About-page image and design credits have Khmer translations", () => {
   for (const label of [
     "Images & design assets",

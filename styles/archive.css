@@ -1300,6 +1300,19 @@
   text-wrap: balance;
 }
 
+.archive-entry__community-language-label {
+  width: fit-content;
+  margin: 0;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(169, 125, 57, 0.42);
+  color: var(--color-red);
+  font-family: "KhmerGlobal", var(--font-meta);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+  line-height: 1.6;
+}
+
 .archive-entry__description-subsection {
   display: grid;
   gap: clamp(0.6rem, 1.2vw, 0.8rem);

@@ -15,6 +15,7 @@ import { translate } from "../lib/locale.js";
 import {
   CAMBODIAN_PROVINCES,
   CONTRIBUTION_LIMITS,
+  countDescriptionCharacters,
   detectSupportedPhoto,
   isValidPeriodForMode,
   normalizePeriodLabel,
@@ -23,6 +24,7 @@ import {
   parsePeriodDateParts,
   sanitizePeriodDatePart,
   sanitizePeriodYear,
+  sanitizeDescriptionInput,
   serializePeriodDateParts,
   validateContributionFields,
 } from "../lib/contribution-validation.mjs";
@@ -31,7 +33,8 @@ const INITIAL_FIELDS = {
   title_en: "",
   title_kh: "",
   summary: "",
-  description: "",
+  description_en: "",
+  description_kh: "",
   period_label: "",
   location: "",
 };
@@ -50,7 +53,8 @@ const KEYBOARD_NAVIGATION_FIELD_SELECTOR = "[data-contribution-keyboard-field]";
 const CONTRIBUTION_FIELD_KEYBOARD_ORDER = {
   title_en: 10,
   title_kh: 20,
-  description: 30,
+  description_en: 30,
+  description_kh: 30,
   photo: 40,
   summary: 50,
   period_label: 60,
@@ -128,11 +132,29 @@ function createPhotoId() {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-function focusFirstInvalid(errors) {
+function focusFirstInvalid(errors, descriptionLanguage, setDescriptionLanguage) {
+  const activeDescriptionField = `description_${descriptionLanguage}`;
+  const alternateDescriptionField = descriptionLanguage === "km" ? "description_en" : "description_kh";
+  const descriptionErrorField = errors[activeDescriptionField]
+    ? activeDescriptionField
+    : errors[alternateDescriptionField]
+      ? alternateDescriptionField
+      : errors.description
+        ? activeDescriptionField
+        : null;
+
+  if (descriptionErrorField) {
+    const nextLanguage = descriptionErrorField === "description_kh" ? "km" : "en";
+    setDescriptionLanguage(nextLanguage);
+    window.requestAnimationFrame(() => {
+      document.getElementById(`contribute-${descriptionErrorField}`)?.focus();
+    });
+    return;
+  }
+
   const firstField = [
-    "title_en", "title_kh", "summary", "description", "period_label", "location", "photo",
-  ]
-    .find((field) => errors[field]);
+    "title_en", "title_kh", "summary", "period_label", "location", "photo",
+  ].find((field) => errors[field]);
   if (firstField) {
     document.getElementById(`contribute-${firstField}`)?.focus();
   }
@@ -146,6 +168,10 @@ export default function ContributionForm({
 }) {
   const { locale } = useLocale();
   const isEditing = mode === "edit";
+  const {
+    description: legacyDescription = "",
+    ...localizedInitialValues
+  } = initialValues ?? {};
   const initialPeriodValue = normalizePeriodLabel(initialValues?.period_label);
   const router = useRouter();
   const titleEnRef = useRef(null);
@@ -157,9 +183,18 @@ export default function ContributionForm({
   const pendingListEnterRef = useRef(null);
   const [fields, setFields] = useState(() => ({
     ...INITIAL_FIELDS,
-    ...initialValues,
+    ...localizedInitialValues,
+    description_en: typeof localizedInitialValues.description_en === "string"
+      ? localizedInitialValues.description_en
+      : typeof legacyDescription === "string"
+        ? legacyDescription
+        : "",
+    description_kh: typeof localizedInitialValues.description_kh === "string"
+      ? localizedInitialValues.description_kh
+      : "",
     period_label: initialPeriodValue,
   }));
+  const [descriptionLanguage, setDescriptionLanguage] = useState(locale === "km" ? "km" : "en");
   const [periodMode, setPeriodMode] = useState(() => (
     /^\d{4}$/u.test(initialPeriodValue)
       ? "year"
@@ -187,6 +222,39 @@ export default function ContributionForm({
   }, [isSubmissionComplete]);
 
   useEffect(() => {
+    setDescriptionLanguage(locale === "km" ? "km" : "en");
+  }, [locale]);
+
+  // Fast Refresh can preserve pre-bilingual form state while developing.
+  // Migrate its single legacy description into the currently selected version.
+  useEffect(() => {
+    setFields((current) => {
+      const legacyDescriptionDraft = typeof current.description === "string"
+        ? current.description
+        : "";
+      const descriptionEn = typeof current.description_en === "string"
+        ? current.description_en
+        : descriptionLanguage === "en" ? legacyDescriptionDraft : "";
+      const descriptionKh = typeof current.description_kh === "string"
+        ? current.description_kh
+        : descriptionLanguage === "km" ? legacyDescriptionDraft : "";
+
+      if (
+        current.description_en === descriptionEn
+        && current.description_kh === descriptionKh
+      ) {
+        return current;
+      }
+
+      return {
+        ...current,
+        description_en: descriptionEn,
+        description_kh: descriptionKh,
+      };
+    });
+  }, [descriptionLanguage]);
+
+  useEffect(() => {
     if (!photo) {
       setPhotoPreviewUrl("");
       return undefined;
@@ -199,8 +267,13 @@ export default function ContributionForm({
 
   const updateField = (event) => {
     const { name, value } = event.currentTarget;
-    setFields((current) => ({ ...current, [name]: value }));
-    setErrors((current) => ({ ...current, [name]: "" }));
+    const safeValue = name.startsWith("description_") ? sanitizeDescriptionInput(value) : value;
+    setFields((current) => ({ ...current, [name]: safeValue }));
+    setErrors((current) => ({
+      ...current,
+      [name]: "",
+      ...(name.startsWith("description_") ? { description: "" } : {}),
+    }));
     setMessage("");
   };
 
@@ -287,6 +360,19 @@ export default function ContributionForm({
     }
 
     if (field.tagName === "BUTTON") {
+      if (field.hasAttribute("data-description-language-option")
+        && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        event.preventDefault();
+        const options = ["km", "en"];
+        const currentIndex = options.indexOf(field.dataset.descriptionLanguageOption);
+        const direction = event.key === "ArrowRight" ? 1 : -1;
+        const nextLanguage = options[(currentIndex + direction + options.length) % options.length];
+        setDescriptionLanguage(nextLanguage);
+        window.requestAnimationFrame(() => {
+          document.getElementById(`contribute-description-language-${nextLanguage}`)?.focus();
+        });
+        return;
+      }
       if (event.key === "ArrowUp" || event.key === "ArrowDown") {
         event.preventDefault();
         const direction = event.key === "ArrowDown" ? 1 : -1;
@@ -397,7 +483,11 @@ export default function ContributionForm({
     if (submittingRef.current) return;
 
     setMessage("");
-    const normalizedFields = normalizeContributionFields(fields);
+    const normalizedFields = normalizeContributionFields({
+      ...fields,
+      description_en: sanitizeDescriptionInput(fields.description_en),
+      description_kh: sanitizeDescriptionInput(fields.description_kh),
+    });
     setFields(normalizedFields);
     const validation = validateContributionFields(normalizedFields);
     const nextErrors = { ...validation.errors };
@@ -419,7 +509,7 @@ export default function ContributionForm({
 
     if (Object.keys(nextErrors).length) {
       setErrors(nextErrors);
-      focusFirstInvalid(nextErrors);
+      focusFirstInvalid(nextErrors, descriptionLanguage, setDescriptionLanguage);
       return;
     }
 
@@ -482,7 +572,7 @@ export default function ContributionForm({
       if (!result?.ok) {
         if (result?.fieldErrors) {
           setErrors(result.fieldErrors);
-          focusFirstInvalid(result.fieldErrors);
+          focusFirstInvalid(result.fieldErrors, descriptionLanguage, setDescriptionLanguage);
         }
         setMessage(result?.message || "The entry could not be saved. Please try again.");
         return;
@@ -514,7 +604,7 @@ export default function ContributionForm({
   const getFieldProps = (field) => ({
     id: `contribute-${field}`,
     name: field,
-    value: fields[field],
+    value: typeof fields[field] === "string" ? fields[field] : "",
     onChange: updateField,
     disabled: isSubmitting,
     "data-contribution-keyboard-field": "true",
@@ -525,7 +615,23 @@ export default function ContributionForm({
   const titleEnAtLimit = fields.title_en.length >= CONTRIBUTION_LIMITS.titleEnMax;
   const titleKhAtLimit = fields.title_kh.length >= CONTRIBUTION_LIMITS.titleKhMax;
   const summaryAtLimit = fields.summary.length >= CONTRIBUTION_LIMITS.summaryMax;
-  const descriptionAtLimit = fields.description.length >= CONTRIBUTION_LIMITS.descriptionMax;
+  const descriptionField = descriptionLanguage === "km" ? "description_kh" : "description_en";
+  const descriptionFieldError = errors[descriptionField] || errors.description;
+  const descriptionLengths = {
+    en: countDescriptionCharacters(fields.description_en),
+    km: countDescriptionCharacters(fields.description_kh),
+  };
+  const descriptionLength = descriptionLengths[descriptionLanguage];
+  const descriptionAtLimit = descriptionLength >= CONTRIBUTION_LIMITS.descriptionMax;
+  const descriptionCounterLanguages = [
+    { value: descriptionLanguage, label: descriptionLanguage === "km" ? "Khmer" : "English" },
+    {
+      value: descriptionLanguage === "km" ? "en" : "km",
+      label: descriptionLanguage === "km" ? "English" : "Khmer",
+    },
+  ].filter((option, index) => (
+    index === 0 || descriptionLengths[option.value] > 0
+  ));
   const locationAtLimit = fields.location.length >= CONTRIBUTION_LIMITS.locationMax;
   const getFieldDescriptionIds = (field, additionalId) => [
     errors[field] ? `contribute-${field}-error` : null,
@@ -635,30 +741,80 @@ export default function ContributionForm({
       </label>
 
       <div className="contribute-field contribute-form__required-description">
-        <label htmlFor="contribute-description">
-          <FieldLabel required>{FIELD_LABELS.description}</FieldLabel>
-        </label>
+        <div className="contribute-description__header">
+          <label htmlFor={`contribute-${descriptionField}`}>
+            <FieldLabel required>{FIELD_LABELS.description}</FieldLabel>
+            <span className="contribute-description__active-language">
+              {translate(locale, descriptionLanguage === "km" ? "Khmer version" : "English version")}
+            </span>
+          </label>
+          <div className="contribute-description__languages" role="group" aria-label={translate(locale, "Description language")}>
+            {[{ value: "km", label: "Khmer" }, { value: "en", label: "English" }].map((option) => (
+              <button
+                className={`contribute-description__language${descriptionLanguage === option.value ? " contribute-description__language--selected" : ""}`}
+                type="button"
+                key={option.value}
+                id={`contribute-description-language-${option.value}`}
+                data-description-language-option={option.value}
+                data-contribution-keyboard-field={descriptionLanguage === option.value ? "true" : undefined}
+                data-contribution-keyboard-order={CONTRIBUTION_FIELD_KEYBOARD_ORDER.description_en}
+                aria-pressed={descriptionLanguage === option.value}
+                disabled={isSubmitting}
+                onClick={() => setDescriptionLanguage(option.value)}
+              >
+                {translate(locale, option.label)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="contribute-description__hint">
+          {translate(locale, "Add a description in either language or both. Each version must contain 20 to 2,000 characters.")}
+        </p>
         <div className="contribute-field__textarea-wrap">
           <textarea
-            {...getFieldProps("description")}
+            {...getFieldProps(descriptionField)}
             ref={descriptionRef}
+            lang={descriptionLanguage}
+            dir="auto"
             className={descriptionAtLimit ? "contribute-field__input--limit-reached" : undefined}
             rows={7}
             maxLength={CONTRIBUTION_LIMITS.descriptionMax}
             minLength={CONTRIBUTION_LIMITS.descriptionMin}
             placeholder={translate(locale, "Write the story or tradition you want to preserve.")}
-            required
+            aria-invalid={Boolean(descriptionFieldError)}
+            aria-required={!fields.description_en && !fields.description_kh}
+            aria-describedby={descriptionFieldError ? `contribute-${descriptionField}-error` : undefined}
           />
           <ScrollIndicator
             scrollRef={descriptionRef}
             className="contribute-field__textarea-scrollbar"
           />
         </div>
-        <span className={`contribute-field__hint${descriptionAtLimit ? " contribute-field__hint--limit-reached" : ""}`}>
-          {countCodePoints(fields.description)}/{CONTRIBUTION_LIMITS.descriptionMax} {translate(locale, "characters")}
-          {descriptionAtLimit ? ` — ${translate(locale, "maximum reached")}` : ""}
-        </span>
-        {errors.description ? <small className="contribute-field__error" id="contribute-description-error">{translate(locale, errors.description)}</small> : null}
+        <div
+          className="contribute-description__counters"
+          role="group"
+          aria-label={translate(locale, "Description character counts")}
+        >
+          {descriptionCounterLanguages.map((option) => {
+            const length = descriptionLengths[option.value];
+            const atLimit = length >= CONTRIBUTION_LIMITS.descriptionMax;
+            return (
+              <span
+                className={`contribute-description__counter${atLimit ? " contribute-description__counter--limit-reached" : ""}`}
+                data-current-language={option.value === descriptionLanguage || undefined}
+                key={option.value}
+              >
+                {translate(locale, option.label)}: {length}/{CONTRIBUTION_LIMITS.descriptionMax}
+                {atLimit ? ` — ${translate(locale, "maximum reached")}` : ""}
+              </span>
+            );
+          })}
+        </div>
+        {descriptionFieldError ? (
+          <small className="contribute-field__error" id={`contribute-${descriptionField}-error`}>
+            {translate(locale, descriptionFieldError)}
+          </small>
+        ) : null}
       </div>
 
       <div className={`contribute-field contribute-field--photo ${isEditing ? "contribute-form__optional-photo" : "contribute-form__required-photo"}`}>

@@ -5,6 +5,7 @@ import { DescriptionGallery, DescriptionGalleryStack } from "./ArchiveDescriptio
 import { getImageDimensions } from "../lib/media.js";
 import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
 import ArchiveContentText from "./ArchiveContentText.js";
+import CommunityArchiveDescription from "./CommunityArchiveDescription.js";
 import LocaleText from "./LocaleText.js";
 
 function DescriptionPart({ part, isCommunityEntry }) {
@@ -281,7 +282,13 @@ export default function ArchiveDescription({ entry }) {
         />
       ) : null}
       <h2 className="section-label" id="description-title"><LocaleText>Archive description</LocaleText></h2>
-      {entry.descriptionSections?.length ? (
+      {isCommunityEntry && (entry.descriptionEn || entry.descriptionKh) ? (
+        <CommunityArchiveDescription
+          descriptionEn={entry.descriptionEn}
+          descriptionKh={entry.descriptionKh}
+          fallback={entry.content}
+        />
+      ) : entry.descriptionSections?.length ? (
         <div className="archive-entry__description-sections" data-archive-dynamic="true">
           {entry.descriptionSections.map((section) => (
             <DescriptionSection

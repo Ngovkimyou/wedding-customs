@@ -124,6 +124,8 @@ export async function createArchiveEntry(formData) {
       // the public author field; never accept it from form data.
       thumbnail_path: photo.publicUrl,
       description: values.description,
+      description_en: values.description_en || null,
+      description_kh: values.description_kh || null,
       ...(values.period_label ? { period_label: values.period_label } : {}),
       ...(values.location ? { location: values.location } : {}),
     };
@@ -231,6 +233,8 @@ export async function updateArchiveEntry(formData) {
     title_kh: values.title_kh,
     summary: values.summary || null,
     description: values.description,
+    description_en: values.description_en || null,
+    description_kh: values.description_kh || null,
     period_label: values.period_label || null,
     location: values.location || null,
     ...(!isReviewer ? { status: "pending" } : {}),

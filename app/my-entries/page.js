@@ -38,6 +38,30 @@ export default async function MyEntriesPage() {
   }
 
   const entries = error ? [] : data ?? [];
+  const returnedEntryIds = entries
+    .filter((entry) => entry.status === "returned")
+    .map((entry) => entry.id);
+  let feedbackByEntryId = new Map();
+  let feedbackError = false;
+
+  if (returnedEntryIds.length > 0) {
+    try {
+      const { data: feedbackRows, error: noteError } = await supabase
+        .from("entry_review_feedback")
+        .select("entry_id, note")
+        .in("entry_id", returnedEntryIds);
+
+      if (noteError) {
+        console.error("[my-entries] Reviewer feedback could not be loaded.", noteError);
+        feedbackError = true;
+      } else {
+        feedbackByEntryId = new Map((feedbackRows ?? []).map((row) => [row.entry_id, row.note]));
+      }
+    } catch (noteError) {
+      console.error("[my-entries] Reviewer feedback could not be loaded.", noteError);
+      feedbackError = true;
+    }
+  }
 
   return (
     <main className="contribute-page my-entries-page" aria-labelledby="my-entries-title">
@@ -73,6 +97,17 @@ export default async function MyEntriesPage() {
                     >
                       <LocaleText>Edit entry</LocaleText>
                     </Link>
+                    {statusVariant === "returned" ? (
+                      <aside className="my-entries-list__feedback">
+                        <h3><LocaleText>Reviewer feedback</LocaleText></h3>
+                        <p dir="auto">
+                          {feedbackError
+                            ? <LocaleText>Reviewer feedback could not be loaded. Please refresh the page.</LocaleText>
+                            : feedbackByEntryId.get(entry.id)
+                              || <LocaleText>This requested change has no feedback.</LocaleText>}
+                        </p>
+                      </aside>
+                    ) : null}
                   </li>
                 );
               })}

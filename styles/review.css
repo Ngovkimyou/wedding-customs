@@ -312,6 +312,119 @@
   opacity: 0.62;
 }
 
+.review-feedback-form {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+  padding: clamp(0.9rem, 2.4vw, 1.25rem);
+  border: 1px solid rgba(142, 107, 61, 0.55);
+  background: linear-gradient(125deg, rgba(201, 169, 104, 0.13), rgba(255, 252, 246, 0.86));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  animation: review-feedback-reveal 180ms ease-out both;
+}
+
+.review-feedback-form__label {
+  color: var(--color-brown);
+  font-family: "KhmerGlobal", var(--font-meta);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.review-feedback-form__hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.review-feedback-form__input {
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--color-gold-muted);
+  border-radius: 0.12rem;
+  background: rgba(255, 252, 246, 0.9);
+  color: var(--color-brown);
+  font-family: "KhmerGlobal", var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.review-feedback-form__input:focus-visible {
+  border-color: var(--color-red);
+  box-shadow: 0 0 0 3px rgba(125, 50, 56, 0.12);
+  outline: none;
+}
+
+.review-feedback-form__input[aria-invalid="true"] {
+  border-color: var(--color-red);
+}
+
+.review-feedback-form__footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+
+.review-feedback-form__count {
+  color: var(--color-muted);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.review-feedback-form__error {
+  grid-column: 1 / -1;
+  color: var(--color-red);
+  font-size: 0.88rem;
+}
+
+.review-feedback-form__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.review-feedback-form__cancel {
+  min-height: 3rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--color-gold-muted);
+  background: transparent;
+  color: var(--color-red);
+  cursor: pointer;
+  font-family: "KhmerGlobal", var(--font-meta);
+  font-size: 0.88rem;
+  font-weight: 700;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.review-feedback-form__cancel:hover:not(:disabled),
+.review-feedback-form__cancel:focus-visible {
+  background: rgba(125, 50, 56, 0.08);
+}
+
+.review-feedback-form__cancel:focus-visible {
+  outline: 2px solid var(--color-title-gold);
+  outline-offset: 3px;
+}
+
+.review-feedback-form__cancel:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.review-feedback-form__submit {
+  width: 100%;
+  min-width: 0;
+}
+
+@keyframes review-feedback-reveal {
+  from { opacity: 0; transform: translateY(-0.3rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .review-entry__saving,
 .review-entry__error {
   display: grid;
@@ -346,5 +459,28 @@
 @media (max-width: 420px) {
   .review-entry__actions {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .review-feedback-form__footer {
+    grid-template-columns: 1fr;
+  }
+
+  .review-feedback-form__actions {
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
+  }
+
+  .review-feedback-form__submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .review-feedback-form {
+    animation: none;
+  }
+
+  .review-feedback-form__input,
+  .review-feedback-form__cancel {
+    transition: none;
   }
 }

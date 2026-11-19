@@ -12,7 +12,10 @@ import {
   normalizeSearchText,
 } from "../lib/archive-search.mjs";
 import { limitCodePoints, SEARCH_QUERY_MAX_LENGTH } from "../lib/security.mjs";
-import { isCommunityArchiveEntry } from "../lib/archive-entry-mapper.mjs";
+import {
+  isCommunityArchiveEntry,
+  splitArchiveDescriptionParagraphs,
+} from "../lib/archive-entry-mapper.mjs";
 import {
   translateArchiveContent,
   translateArchiveSearchSnippet,
@@ -26,6 +29,11 @@ import { useLocale } from "./LocaleProvider.js";
 
 const KHMER_SCRIPT_PATTERN = /[\u1780-\u17ff\u19e0-\u19ff]/u;
 
+function splitCommunityDescription(value) {
+  return splitArchiveDescriptionParagraphs(value)
+    .map((text) => ({ sectionTitle: "Story", text }));
+}
+
 export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   const { locale } = useLocale();
   const [query, setQuery] = useState("");
@@ -37,28 +45,43 @@ export default function ArchiveSearch({ entries = [], dataStatus = "ready" }) {
   const searchIndex = useMemo(
     () => entries.map((entry) => {
       const isCommunityEntry = isCommunityArchiveEntry(entry);
-      const khmerDescriptionBlocks = getArchiveDescriptionBlocks(entry)
-        .map((block) => ({
-          sectionTitle: isCommunityEntry
-            ? keepKhmerSearchText(block.sectionTitle)
-            : translate("km", translateArchiveContent("km", block.sectionTitle)),
-          text: isCommunityEntry
-            ? keepKhmerSearchText(block.text)
-            : translateArchiveSearchText("km", block.text),
-        }))
-        .filter((block) => block.text && KHMER_SCRIPT_PATTERN.test(block.text));
-      const khmerSearchBlocks = khmerDescriptionBlocks.map((block) => ({
-        ...block,
-        text: keepKhmerSearchText(block.text),
-      })).filter((block) => block.text);
+      const existingDescriptionBlocks = getArchiveDescriptionBlocks(entry);
+      const englishDescriptionBlocks = isCommunityEntry && entry.descriptionEn
+        ? splitCommunityDescription(entry.descriptionEn)
+        : existingDescriptionBlocks;
+      const khmerDescriptionBlocks = isCommunityEntry
+        ? (entry.descriptionKh
+          ? splitCommunityDescription(entry.descriptionKh)
+          : existingDescriptionBlocks)
+          .map((block) => ({
+            sectionTitle: keepKhmerSearchText(block.sectionTitle),
+            text: keepKhmerSearchText(block.text),
+          }))
+          .filter((block) => block.text && KHMER_SCRIPT_PATTERN.test(block.text))
+        : existingDescriptionBlocks
+          .map((block) => ({
+            sectionTitle: translate("km", translateArchiveContent("km", block.sectionTitle)),
+            text: translateArchiveSearchText("km", block.text),
+          }))
+          .filter((block) => block.text && KHMER_SCRIPT_PATTERN.test(block.text));
+      const khmerSearchBlocks = isCommunityEntry && entry.descriptionKh
+        ? khmerDescriptionBlocks
+        : khmerDescriptionBlocks.map((block) => ({
+          ...block,
+          text: keepKhmerSearchText(block.text),
+        })).filter((block) => block.text);
 
       return {
         ...entry,
         isCommunityEntry,
+        descriptionBlocks: englishDescriptionBlocks,
         khmerDescriptionBlocks,
         searchTitle: normalizeSearchText(entry.title),
         searchKhmerTitle: normalizeSearchText(keepKhmerSearchText(entry.khmerTitle)),
-        searchDescription: normalizeSearchText(getArchiveDescriptionText(entry)),
+        searchDescription: normalizeSearchText(getArchiveDescriptionText({
+          ...entry,
+          descriptionBlocks: englishDescriptionBlocks,
+        })),
         searchKhmerDescription: normalizeSearchText(getArchiveDescriptionText({
           ...entry,
           descriptionBlocks: khmerSearchBlocks,

@@ -2,11 +2,12 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "../../lib/supabase/server.js";
+import { normalizeReviewFeedback } from "../../lib/review-feedback.mjs";
 
 const ENTRY_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const REVIEW_DECISIONS = new Set(["published", "returned"]);
 
-export async function decideReviewEntry(entryId, decision) {
+export async function decideReviewEntry(entryId, decision, returnNote = null) {
   if (
     typeof entryId !== "string"
     || !ENTRY_ID_PATTERN.test(entryId)
@@ -15,11 +16,20 @@ export async function decideReviewEntry(entryId, decision) {
     return { ok: false };
   }
 
+  const cleanReturnNote = decision === "returned"
+    ? normalizeReviewFeedback(returnNote)
+    : null;
+
+  if (decision === "returned" && !cleanReturnNote) {
+    return { ok: false };
+  }
+
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("review_entry", {
       entry_id: entryId,
       decision,
+      return_note: decision === "returned" ? cleanReturnNote : null,
     });
 
     if (error) {
