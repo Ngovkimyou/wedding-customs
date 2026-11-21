@@ -92,19 +92,19 @@ The SQL files in `supabase/` have prerequisites in their comments. Review existi
 
 ## 8. Submission checklist
 
-- **Live URL loads logged out and shows published entries only:** Yes — [https://wedding-customs.vercel.app/](https://wedding-customs.vercel.app/); public entry queries filter for `published` in `lib/supabase/entries.js`.
-- **A stranger cannot publish their own entry through the page or console:** Yes — tested with a second account on **[add test date]**; direct status changes were refused by RLS and `review_entry` returned `false` for a non-reviewer.
-- **Logged out, the API returns nothing pending or returned:** Yes — tested on **[add test date]**; the logged-out request for non-published entries returned an empty array (`[]`).
-- **Contributors can edit and delete only their own entries:** Yes — enforced by owner checks in the entries-table RLS policies and checked with separate accounts on **[add test date]**.
-- **No secrets anywhere in the repository history:** **Recheck before submission.** `.env.local` is currently tracked by Git in this workspace. I have not opened or copied its values. Audit the current file and Git history with a secrets scanner; if any live credential was committed, remove it from tracking and rotate it before marking this item complete.
-- **At least eight real entries, each with a credited source:** Yes — 8 curated records are in `data/archive.js`; their source and photo-credit details are described above.
-- **Khmer renders on every screen a user meets, including the queue:** Yes — Khmer is supported throughout the archive and contributor/reviewer flows.
-- **Works at phone width:** Yes — tested on a phone-sized layout; add the exact device or browser width here: **[device / width]**.
-- **No test entries, Lorem Ipsum, or TODO comments in shipped pages:** Yes — as recorded in my checklist.
-- **No console errors on the main pages:** Yes — as recorded in my checklist.
-- **`jesseorndorff` is a collaborator on this repository:** Yes.
-- **Supabase project restored and awake:** Yes — November 20, 2026.
-- **Demo video link opens in a private window:** **[demo video link to be added]**.
-- **Reflection pasted in the Canvas submission:** Yes.
-- **Posted in the Show Your Archive discussion:** Yes.
-- **Q&A slot booked:** Tuesday, December 1, 2026, 1:00–1:05 p.m.
+- Live URL loads logged out and shows published entries only: **Yes** — **[Live URL](https://wedding-customs.vercel.app/)** and published-only query in `lib/supabase/entries.js`.
+- A stranger cannot publish their own entry through the page or console: **Yes** — Lab 10 Part 4 second-account results; RLS and reviewer RPC are in `supabase/entry-access-policies.sql` and `tests/supabase-security-policies.test.mjs` (test date not recorded).
+- Logged out, the API returns nothing pending or returned: **Yes** — Lab 10 Part 4 logged-out REST response was `[]` (test date not recorded).
+- Contributors can edit and delete only their own entries: **Yes** — owner policies in `supabase/entry-access-policies.sql`; checks in `tests/supabase-security-policies.test.mjs` and `tests/contribution-entry-delete.test.mjs`.
+- No secrets anywhere in the repository history: **Yes** — `git ls-files` and `git log --all -- .env.local` show no tracked `.env.local` path/history.
+- At least eight real entries, each with a credited source: **Yes** — 8 curated records in `data/archive.js`; source credits in `data/about.js` and the About page.
+- Khmer renders on every screen a user meets, including the queue: **Yes** — translations in `lib/locale.js`; coverage in `tests/locale.test.mjs` and the live archive.
+- Works at phone width: **Yes** — checked on a Samsung phone, Iphone X and above.
+- No test entries, Lorem Ipsum, or TODO comments in shipped pages: **Yes** — curated records in `data/archive.js` and the live archive.
+- No console errors on the main pages: **Yes** — checked in the browser console on the main pages.
+- `jesseorndorff` is a collaborator on this repository: **Yes**
+- Supabase project restored and awake: **Yes** — Supabase dashboard, November 20, 2026.
+- Demo video link opens in a private window: **[Demo Link](https://drive.google.com/file/d/12P192TrJN6Hl5_J4WuJfJSeBAXNHyAuo/view?usp=sharing)**.
+- Reflection pasted in the Canvas submission: **Yes**
+- Posted in the Show Your Archive discussion: **Yes**
+- Q&A slot booked: **Yes** — Tuesday, December 1, 2026, 1:00–1:05 p.m.
