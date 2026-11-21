@@ -111,7 +111,7 @@ export default function ArchiveGrid({ entries = [], status = "ready" }) {
                   <Link
                     className="archive-grid__contribute"
                     href="/contribute"
-                    prefetch={true}
+                    prefetch={false}
                   >
                     <span className="visually-hidden"><LocaleText>Contribute an entry</LocaleText></span>
                     <span aria-hidden="true">+</span>

@@ -1,9 +1,8 @@
-import Link from "next/link";
 import ContributionForm from "./ContributionForm.js";
+import ContributionAccessGate from "./ContributionAccessGate.js";
 import LocaleText from "./LocaleText.js";
 
 export default function ArchiveEntryFormPage({
-  isAuthenticated = false,
   mode = "create",
   entry = null,
 }) {
@@ -33,7 +32,7 @@ export default function ArchiveEntryFormPage({
           </p>
         ) : null}
 
-        {isEditing || isAuthenticated ? (
+        {isEditing ? (
           <ContributionForm
             mode={mode}
             entryId={entry?.dbId}
@@ -41,10 +40,9 @@ export default function ArchiveEntryFormPage({
             existingThumbnailUrl={entry?.images?.[0]?.src ?? null}
           />
         ) : (
-          <div className="contribute-login-prompt">
-            <p><LocaleText>Log in to add an entry to the archive.</LocaleText></p>
-            <Link className="contribute-submit" href="/login"><LocaleText>Log in to contribute</LocaleText></Link>
-          </div>
+          <ContributionAccessGate>
+            <ContributionForm mode={mode} />
+          </ContributionAccessGate>
         )}
       </section>
     </main>

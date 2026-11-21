@@ -116,7 +116,7 @@ export default async function MyEntriesPage() {
             <p className="my-entries-message"><LocaleText>You haven’t contributed an entry yet.</LocaleText></p>
           )}
 
-          <Link className="my-entries-contribute" href="/contribute">
+          <Link className="my-entries-contribute" href="/contribute" prefetch={false}>
             <LocaleText>Add an entry</LocaleText>
           </Link>
         </div>

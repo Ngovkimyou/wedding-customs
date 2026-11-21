@@ -30,6 +30,11 @@ test("archive titles follow the selected language and retain the alternate title
   });
 });
 
+test("contribution session-check status has Khmer copy", () => {
+  assert.match(translate("km", "Checking your sign-in…"), /[\u1780-\u17ff]/u);
+  assert.equal(translate("en", "Checking your sign-in…"), "Checking your sign-in…");
+});
+
 test("curated archive card labels, summaries, and captions have Khmer translations", () => {
   const curatedCardCopy = [
     "Archive",
